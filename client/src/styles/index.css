@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-sale: #C4301C;
+    --color-badge-new: #0D8756;
+    --color-badge-hot: #7188ED;
+    --font-heading: 'Instrument Sans', sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* Utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Shaporoo Reference Pill Buttons */
+.btn-pill-dark {
+  @apply inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-black text-white font-semibold text-sm tracking-wide transition-all duration-300 hover:bg-neutral-800 hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-pill-light {
+  @apply inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-white text-black font-semibold text-sm tracking-wide border border-neutral-200 transition-all duration-300 hover:bg-neutral-50 hover:border-black active:scale-[0.98];
+}
+
+.btn-pill-yellow {
+  @apply inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-[#F4F691] text-black font-bold text-sm tracking-wide transition-all duration-300 hover:bg-[#ebed79] hover:shadow-md active:scale-[0.98];
+}
+
+.btn-pill-outline {
+  @apply inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-transparent text-black font-semibold text-sm tracking-wide border border-black transition-all duration-300 hover:bg-black hover:text-white active:scale-[0.98];
+}
+
+/* Input Fields */
+.input-pill {
+  @apply w-full px-5 py-3 rounded-full border border-neutral-200 bg-neutral-50 text-sm focus:outline-none focus:border-black focus:bg-white transition-all duration-200;
+}
+
+/* Badge Styles */
+.badge-sale {
+  @apply bg-[#C4301C] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full tracking-wider uppercase;
+}
+
+.badge-new {
+  @apply bg-[#0D8756] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full tracking-wider uppercase;
+}
+
+.badge-hot {
+  @apply bg-[#7188ED] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full tracking-wider uppercase;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 3s infinite ease-in-out;
+}
+
+@keyframes floatBob {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-float {
+  animation: floatBob 3s ease-in-out infinite;
+}
+
+@keyframes shimmerEffect {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transform: translateX(-100%);
+  animation: shimmerEffect 2.5s infinite;
+}
+
+.hover-lift {
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.08);
+}
+
+/* FoxTheme Hyper Motion Engine (Shaporoo Reference) */
+:root {
+  --ease-fox-entrance: cubic-bezier(0, 0, 0.3, 1);
+  --ease-fox-hover: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fox-image: 0.85s;
+  --duration-fox-action: 0.54s;
+}
+
+@keyframes dotscale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.85); }
+}
+
+.animate-dotscale {
+  animation: dotscale 2s var(--ease-fox-entrance) infinite;
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.animate-pulse-ring {
+  animation: pulseRing 2.2s cubic-bezier(0.2, 0, 0, 1) infinite;
+}
+
+@keyframes fadeInUpFox {
+  0% { opacity: 0.01; transform: translateY(2.5rem); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fox-fade-up {
+  animation: fadeInUpFox 0.5s var(--ease-fox-entrance) forwards;
+}
+
+@keyframes zoomOutSm {
+  0% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.animate-zoom-out-sm {
+  animation: zoomOutSm 1.2s var(--ease-fox-entrance) forwards;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 24s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+
+
