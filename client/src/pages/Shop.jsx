@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Filter, SlidersHorizontal, ChevronDown, X, RotateCcw, Loader2 } from 'lucide-react';
+import { SlidersHorizontal, X, Loader2 } from 'lucide-react';
 import api from '../services/api';
 import ProductCard from '../components/common/ProductCard';
 

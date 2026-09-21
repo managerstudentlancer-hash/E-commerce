@@ -57,6 +57,7 @@ export const api = {
   // Categories
   categories: {
     getAll: () => request('/categories'),
+    getAllAdmin: () => request('/categories/all'),
     getBySlug: (slug) => request(`/categories/${slug}`),
     create: (cat) => request('/categories', { method: 'POST', body: JSON.stringify(cat) }),
     update: (id, cat) => request(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(cat) }),
@@ -103,12 +104,35 @@ export const api = {
       request(`/orders/${id}/status`, { method: 'PUT', body: JSON.stringify(statusData) }),
   },
 
+  // Customers (Admin)
+  customers: {
+    getAll: (params = {}) => {
+      const query = new URLSearchParams(params).toString();
+      return request(`/admin/customers${query ? `?${query}` : ''}`);
+    },
+    getById: (id) => request(`/admin/customers/${id}`),
+    updateStatus: (id, isActive) =>
+      request(`/admin/customers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
+  },
+
+  // Inventory (Admin)
+  inventory: {
+    getAll: (params = {}) => {
+      const query = new URLSearchParams(params).toString();
+      return request(`/admin/inventory${query ? `?${query}` : ''}`);
+    },
+    updateStock: (id, stock) =>
+      request(`/admin/inventory/${id}/stock`, { method: 'PATCH', body: JSON.stringify({ stock }) }),
+  },
+
   // Coupons
   coupons: {
     validate: (code, subtotal) =>
       request('/coupons/validate', { method: 'POST', body: JSON.stringify({ code, subtotal }) }),
     getAll: () => request('/coupons'),
     create: (coupon) => request('/coupons', { method: 'POST', body: JSON.stringify(coupon) }),
+    update: (id, coupon) => request(`/coupons/${id}`, { method: 'PUT', body: JSON.stringify(coupon) }),
+    toggle: (id) => request(`/coupons/${id}/toggle`, { method: 'PATCH' }),
     delete: (id) => request(`/coupons/${id}`, { method: 'DELETE' }),
   },
 

@@ -10,6 +10,8 @@ const Coupon = require('../models/Coupon');
 const Banner = require('../models/Banner');
 const SiteSettings = require('../models/SiteSettings');
 const Review = require('../models/Review');
+const bagsData = require('./bagsData');
+const shoesData = require('./shoesData');
 
 dotenv.config();
 
@@ -131,10 +133,10 @@ const seedAll = async () => {
       {
         name: 'Bags & Luggage',
         slug: 'bags',
-        description: 'Full-grain leather weekenders, structured totes, and modular backpacks.',
+        description: 'Full-grain leather weekenders, structured totes, designer purses, and everyday bags.',
         image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=600&q=80',
         icon: 'ShoppingBag',
-        itemCount: 24,
+        itemCount: 36,
         sortOrder: 4,
       },
       {
@@ -149,10 +151,10 @@ const seedAll = async () => {
       {
         name: 'Shoes',
         slug: 'shoes',
-        description: 'Artisanal Italian leather loafers, minimalist runners, and boots.',
+        description: 'Artisanal Italian leather loafers, running shoes, sneakers, and boots.',
         image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=600&q=80',
         icon: 'Footprints',
-        itemCount: 27,
+        itemCount: 36,
         sortOrder: 6,
       },
       {
@@ -428,13 +430,13 @@ const seedAll = async () => {
         description:
           'Handmade in Civitanova Marche, Italy from supple calfskin nappa leather. Built atop a Margom vulcanized rubber cupsole with an arch-support cork footbed lined in antibacterial calf leather.',
         shortDescription: 'Handcrafted Italian calfskin low-top sneaker with Margom rubber sole.',
-        price: 165.0,
-        compareAtPrice: 210.0,
+        price: 42.0,
+        compareAtPrice: 70.0,
         images: [
+          'https://images.unsplash.com/photo-1515955656352-a1fa3ffcd111?auto=format&fit=crop&w=800&q=80',
           'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80',
-          'https://images.unsplash.com/photo-1560769629-975ec94e6a86?auto=format&fit=crop&w=800&q=80',
         ],
-        thumbnail: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80',
+        thumbnail: 'https://images.unsplash.com/photo-1515955656352-a1fa3ffcd111?auto=format&fit=crop&w=800&q=80',
         category: 'Shoes',
         categorySlug: 'shoes',
         subcategory: 'Sneakers',
@@ -1107,7 +1109,8 @@ const seedAll = async () => {
       },
     ];
 
-    const products = await Product.insertMany(productsData);
+    const allProducts = [...productsData, ...bagsData, ...shoesData];
+    const products = await Product.insertMany(allProducts);
     console.log(`[VEXIVO Seed] Seeded ${products.length} products.`);
 
     // 5. Collections

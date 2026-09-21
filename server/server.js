@@ -18,8 +18,8 @@ const { seedAll } = require('./seed/seedData');
 connectDB().then(async () => {
   try {
     const count = await Product.countDocuments();
-    if (count < 25) {
-      console.log(`[VEXIVO] Database count is ${count} (< 25). Running catalog auto-seed...`);
+    if (count < 60) {
+      console.log(`[VEXIVO] Database count is ${count} (< 60). Running catalog auto-seed...`);
       await seedAll();
     }
   } catch (err) {
@@ -53,12 +53,31 @@ app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/banners', require('./routes/bannerRoutes'));
 app.use('/api/site-settings', require('./routes/settingsRoutes'));
 app.use('/api/newsletter', require('./routes/newsletterRoutes'));
-// Reseed endpoint for instant sync
-app.get('/api/seed', async (req, res) => {
+app.use('/api/admin', require('./routes/adminRoutes'));
+
+// Reseed endpoint for instant sync (admin-only protected)
+const { protect, adminOnly } = require('./middleware/auth');
+app.get('/api/seed', protect, adminOnly, async (req, res) => {
   try {
     await seedAll();
     const total = await Product.countDocuments();
     res.json({ success: true, message: `Catalog seeded! Total products: ${total}` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/seed-catalog', async (req, res) => {
+  try {
+    delete require.cache[require.resolve('./seed/seedData')];
+    delete require.cache[require.resolve('./seed/bagsData')];
+    delete require.cache[require.resolve('./seed/shoesData')];
+    const { seedAll: freshSeedAll } = require('./seed/seedData');
+    await freshSeedAll();
+    const total = await Product.countDocuments();
+    const bagCount = await Product.countDocuments({ categorySlug: 'bags' });
+    const shoeCount = await Product.countDocuments({ categorySlug: 'shoes' });
+    res.json({ success: true, message: `Catalog seeded! Total: ${total}, Bags: ${bagCount}, Shoes: ${shoeCount}` });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

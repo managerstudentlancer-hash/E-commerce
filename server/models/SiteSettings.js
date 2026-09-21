@@ -23,7 +23,7 @@ const siteSettingsSchema = new mongoose.Schema(
       youtube: { type: String, default: 'https://youtube.com/vexivo' },
     },
     contactInfo: {
-      email: { type: String, default: 'arpit123@gmail.com' },
+      email: { type: String, default: 'concierge@vexivo.com' },
       phone: { type: String, default: '+44 20 7946 0991' },
       address: { type: String, default: '71-75 Shelton Street, Covent Garden, London, WC2H 9JQ' },
       hours: { type: String, default: 'Monday - Saturday: 9:00 AM - 6:00 PM GMT' },

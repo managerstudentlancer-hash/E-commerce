@@ -1,6 +1,17 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL: JWT_SECRET environment variable is required in production.');
+    }
+    return 'vexivo_development_secret_key_do_not_use_in_prod';
+  }
+  return secret;
+};
+
 const protect = async (req, res, next) => {
   let token;
 
@@ -15,7 +26,7 @@ const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'vexivo_super_secret_jwt_key_9837428947239847293847239');
+    const decoded = jwt.verify(token, getJwtSecret());
     req.user = await User.findById(decoded.id).select('-passwordHash');
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'User associated with token not found' });
@@ -41,7 +52,7 @@ const optionalAuth = async (req, res, next) => {
   }
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'vexivo_super_secret_jwt_key_9837428947239847293847239');
+      const decoded = jwt.verify(token, getJwtSecret());
       req.user = await User.findById(decoded.id).select('-passwordHash');
     } catch (e) {
       req.user = null;

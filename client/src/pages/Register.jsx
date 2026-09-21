@@ -26,7 +26,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await register({ name, email, password, phone });
+      await register(name, email, password, phone);
       navigate('/account');
     } catch (err) {
       setError(err.message || 'Registration failed');
@@ -242,9 +242,9 @@ const Register = () => {
 
           <p className="text-[11px] text-neutral-500 text-center mt-4 leading-relaxed">
             By registering, you agree to VEXIVO's{' '}
-            <Link to="/legal/terms" className="underline hover:text-black">Terms of Service</Link>{' '}
+            <Link to="/terms" className="underline hover:text-black">Terms of Service</Link>{' '}
             and{' '}
-            <Link to="/legal/privacy" className="underline hover:text-black">Privacy Policy</Link>.
+            <Link to="/privacy-policy" className="underline hover:text-black">Privacy Policy</Link>.
           </p>
         </div>
       </div>

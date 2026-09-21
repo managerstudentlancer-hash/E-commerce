@@ -11,11 +11,22 @@ const slugify = (text) => {
     .replace(/--+/g, '-');
 };
 
-// @desc Get all active categories
+// @desc Get all active categories (Public)
 // @route GET /api/categories
 const getCategories = async (req, res, next) => {
   try {
     const categories = await Category.find({ status: 'active' }).sort({ sortOrder: 1, name: 1 });
+    res.json({ success: true, count: categories.length, categories });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Get all categories including inactive (Admin)
+// @route GET /api/categories/all
+const getAllCategoriesAdmin = async (req, res, next) => {
+  try {
+    const categories = await Category.find().sort({ sortOrder: 1, name: 1 });
     res.json({ success: true, count: categories.length, categories });
   } catch (error) {
     next(error);
@@ -29,7 +40,6 @@ const getCategoryBySlug = async (req, res, next) => {
     const slug = (req.params.slug || '').toLowerCase().trim();
     let category = await Category.findOne({ slug });
 
-    // Category title map for friendly display
     const categoryTitleMap = {
       women: "Women's Fashion",
       men: "Men's Tailoring",
@@ -46,7 +56,12 @@ const getCategoryBySlug = async (req, res, next) => {
     };
 
     if (!category) {
-      const friendlyName = categoryTitleMap[slug] || slug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+      const friendlyName =
+        categoryTitleMap[slug] ||
+        slug
+          .split('-')
+          .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+          .join(' ');
       category = {
         name: friendlyName,
         slug: slug,
@@ -56,24 +71,16 @@ const getCategoryBySlug = async (req, res, next) => {
       };
     }
 
-    const safeSlug = slug.replace(/[^a-zA-Z0-9]/g, ' ');
-    const searchTerms = [slug, safeSlug, category.name];
-    const regexList = searchTerms.map(t => new RegExp(t, 'i'));
-
-    // Find products matching this category slug, category name, subcategory, tags, or name
     let products = await Product.find({
       $or: [
         { categorySlug: slug },
-        { categorySlug: { $in: regexList } },
-        { category: { $in: regexList } },
-        { subcategory: { $in: regexList } },
-        { tags: { $in: regexList } },
-        { name: { $in: regexList } },
+        { category: new RegExp(`^${category.name}$`, 'i') },
+        { category: new RegExp(`^${slug}$`, 'i') },
+        { category: new RegExp(slug, 'i') },
       ],
       status: 'active',
     });
 
-    // If category has no directly tagged items, provide popular bestsellers so user is never greeted with a blank page
     if (products.length === 0) {
       products = await Product.find({ status: 'active' }).limit(8);
     }
@@ -93,7 +100,7 @@ const getCategoryBySlug = async (req, res, next) => {
 // @route POST /api/categories
 const createCategory = async (req, res, next) => {
   try {
-    const { name, description, image, icon, sortOrder } = req.body;
+    const { name, description, image, icon, sortOrder, status, parentCategory } = req.body;
     const slug = slugify(name);
 
     const exists = await Category.findOne({ slug });
@@ -107,6 +114,8 @@ const createCategory = async (req, res, next) => {
       description,
       image,
       icon,
+      parentCategory: parentCategory || '',
+      status: status || 'active',
       sortOrder: sortOrder || 0,
     });
 
@@ -156,6 +165,7 @@ const deleteCategory = async (req, res, next) => {
 
 module.exports = {
   getCategories,
+  getAllCategoriesAdmin,
   getCategoryBySlug,
   createCategory,
   updateCategory,

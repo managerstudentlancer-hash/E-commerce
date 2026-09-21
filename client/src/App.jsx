@@ -8,6 +8,7 @@ import { WishlistProvider } from './context/WishlistContext';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import CartDrawer from './components/common/CartDrawer';
+import { ProtectedRoute, AdminRoute } from './components/common/ProtectedRoute';
 
 // Store Pages
 import Home from './pages/Home';
@@ -43,6 +44,9 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminCategories from './pages/admin/AdminCategories';
+import AdminCollections from './pages/admin/AdminCollections';
+import AdminCustomers from './pages/admin/AdminCustomers';
+import AdminInventory from './pages/admin/AdminInventory';
 import AdminCoupons from './pages/admin/AdminCoupons';
 import AdminReviews from './pages/admin/AdminReviews';
 import AdminBanners from './pages/admin/AdminBanners';
@@ -85,11 +89,13 @@ const App = () => {
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<Login />} />
 
-              {/* Customer Account Routes */}
-              <Route path="/account" element={<AccountDashboard />} />
-              <Route path="/account/orders" element={<OrderHistory />} />
-              <Route path="/account/wishlist" element={<WishlistPage />} />
-              <Route path="/account/addresses" element={<AddressBook />} />
+              {/* Customer Account Routes (Protected) */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/account" element={<AccountDashboard />} />
+                <Route path="/account/orders" element={<OrderHistory />} />
+                <Route path="/account/wishlist" element={<WishlistPage />} />
+                <Route path="/account/addresses" element={<AddressBook />} />
+              </Route>
 
               {/* Informational & Policy Pages */}
               <Route path="/about" element={<About />} />
@@ -102,13 +108,22 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Route>
 
-            {/* Admin Control Center Routes */}
-            <Route path="/admin" element={<AdminLayout />}>
+            {/* Admin Control Center Routes (Protected) */}
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
               <Route index element={<AdminDashboard />} />
               <Route path="products" element={<AdminProducts />} />
-              <Route path="orders" element={<AdminOrders />} />
               <Route path="categories" element={<AdminCategories />} />
-              <Route path="collections" element={<AdminCategories />} />
+              <Route path="orders" element={<AdminOrders />} />
+              <Route path="customers" element={<AdminCustomers />} />
+              <Route path="inventory" element={<AdminInventory />} />
+              <Route path="collections" element={<AdminCollections />} />
               <Route path="coupons" element={<AdminCoupons />} />
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="banners" element={<AdminBanners />} />
