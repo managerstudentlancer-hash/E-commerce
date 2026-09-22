@@ -103,6 +103,55 @@ const login = async (req, res, next) => {
   }
 };
 
+// @desc Admin-only login with strict role validation
+// @route POST /api/auth/admin-login
+const adminLogin = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide admin email and password' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid administrator credentials' });
+    }
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Invalid administrator credentials' });
+    }
+
+    // Strict Security Guard: User MUST have role === 'admin'
+    if (user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Denied: Only accounts with Administrator privileges can log in through the Admin Portal.',
+      });
+    }
+
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        addresses: user.addresses,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc Logout user
 // @route POST /api/auth/logout
 const logout = async (req, res) => {
@@ -195,6 +244,7 @@ const resetPassword = async (req, res) => {
 module.exports = {
   register,
   login,
+  adminLogin,
   logout,
   getMe,
   updateProfile,

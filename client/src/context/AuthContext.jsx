@@ -45,6 +45,17 @@ export const AuthProvider = ({ children }) => {
     throw new Error(response.message || 'Login failed');
   };
 
+  const adminLogin = async (email, password) => {
+    const response = await api.auth.adminLogin({ email, password });
+    if (response.success && response.token) {
+      localStorage.setItem('vexivo_token', response.token);
+      setToken(response.token);
+      setUser(response.user);
+      return response.user;
+    }
+    throw new Error(response.message || 'Admin authentication failed');
+  };
+
   const register = async (name, email, password, phone) => {
     const response = await api.auth.register({ name, email, password, phone });
     if (response.success && response.token) {
@@ -81,6 +92,7 @@ export const AuthProvider = ({ children }) => {
         token,
         loading,
         login,
+        adminLogin,
         register,
         logout,
         updateProfile,

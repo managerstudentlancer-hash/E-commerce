@@ -35,6 +35,7 @@ export const api = {
   auth: {
     register: (userData) => request('/auth/register', { method: 'POST', body: JSON.stringify(userData) }),
     login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
+    adminLogin: (credentials) => request('/auth/admin-login', { method: 'POST', body: JSON.stringify(credentials) }),
     logout: () => request('/auth/logout', { method: 'POST' }),
     getMe: () => request('/auth/me'),
     updateProfile: (profileData) => request('/auth/profile', { method: 'PUT', body: JSON.stringify(profileData) }),

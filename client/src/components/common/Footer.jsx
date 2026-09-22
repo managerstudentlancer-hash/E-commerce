@@ -192,6 +192,7 @@ const Footer = () => {
             <span>© 2026 VEXIVO International Ltd. All rights reserved.</span>
             <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link to="/admin/login" className="hover:text-white transition-colors text-neutral-400 font-medium">Admin Portal</Link>
           </div>
 
           {/* Payment Badges (Pills) */}
