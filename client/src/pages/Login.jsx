@@ -218,7 +218,7 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Demo Logins with 1-Click Fill */}
+          {/* Demo Customer Login with 1-Click Fill */}
           <div className="mt-6 pt-5 border-t border-neutral-100 bg-neutral-50/80 p-4 rounded-2xl border border-neutral-200/60">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-700 flex items-center space-x-1">
@@ -226,22 +226,25 @@ const Login = () => {
                 <span>Instant 1-Click Demo Fill:</span>
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('arpit123@gmail.com', 'Arpit123!')}
-                className="py-2.5 px-3 rounded-xl bg-white border border-neutral-300 hover:border-black text-neutral-900 text-xs font-bold text-center transition-all shadow-sm hover:shadow"
-              >
-                👤 Arpit (Demo User)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('admin@vexivo.com', 'AdminPass123!')}
-                className="py-2.5 px-3 rounded-xl bg-white border border-neutral-300 hover:border-black text-neutral-900 text-xs font-bold text-center transition-all shadow-sm hover:shadow"
-              >
-                ⚡ Admin Demo
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => handleQuickFill('arpit123@gmail.com', 'Arpit123!')}
+              className="w-full py-2.5 px-3 rounded-xl bg-white border border-neutral-300 hover:border-black text-neutral-900 text-xs font-bold text-center transition-all shadow-sm hover:shadow flex items-center justify-center space-x-2"
+            >
+              <span>👤 Autofill Customer Account (`arpit123@gmail.com`)</span>
+            </button>
+          </div>
+
+          {/* Dedicated Admin Portal Link */}
+          <div className="mt-4 pt-3 text-center">
+            <Link
+              to="/admin/login"
+              className="text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition-colors inline-flex items-center space-x-1.5"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-[#C4301C]" />
+              <span>Are you a Store Administrator?</span>
+              <span className="text-black underline font-bold">Secure Admin Portal →</span>
+            </Link>
           </div>
         </div>
       </div>

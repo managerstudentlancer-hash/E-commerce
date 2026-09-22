@@ -53,8 +53,8 @@ const AdminLayout = () => {
             You must be signed in with an administrator account to access the VEXIVO control panel.
           </p>
           <div className="pt-2 flex flex-col gap-2.5">
-            <Link to="/login" className="btn-pill-dark text-xs py-3 font-bold">
-              Sign In as Administrator
+            <Link to="/admin/login" className="btn-pill-dark text-xs py-3 font-bold">
+              Sign In to Admin Portal
             </Link>
             <Link to="/" className="btn-pill-light text-xs py-2.5 font-medium">
               Return to Storefront
@@ -67,7 +67,7 @@ const AdminLayout = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/admin/login');
   };
 
   const isNavActive = (path) => {

@@ -41,6 +41,7 @@ import NotFound from './pages/static/NotFound';
 // Admin Pages
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminLogin from './pages/admin/AdminLogin';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminCategories from './pages/admin/AdminCategories';
@@ -107,6 +108,9 @@ const App = () => {
               <Route path="/terms" element={<Terms />} />
               <Route path="*" element={<NotFound />} />
             </Route>
+
+            {/* Dedicated Admin Portal Login (Public/Guest) */}
+            <Route path="/admin/login" element={<AdminLogin />} />
 
             {/* Admin Control Center Routes (Protected) */}
             <Route
