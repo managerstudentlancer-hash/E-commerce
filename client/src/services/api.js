@@ -33,6 +33,8 @@ const request = async (endpoint, options = {}) => {
 export const api = {
   // Auth
   auth: {
+    sendOtp: (phone) => request('/auth/send-otp', { method: 'POST', body: JSON.stringify({ phone }) }),
+    verifyOtp: (data) => request('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ firebaseIdToken: data.firebaseIdToken, name: data.name }) }),
     register: (userData) => request('/auth/register', { method: 'POST', body: JSON.stringify(userData) }),
     login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
     adminLogin: (credentials) => request('/auth/admin-login', { method: 'POST', body: JSON.stringify(credentials) }),

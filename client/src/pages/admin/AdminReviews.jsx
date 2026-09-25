@@ -5,11 +5,11 @@ import {
   XCircle,
   Trash2,
   Loader2,
-  Filter,
   Check,
   X,
   MessageSquare,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -81,10 +81,10 @@ const AdminReviews = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-slate-100">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 bg-neutral-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl border border-neutral-700 animate-slide-up">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 bg-slate-900 text-white text-xs font-bold px-5 py-3.5 rounded-2xl shadow-2xl border border-emerald-500/40 glow-emerald animate-slide-up">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -93,16 +93,16 @@ const AdminReviews = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-            Customer Reviews Moderation
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            Customer Reviews &amp; Testimonial Moderation
           </h2>
-          <p className="text-xs text-neutral-500 mt-0.5">
-            Audit buyer testimonials, filter verified purchase ratings, and moderate public feedback.
+          <p className="text-xs text-slate-400 mt-0.5">
+            Audit customer ratings, filter verified buyer feedback, and approve public endorsements.
           </p>
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex items-center space-x-1.5 p-1 bg-neutral-100 rounded-xl self-start sm:self-auto">
+        <div className="flex items-center space-x-1.5 p-1 bg-white/5 rounded-2xl border border-white/5 self-start sm:self-auto">
           {[
             { id: 'all', label: 'All Reviews' },
             { id: 'approved', label: 'Approved' },
@@ -112,10 +112,10 @@ const AdminReviews = () => {
             <button
               key={tab.id}
               onClick={() => setStatusFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 statusFilter === tab.id
-                  ? 'bg-white text-neutral-950 shadow-sm'
-                  : 'text-neutral-500 hover:text-neutral-900'
+                  ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/20'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               {tab.label}
@@ -125,39 +125,40 @@ const AdminReviews = () => {
       </div>
 
       {/* Reviews List */}
-      <div className="bg-white rounded-3xl border border-neutral-200/80 overflow-hidden shadow-subtle">
+      <div className="admin-card rounded-3xl overflow-hidden shadow-2xl">
         {loading ? (
-          <div className="p-16 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+          <div className="p-20 flex flex-col items-center justify-center space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+            <p className="text-xs text-slate-400 font-bold">Querying customer testimonials...</p>
           </div>
         ) : filteredReviews.length === 0 ? (
-          <div className="p-16 text-center text-xs text-neutral-400">
+          <div className="p-16 text-center text-xs text-slate-400">
             No customer reviews found matching this filter.
           </div>
         ) : (
-          <div className="divide-y divide-neutral-100">
+          <div className="divide-y divide-white/5">
             {filteredReviews.map((rev) => (
               <div
                 key={rev._id}
-                className="p-6 flex flex-col md:flex-row md:items-start justify-between gap-4 hover:bg-neutral-50/50 transition-colors"
+                className="p-6 flex flex-col md:flex-row md:items-start justify-between gap-5 hover:bg-white/[0.02] transition-colors"
               >
-                <div className="space-y-2 flex-1">
+                <div className="space-y-2.5 flex-1">
                   {/* Product & Reviewer Header */}
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3.5">
                     <img
                       src={rev.product?.thumbnail || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=300&q=80'}
                       alt=""
-                      className="w-9 h-9 object-cover rounded-xl bg-neutral-100 flex-shrink-0"
+                      className="w-11 h-11 object-cover rounded-2xl bg-slate-900 border border-white/10 flex-shrink-0"
                     />
                     <div>
-                      <p className="text-xs font-bold text-neutral-900">
+                      <p className="text-xs font-bold text-white">
                         {rev.product?.name || 'Catalog Item'}
                       </p>
-                      <p className="text-[11px] text-neutral-500 flex items-center space-x-1">
+                      <p className="text-[11px] text-slate-400 flex items-center space-x-1.5 mt-0.5">
                         <span>by {rev.userName}</span>
                         {rev.verifiedPurchase && (
-                          <span className="inline-flex items-center text-emerald-600 font-semibold text-[10px]">
-                            <ShieldCheck className="w-3 h-3 ml-1 mr-0.5" /> Verified Buyer
+                          <span className="inline-flex items-center text-emerald-400 font-bold text-[10px]">
+                            <ShieldCheck className="w-3 h-3 ml-1 mr-0.5 text-emerald-400" /> Verified Buyer
                           </span>
                         )}
                       </p>
@@ -171,20 +172,20 @@ const AdminReviews = () => {
                         <Star
                           key={i}
                           className={`w-3.5 h-3.5 ${
-                            i < rev.rating ? 'fill-current' : 'text-neutral-200'
+                            i < rev.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-700'
                           }`}
                         />
                       ))}
                     </div>
-                    <span className="text-xs font-extrabold text-neutral-900">{rev.title}</span>
+                    <span className="text-xs font-black text-white">{rev.title}</span>
                   </div>
 
                   {/* Comment */}
-                  <p className="text-xs text-neutral-700 leading-relaxed max-w-2xl">
+                  <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
                     "{rev.comment}"
                   </p>
 
-                  <p className="text-[10px] text-neutral-400">
+                  <p className="text-[10px] text-slate-500 font-mono">
                     Posted on{' '}
                     {new Date(rev.createdAt).toLocaleDateString('en-GB', {
                       day: 'numeric',
@@ -195,14 +196,14 @@ const AdminReviews = () => {
                 </div>
 
                 {/* Status Badge & Action Controls */}
-                <div className="flex items-center md:flex-col md:items-end justify-between md:justify-start gap-2.5">
+                <div className="flex items-center md:flex-col md:items-end justify-between md:justify-start gap-3">
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase ${
                       rev.status === 'approved'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                         : rev.status === 'rejected'
-                        ? 'bg-red-50 text-red-600 border border-red-200/60'
-                        : 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                     }`}
                   >
                     {rev.status}
@@ -213,7 +214,7 @@ const AdminReviews = () => {
                       <button
                         onClick={() => handleUpdateStatus(rev._id, 'approved')}
                         disabled={actionLoading === rev._id}
-                        className="p-1.5 rounded-xl border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors"
+                        className="p-2 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors"
                         title="Approve Review"
                       >
                         <Check className="w-3.5 h-3.5" />
@@ -224,7 +225,7 @@ const AdminReviews = () => {
                       <button
                         onClick={() => handleUpdateStatus(rev._id, 'rejected')}
                         disabled={actionLoading === rev._id}
-                        className="p-1.5 rounded-xl border border-amber-200 text-amber-700 hover:bg-amber-50 transition-colors"
+                        className="p-2 rounded-xl bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30 transition-colors"
                         title="Reject Review"
                       >
                         <X className="w-3.5 h-3.5" />
@@ -233,7 +234,7 @@ const AdminReviews = () => {
 
                     <button
                       onClick={() => setDeleteConfirmId(rev._id)}
-                      className="p-1.5 rounded-xl border border-neutral-200 text-neutral-700 hover:border-red-600 hover:text-red-600 transition-colors"
+                      className="p-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-colors"
                       title="Delete Review"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -251,23 +252,23 @@ const AdminReviews = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
           <div
             onClick={() => setDeleteConfirmId(null)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
           />
-          <div className="relative w-full max-w-sm bg-white p-6 rounded-3xl shadow-2xl space-y-4 z-10 border border-neutral-200">
-            <h3 className="text-base font-extrabold text-neutral-900">Delete Review</h3>
-            <p className="text-xs text-neutral-500">
+          <div className="relative w-full max-w-sm bg-[#0F172A] p-6 rounded-3xl shadow-2xl space-y-4 z-10 border border-white/10">
+            <h3 className="text-base font-extrabold text-white">Delete Customer Review</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
               Are you sure you want to delete this customer review permanently?
             </p>
             <div className="pt-2 flex justify-end space-x-2.5">
               <button
                 onClick={() => setDeleteConfirmId(null)}
-                className="btn-pill-light py-2 px-4 text-xs font-bold"
+                className="px-4 py-2 rounded-full bg-white/5 text-slate-300 font-bold text-xs hover:bg-white/10"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteReview}
-                className="btn-pill-dark bg-red-600 hover:bg-red-700 text-white py-2 px-4 text-xs font-bold"
+                className="px-5 py-2 rounded-full bg-rose-500 hover:bg-rose-600 text-white font-black text-xs shadow-lg shadow-rose-500/20"
               >
                 Delete
               </button>

@@ -13,12 +13,16 @@ import {
   Loader2,
   CheckCircle2,
   ShieldCheck,
+  Sparkles,
+  Radio,
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 
 const AdminSettings = () => {
   const { user } = useAuth();
+  const { refreshSettings } = useSettings();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -83,7 +87,8 @@ const AdminSettings = () => {
 
       const res = await api.settings.update(payload);
       if (res.success) {
-        showToast('Store & System settings saved successfully!');
+        showToast('Store settings saved & synced to live storefront!');
+        refreshSettings();
       }
     } catch (err) {
       showToast(err.message || 'Failed to update settings');
@@ -95,16 +100,16 @@ const AdminSettings = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-4xl animate-fade-in">
+    <div className="space-y-6 max-w-4xl animate-fade-in text-slate-100">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 bg-neutral-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl border border-neutral-700 animate-slide-up">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 bg-slate-900 text-white text-xs font-bold px-5 py-3.5 rounded-2xl shadow-2xl border border-emerald-500/40 glow-emerald animate-slide-up">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -112,92 +117,92 @@ const AdminSettings = () => {
 
       {/* Header */}
       <div>
-        <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-          System & Store Settings
+        <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          System &amp; Live Storefront Settings
         </h2>
-        <p className="text-xs text-neutral-500 mt-0.5">
-          Configure administrator credentials, store identity, customer support channels, and shipping thresholds.
+        <p className="text-xs text-slate-400 mt-0.5">
+          Configure real-time store identity, header branding, customer concierge lines, and checkout shipping rules.
         </p>
       </div>
 
       <form onSubmit={handleSaveSettings} className="space-y-6">
-        {/* 1. Admin Profile Overview */}
-        <div className="bg-white p-6 rounded-3xl border border-neutral-200/80 shadow-subtle space-y-4">
-          <div className="flex items-center space-x-2.5 pb-3 border-b border-neutral-100">
-            <UserCheck className="w-4 h-4 text-neutral-700" />
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-neutral-900">
+        {/* 1. Admin Profile Security Overview */}
+        <div className="admin-card p-6 rounded-3xl space-y-4">
+          <div className="flex items-center space-x-2.5 pb-3 border-b border-white/10">
+            <ShieldCheck className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-xs font-black uppercase tracking-widest text-white">
               Active Administrator Profile
             </h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div>
-              <p className="text-[10px] font-bold uppercase text-neutral-400">Admin Name</p>
-              <p className="font-bold text-neutral-900 mt-0.5">{user?.name || 'VEXIVO Superadmin'}</p>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Superadmin Name</p>
+              <p className="font-bold text-white mt-1">{user?.name || 'VEXIVO Administrator'}</p>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase text-neutral-400">Authenticated Email</p>
-              <p className="font-semibold text-neutral-700 mt-0.5">{user?.email || 'admin@vexivo.com'}</p>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Authenticated Email</p>
+              <p className="font-mono text-cyan-300 mt-1">{user?.email || 'admin@vexivo.com'}</p>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase text-neutral-400">Role Privilege</p>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#C4301C] text-white mt-0.5">
-                FULL ACCESS ({user?.role || 'admin'})
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Security Privilege</p>
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mt-1">
+                MASTER ACCESS ({user?.role || 'admin'})
               </span>
             </div>
           </div>
         </div>
 
-        {/* 2. Store Identity */}
-        <div className="bg-white p-6 rounded-3xl border border-neutral-200/80 shadow-subtle space-y-4">
-          <div className="flex items-center space-x-2.5 pb-3 border-b border-neutral-100">
-            <Store className="w-4 h-4 text-neutral-700" />
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-neutral-900">
-              Storefront Identity & Banner Announcement
+        {/* 2. Storefront Identity & Top Announcement Bar */}
+        <div className="admin-card p-6 rounded-3xl space-y-4">
+          <div className="flex items-center space-x-2.5 pb-3 border-b border-white/10">
+            <Store className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-xs font-black uppercase tracking-widest text-white">
+              Storefront Branding &amp; Top Ticker Announcement
             </h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label className="block font-bold uppercase text-neutral-700 mb-1">
-                Store Brand Name *
+              <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                Brand Logo Text (Header &amp; Footer) *
               </label>
               <input
                 type="text"
                 required
                 value={formData.siteName}
                 onChange={(e) => setFormData({ ...formData, siteName: e.target.value })}
-                className="input-pill"
+                className="w-full px-4 py-3 rounded-2xl admin-input font-bold"
               />
             </div>
 
             <div>
-              <label className="block font-bold uppercase text-neutral-700 mb-1">
-                Top Announcement Bar Text
+              <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                Top Announcement Bar Ticker *
               </label>
               <input
                 type="text"
                 value={formData.announcementText}
                 onChange={(e) => setFormData({ ...formData, announcementText: e.target.value })}
-                placeholder="✨ FREE UK NEXT-DAY DELIVERY OVER £50"
-                className="input-pill"
+                placeholder="✨ FREE UK NEXT-DAY DELIVERY OVER £50 | CODE VEX10"
+                className="w-full px-4 py-3 rounded-2xl admin-input"
               />
             </div>
           </div>
         </div>
 
-        {/* 3. Customer Contact & Support */}
-        <div className="bg-white p-6 rounded-3xl border border-neutral-200/80 shadow-subtle space-y-4">
-          <div className="flex items-center space-x-2.5 pb-3 border-b border-neutral-100">
-            <Mail className="w-4 h-4 text-neutral-700" />
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-neutral-900">
-              Store Contact Information
+        {/* 3. Customer Concierge & Support Channels */}
+        <div className="admin-card p-6 rounded-3xl space-y-4">
+          <div className="flex items-center space-x-2.5 pb-3 border-b border-white/10">
+            <Mail className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-xs font-black uppercase tracking-widest text-white">
+              Client Support &amp; Concierge Channels
             </h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label className="block font-bold uppercase text-neutral-700 mb-1">
+              <label className="block font-bold uppercase text-slate-300 mb-1.5">
                 Concierge Support Email *
               </label>
               <input
@@ -205,62 +210,62 @@ const AdminSettings = () => {
                 required
                 value={formData.contactEmail}
                 onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                className="input-pill"
+                className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
               />
             </div>
 
             <div>
-              <label className="block font-bold uppercase text-neutral-700 mb-1">
-                Support Phone Line
+              <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                Concierge Direct Phone Line
               </label>
               <input
                 type="text"
                 value={formData.contactPhone}
                 onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                className="input-pill"
+                className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label className="block font-bold uppercase text-neutral-700 mb-1">
-                Registered Physical Address
+              <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                Registered London Office Address
               </label>
               <input
                 type="text"
                 value={formData.contactAddress}
                 onChange={(e) => setFormData({ ...formData, contactAddress: e.target.value })}
-                className="input-pill"
+                className="w-full px-4 py-3 rounded-2xl admin-input"
               />
             </div>
 
             <div>
-              <label className="block font-bold uppercase text-neutral-700 mb-1">
+              <label className="block font-bold uppercase text-slate-300 mb-1.5">
                 Operating Hours (GMT)
               </label>
               <input
                 type="text"
                 value={formData.contactHours}
                 onChange={(e) => setFormData({ ...formData, contactHours: e.target.value })}
-                className="input-pill"
+                className="w-full px-4 py-3 rounded-2xl admin-input"
               />
             </div>
           </div>
         </div>
 
-        {/* 4. Basic Shipping & Payment Configuration */}
-        <div className="bg-white p-6 rounded-3xl border border-neutral-200/80 shadow-subtle space-y-4">
-          <div className="flex items-center space-x-2.5 pb-3 border-b border-neutral-100">
-            <Truck className="w-4 h-4 text-neutral-700" />
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-neutral-900">
-              Shipping & Gateway Configuration Status
+        {/* 4. Shipping & Payment Gateways */}
+        <div className="admin-card p-6 rounded-3xl space-y-4">
+          <div className="flex items-center space-x-2.5 pb-3 border-b border-white/10">
+            <Truck className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-xs font-black uppercase tracking-widest text-white">
+              Logistics Rules &amp; Payment Gateway Status
             </h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label className="block font-bold uppercase text-neutral-700 mb-1">
+              <label className="block font-bold uppercase text-slate-300 mb-1.5">
                 Free UK Next-Day Delivery Threshold (£)
               </label>
               <input
@@ -270,35 +275,35 @@ const AdminSettings = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, freeShippingThreshold: e.target.value })
                 }
-                className="input-pill"
+                className="w-full px-4 py-3 rounded-2xl admin-input font-mono font-bold"
               />
-              <p className="text-[10px] text-neutral-400 mt-1">
-                Cart subtotals above this amount receive automatic complimentary shipping.
+              <p className="text-[10px] text-slate-400 mt-1">
+                Subtotals exceeding this amount automatically receive complimentary next-day courier dispatch.
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="block font-bold uppercase text-neutral-700">
-                Payment Gateways Status
+              <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                Active Payment Gateways
               </label>
-              <div className="space-y-1.5">
-                <div className="p-2.5 bg-neutral-50 rounded-xl border border-neutral-200/60 flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <CreditCard className="w-3.5 h-3.5 text-neutral-600" />
-                    <span className="font-semibold text-neutral-800">Stripe Card Terminal</span>
+              <div className="space-y-2">
+                <div className="p-3 bg-slate-900/60 rounded-2xl border border-white/10 flex items-center justify-between">
+                  <div className="flex items-center space-x-2.5">
+                    <CreditCard className="w-4 h-4 text-cyan-400" />
+                    <span className="font-bold text-white">Stripe Credit &amp; Debit Cards</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-50 text-emerald-700">
-                    Live Demo Ready
+                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Active Sandbox
                   </span>
                 </div>
 
-                <div className="p-2.5 bg-neutral-50 rounded-xl border border-neutral-200/60 flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <CreditCard className="w-3.5 h-3.5 text-neutral-600" />
-                    <span className="font-semibold text-neutral-800">Cash on Delivery (COD)</span>
+                <div className="p-3 bg-slate-900/60 rounded-2xl border border-white/10 flex items-center justify-between">
+                  <div className="flex items-center space-x-2.5">
+                    <CreditCard className="w-4 h-4 text-cyan-400" />
+                    <span className="font-bold text-white">Cash on Delivery (COD)</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-50 text-emerald-700">
-                    Active
+                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Operational
                   </span>
                 </div>
               </div>
@@ -311,10 +316,10 @@ const AdminSettings = () => {
           <button
             type="submit"
             disabled={saving}
-            className="btn-pill-dark py-3 px-8 text-xs font-bold flex items-center space-x-2 shadow-lg"
+            className="px-8 py-3.5 rounded-full bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-slate-950 font-black text-xs flex items-center space-x-2 shadow-xl shadow-cyan-500/20 transition-all active:scale-95"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span>{saving ? 'Saving System Settings...' : 'Save Settings'}</span>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin text-slate-950" /> : <Save className="w-4 h-4 text-slate-950" />}
+            <span>{saving ? 'Synchronizing Store Settings...' : 'Save & Sync Live Settings'}</span>
           </button>
         </div>
       </form>

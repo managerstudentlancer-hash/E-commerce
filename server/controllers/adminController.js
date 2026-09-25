@@ -50,11 +50,29 @@ const getDashboardStats = async (req, res, next) => {
       returned: await Order.countDocuments({ orderStatus: 'returned' }),
     };
 
-    // Build 7-day dynamic sales overview chart series from real orders
+    // Category Distribution breakdown
+    const categoryAgg = await Product.aggregate([
+      { $match: { status: 'active' } },
+      { $group: { _id: '$category', count: { $sum: 1 }, avgPrice: { $avg: '$price' } } },
+      { $sort: { count: -1 } },
+      { $limit: 6 },
+    ]);
+
+    const totalActiveProducts = await Product.countDocuments({ status: 'active' });
+    const categoryDistribution = categoryAgg.map((c) => ({
+      name: c._id || 'Uncategorized',
+      count: c.count,
+      percentage: totalActiveProducts > 0 ? Math.round((c.count / totalActiveProducts) * 100) : 0,
+      avgPrice: Math.round((c.avgPrice || 0) * 100) / 100,
+    }));
+
+    // Build 7-day & 30-day dynamic sales overview chart series from real orders
     const now = new Date();
-    const chartDays = [];
+    const chartDays7 = [];
+    const chartDays30 = [];
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+    // 7 Days
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
@@ -66,7 +84,27 @@ const getDashboardStats = async (req, res, next) => {
       );
 
       const daySales = dayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-      chartDays.push({
+      chartDays7.push({
+        day: dayNames[d.getDay()],
+        date: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+        sales: Math.round(daySales * 100) / 100,
+        orders: dayOrders.length,
+      });
+    }
+
+    // 30 Days
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const startOfDay = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
+      const endOfDay = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
+      const dayOrders = paidOrders.filter(
+        (ord) => new Date(ord.createdAt) >= startOfDay && new Date(ord.createdAt) <= endOfDay
+      );
+
+      const daySales = dayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+      chartDays30.push({
         day: dayNames[d.getDay()],
         date: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
         sales: Math.round(daySales * 100) / 100,
@@ -127,7 +165,9 @@ const getDashboardStats = async (req, res, next) => {
         lowStockCount,
         statusCounts,
       },
-      salesChart: chartDays,
+      salesChart: chartDays7,
+      salesChart30d: chartDays30,
+      categoryDistribution,
       topProducts,
       lowStockProducts,
       recentOrders,

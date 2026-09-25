@@ -2,8 +2,12 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, ArrowRight, Instagram, Facebook, Twitter, Check } from 'lucide-react';
 import api from '../../services/api';
+import { useSettings } from '../../context/SettingsContext';
+import { useCategories } from '../../context/CategoryContext';
 
 const Footer = () => {
+  const { settings } = useSettings();
+  const { categories } = useCategories();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -30,8 +34,8 @@ const Footer = () => {
           {/* Brand & Newsletter Column (2 spans on desktop) */}
           <div className="lg:col-span-2 space-y-5">
             <Link to="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-extrabold tracking-tight text-white">
-                VEXIVO
+              <span className="text-2xl font-extrabold tracking-tight text-white uppercase">
+                {settings.siteName || 'VEXIVO'}
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-[#C4301C] mb-1" />
             </Link>
@@ -43,7 +47,7 @@ const Footer = () => {
             {/* Newsletter input */}
             <div className="pt-2">
               <p className="text-xs font-bold uppercase tracking-wider text-white mb-2">
-                Join the VEXIVO Circle & Receive 10% Off
+                Join the {settings.siteName || 'VEXIVO'} Circle & Receive 10% Off
               </p>
               {subscribed ? (
                 <div className="flex items-center space-x-2 text-[#0D8756] text-xs font-semibold py-2">
@@ -110,21 +114,13 @@ const Footer = () => {
               Collections
             </h4>
             <ul className="space-y-2.5 text-xs text-neutral-400">
-              <li>
-                <Link to="/category/women" className="hover:text-white transition-colors">Women's Edit</Link>
-              </li>
-              <li>
-                <Link to="/category/men" className="hover:text-white transition-colors">Men's Tailoring</Link>
-              </li>
-              <li>
-                <Link to="/category/electronics" className="hover:text-white transition-colors">Acoustic Audio</Link>
-              </li>
-              <li>
-                <Link to="/category/bags" className="hover:text-white transition-colors">Tuscan Leather</Link>
-              </li>
-              <li>
-                <Link to="/category/jewellery" className="hover:text-white transition-colors">18K Vermeil Jewels</Link>
-              </li>
+              {categories.slice(0, 5).map((cat) => (
+                <li key={cat.slug}>
+                  <Link to={`/category/${cat.slug}`} className="hover:text-white transition-colors capitalize">
+                    {cat.name}
+                  </Link>
+                </li>
+              ))}
               <li>
                 <Link to="/collection/new-arrivals" className="text-[#0D8756] font-semibold hover:underline">New Arrivals 2026</Link>
               </li>
@@ -156,7 +152,7 @@ const Footer = () => {
                 <Link to="/account/orders" className="hover:text-white transition-colors">Track Your Order</Link>
               </li>
               <li>
-                <Link to="/about" className="hover:text-white transition-colors">The VEXIVO Story</Link>
+                <Link to="/about" className="hover:text-white transition-colors">About {settings.siteName || 'VEXIVO'}</Link>
               </li>
             </ul>
           </div>
@@ -169,18 +165,18 @@ const Footer = () => {
             <ul className="space-y-3 text-xs text-neutral-400">
               <li className="flex items-start space-x-2.5">
                 <MapPin className="w-4 h-4 text-neutral-500 flex-shrink-0 mt-0.5" />
-                <span>71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, UK</span>
+                <span>{settings.contactInfo?.address || '71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, UK'}</span>
               </li>
               <li className="flex items-center space-x-2.5">
                 <Phone className="w-4 h-4 text-neutral-500 flex-shrink-0" />
-                <span>+44 20 7946 0991</span>
+                <span>{settings.contactInfo?.phone || '+44 20 7946 0991'}</span>
               </li>
               <li className="flex items-center space-x-2.5">
                 <Mail className="w-4 h-4 text-neutral-500 flex-shrink-0" />
-                <span>arpit123@gmail.com</span>
+                <span>{settings.contactInfo?.email || 'concierge@vexivo.com'}</span>
               </li>
               <li className="text-[11px] text-neutral-500 pt-1">
-                Mon – Sat: 9:00 AM – 6:00 PM GMT
+                {settings.contactInfo?.hours || 'Mon – Sat: 9:00 AM – 6:00 PM GMT'}
               </li>
             </ul>
           </div>
@@ -189,10 +185,9 @@ const Footer = () => {
         {/* Bottom Bar: Legal & Payment Badges */}
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-neutral-500">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <span>© 2026 VEXIVO International Ltd. All rights reserved.</span>
+            <span>© 2026 {settings.siteName || 'VEXIVO'} International Ltd. All rights reserved.</span>
             <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-            <Link to="/admin/login" className="hover:text-white transition-colors text-neutral-400 font-medium">Admin Portal</Link>
           </div>
 
           {/* Payment Badges (Pills) */}

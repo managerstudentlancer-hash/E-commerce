@@ -1,8 +1,10 @@
 import React from 'react';
-import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
+import { Routes, Route, Outlet, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { SettingsProvider } from './context/SettingsContext';
+import { CategoryProvider } from './context/CategoryContext';
 
 // Common Components
 import Header from './components/common/Header';
@@ -72,71 +74,84 @@ const PublicLayout = () => {
 
 const App = () => {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <WishlistProvider>
-          <Routes>
-            {/* Public Storefront Routes */}
-            <Route element={<PublicLayout />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/category/:slug" element={<CategoryPage />} />
-              <Route path="/collection/:slug" element={<CollectionPage />} />
-              <Route path="/product/:slug" element={<ProductDetail />} />
-              <Route path="/search" element={<SearchResults />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<Login />} />
+    <SettingsProvider>
+      <CategoryProvider>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <Routes>
+                {/* Public Storefront Routes */}
+                <Route element={<PublicLayout />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/shop" element={<Shop />} />
+                  <Route path="/category/:slug" element={<CategoryPage />} />
+                  <Route path="/collection/:slug" element={<CollectionPage />} />
+                  <Route path="/product/:slug" element={<ProductDetail />} />
+                  <Route path="/search" element={<SearchResults />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/forgot-password" element={<Login />} />
 
-              {/* Customer Account Routes (Protected) */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/account" element={<AccountDashboard />} />
-                <Route path="/account/orders" element={<OrderHistory />} />
-                <Route path="/account/wishlist" element={<WishlistPage />} />
-                <Route path="/account/addresses" element={<AddressBook />} />
-              </Route>
+                  {/* Customer Account Routes (Protected) */}
+                  <Route element={<ProtectedRoute />}>
+                    <Route path="/account" element={<AccountDashboard />} />
+                    <Route path="/account/orders" element={<OrderHistory />} />
+                    <Route path="/account/wishlist" element={<WishlistPage />} />
+                    <Route path="/account/addresses" element={<AddressBook />} />
+                  </Route>
 
-              {/* Informational & Policy Pages */}
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/shipping-policy" element={<ShippingPolicy />} />
-              <Route path="/return-policy" element={<ReturnPolicy />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="*" element={<NotFound />} />
-            </Route>
+                  {/* Informational & Policy Pages */}
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/shipping-policy" element={<ShippingPolicy />} />
+                  <Route path="/return-policy" element={<ReturnPolicy />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<Terms />} />
+                </Route>
 
-            {/* Dedicated Admin Portal Login (Public/Guest) */}
-            <Route path="/admin/login" element={<AdminLogin />} />
+                {/* Dedicated Admin Portal Login (Public/Guest) and URL aliases */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin login" element={<Navigate to="/admin/login" replace />} />
+                <Route path="/admin%20login" element={<Navigate to="/admin/login" replace />} />
+                <Route path="/admin-login" element={<Navigate to="/admin/login" replace />} />
+                <Route path="/adminlogin" element={<Navigate to="/admin/login" replace />} />
+                <Route path="/admin_login" element={<Navigate to="/admin/login" replace />} />
 
-            {/* Admin Control Center Routes (Protected) */}
-            <Route
-              path="/admin"
-              element={
-                <AdminRoute>
-                  <AdminLayout />
-                </AdminRoute>
-              }
-            >
-              <Route index element={<AdminDashboard />} />
-              <Route path="products" element={<AdminProducts />} />
-              <Route path="categories" element={<AdminCategories />} />
-              <Route path="orders" element={<AdminOrders />} />
-              <Route path="customers" element={<AdminCustomers />} />
-              <Route path="inventory" element={<AdminInventory />} />
-              <Route path="collections" element={<AdminCollections />} />
-              <Route path="coupons" element={<AdminCoupons />} />
-              <Route path="reviews" element={<AdminReviews />} />
-              <Route path="banners" element={<AdminBanners />} />
-              <Route path="settings" element={<AdminSettings />} />
-            </Route>
-          </Routes>
-        </WishlistProvider>
-      </CartProvider>
-    </AuthProvider>
+                {/* Admin Control Center Routes (Protected) */}
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminRoute>
+                      <AdminLayout />
+                    </AdminRoute>
+                  }
+                >
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="products" element={<AdminProducts />} />
+                  <Route path="categories" element={<AdminCategories />} />
+                  <Route path="orders" element={<AdminOrders />} />
+                  <Route path="customers" element={<AdminCustomers />} />
+                  <Route path="inventory" element={<AdminInventory />} />
+                  <Route path="collections" element={<AdminCollections />} />
+                  <Route path="coupons" element={<AdminCoupons />} />
+                  <Route path="reviews" element={<AdminReviews />} />
+                  <Route path="banners" element={<AdminBanners />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                </Route>
+
+                {/* Global Fallback 404 Not Found */}
+                <Route element={<PublicLayout />}>
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
+      </CategoryProvider>
+    </SettingsProvider>
   );
 };
 

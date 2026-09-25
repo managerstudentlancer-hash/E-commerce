@@ -9,7 +9,7 @@ import {
   Boxes,
   Tag,
   Star,
-  Image,
+  Image as ImageIcon,
   Sliders,
   LogOut,
   ExternalLink,
@@ -17,21 +17,27 @@ import {
   X,
   ShieldCheck,
   Bell,
+  Sparkles,
+  Layers,
+  ArrowUpRight,
+  Database,
+  Radio,
+  HelpCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-// Exactly 10 essential admin sections as specified
 const adminNavItems = [
-  { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-  { name: 'Products', path: '/admin/products', icon: Package },
-  { name: 'Categories', path: '/admin/categories', icon: FolderTree },
-  { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
-  { name: 'Customers', path: '/admin/customers', icon: Users },
-  { name: 'Inventory', path: '/admin/inventory', icon: Boxes },
-  { name: 'Coupons', path: '/admin/coupons', icon: Tag },
-  { name: 'Reviews', path: '/admin/reviews', icon: Star },
-  { name: 'Banners', path: '/admin/banners', icon: Image },
-  { name: 'Settings', path: '/admin/settings', icon: Sliders },
+  { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, badge: null },
+  { name: 'Products', path: '/admin/products', icon: Package, badge: null },
+  { name: 'Categories', path: '/admin/categories', icon: FolderTree, badge: null },
+  { name: 'Collections', path: '/admin/collections', icon: Layers, badge: null },
+  { name: 'Orders', path: '/admin/orders', icon: ShoppingCart, badge: 'Live' },
+  { name: 'Customers', path: '/admin/customers', icon: Users, badge: null },
+  { name: 'Inventory', path: '/admin/inventory', icon: Boxes, badge: 'Stock' },
+  { name: 'Coupons', path: '/admin/coupons', icon: Tag, badge: null },
+  { name: 'Reviews', path: '/admin/reviews', icon: Star, badge: null },
+  { name: 'Banners', path: '/admin/banners', icon: ImageIcon, badge: null },
+  { name: 'Settings', path: '/admin/settings', icon: Sliders, badge: null },
 ];
 
 const AdminLayout = () => {
@@ -43,21 +49,29 @@ const AdminLayout = () => {
   // Role verification guard
   if (!user || user.role !== 'admin') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-neutral-100 text-center font-sans">
-        <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl space-y-4 border border-neutral-200">
-          <div className="w-14 h-14 rounded-2xl bg-red-50 text-[#C4301C] flex items-center justify-center mx-auto">
-            <ShieldCheck className="w-8 h-8" />
+      <div className="min-h-screen flex items-center justify-center p-6 bg-[#080B11] text-center font-sans antialiased">
+        <div className="max-w-md w-full admin-card p-8 rounded-3xl shadow-2xl space-y-5 border border-white/10 backdrop-blur-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-red-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto shadow-inner glow-rose">
+            <ShieldCheck className="w-9 h-9" />
           </div>
-          <h2 className="text-xl font-black text-neutral-900">Administrator Access Required</h2>
-          <p className="text-xs text-neutral-500 leading-relaxed">
-            You must be signed in with an administrator account to access the VEXIVO control panel.
-          </p>
-          <div className="pt-2 flex flex-col gap-2.5">
-            <Link to="/admin/login" className="btn-pill-dark text-xs py-3 font-bold">
-              Sign In to Admin Portal
+          <div className="space-y-1.5">
+            <h2 className="text-2xl font-black tracking-tight text-white">Administrator Access Required</h2>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              High-privilege security clearance is required to enter the VEXIVO Master Control Panel.
+            </p>
+          </div>
+          <div className="pt-3 flex flex-col gap-2.5">
+            <Link
+              to="/admin/login"
+              className="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs tracking-wider uppercase transition-all shadow-lg hover:shadow-cyan-500/20 active:scale-[0.98]"
+            >
+              Authenticate as Administrator
             </Link>
-            <Link to="/" className="btn-pill-light text-xs py-2.5 font-medium">
-              Return to Storefront
+            <Link
+              to="/"
+              className="w-full py-3 px-6 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 font-semibold text-xs border border-white/10 transition-colors"
+            >
+              Return to Public Storefront
             </Link>
           </div>
         </div>
@@ -78,25 +92,56 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex font-sans antialiased text-neutral-900">
+    <div className="min-h-screen bg-[#090D16] text-slate-100 flex font-sans antialiased selection:bg-cyan-500 selection:text-black">
+      {/* Background ambient lighting effects */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 -right-40 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
+      </div>
+
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:flex-col w-64 bg-neutral-950 text-neutral-300 border-r border-neutral-900 flex-shrink-0 z-20">
+      <aside className="hidden lg:flex lg:flex-col w-72 bg-[#0C111D]/90 backdrop-blur-2xl border-r border-white/10 flex-shrink-0 z-30 shadow-2xl relative">
         {/* Brand Header */}
-        <div className="h-16 px-6 border-b border-neutral-900 flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2.5 group">
-            <span className="text-xl font-black tracking-tight text-white group-hover:text-neutral-300 transition-colors">
-              VEXIVO
-            </span>
-            <span className="text-[9px] font-extrabold tracking-widest px-2 py-0.5 rounded-full bg-[#C4301C] text-white">
-              ADMIN
-            </span>
+        <div className="h-20 px-6 border-b border-white/10 flex items-center justify-between">
+          <Link to="/admin" className="flex items-center space-x-3 group">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-emerald-400 p-[1.5px] shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform duration-300">
+              <div className="w-full h-full bg-[#0C111D] rounded-[14px] flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-cyan-400 animate-pulse" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center space-x-1.5">
+                <span className="text-lg font-black tracking-wider text-white">VEXIVO</span>
+                <span className="text-[9px] font-extrabold tracking-widest px-2 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-sm">
+                  PRO
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-medium tracking-wide">Enterprise Suite</p>
+            </div>
           </Link>
         </div>
 
+        {/* Live Telemetry Pill */}
+        <div className="px-5 pt-4">
+          <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+              </span>
+              <span className="text-[11px] font-bold text-slate-300">Live MongoDB Cloud</span>
+            </div>
+            <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              ACTIVE
+            </span>
+          </div>
+        </div>
+
         {/* Navigation List */}
-        <nav className="flex-1 p-3.5 space-y-1 overflow-y-auto custom-scrollbar">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-3 py-2">
-            Main Management
+        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3 pt-2 pb-1">
+            Store Command Center
           </p>
           {adminNavItems.map((item) => {
             const Icon = item.icon;
@@ -105,82 +150,135 @@ const AdminLayout = () => {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                className={`group relative flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all duration-300 ${
                   active
-                    ? 'bg-white text-neutral-950 shadow-md font-bold'
-                    : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+                    ? 'bg-gradient-to-r from-cyan-500/20 via-indigo-500/15 to-transparent text-white border border-cyan-500/40 shadow-lg shadow-cyan-500/5'
+                    : 'text-slate-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
                 }`}
               >
-                <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-neutral-950' : 'text-neutral-400'}`} />
-                <span>{item.name}</span>
+                <div className="flex items-center space-x-3.5">
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+                      active
+                        ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/30'
+                        : 'bg-white/5 text-slate-400 group-hover:text-white group-hover:bg-white/10'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span className="tracking-wide">{item.name}</span>
+                </div>
+
+                {item.badge && (
+                  <span
+                    className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                      item.badge === 'Live'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse'
+                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+
+                {active && (
+                  <span className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-cyan-400 rounded-l-full shadow-lg shadow-cyan-400" />
+                )}
               </Link>
             );
           })}
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-3.5 border-t border-neutral-900 space-y-1">
+        <div className="p-4 border-t border-white/10 space-y-2 bg-[#0A0E17]/60">
           <Link
             to="/"
             target="_blank"
-            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"
+            className="flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 transition-all group"
           >
             <span className="flex items-center space-x-2.5">
-              <ExternalLink className="w-3.5 h-3.5" />
+              <ExternalLink className="w-4 h-4 text-cyan-400 group-hover:rotate-12 transition-transform" />
               <span>Live Storefront</span>
+            </span>
+            <span className="text-[10px] text-slate-400 font-mono flex items-center">
+              <span>View</span>
+              <ArrowUpRight className="w-3 h-3 ml-0.5" />
             </span>
           </Link>
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl text-xs text-neutral-400 hover:text-red-400 hover:bg-red-950/30 transition-colors"
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-xs font-bold text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all"
           >
             <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
+            <span>Sign Out Control</span>
           </button>
         </div>
       </aside>
 
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Navbar */}
-        <header className="h-16 bg-white border-b border-neutral-200/80 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center space-x-3">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10">
+        {/* Top Floating Glass Navigation Header */}
+        <header className="h-20 bg-[#0C111D]/80 backdrop-blur-2xl border-b border-white/10 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center space-x-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+              className="lg:hidden p-2.5 rounded-2xl bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
               aria-label="Open navigation menu"
             >
               <Menu className="w-5 h-5" />
             </button>
+
             <div>
-              <h1 className="text-sm sm:text-base font-extrabold text-neutral-900 tracking-tight">
-                VEXIVO Management Suite
-              </h1>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-base sm:text-lg font-black tracking-tight text-white">
+                  VEXIVO Management Suite
+                </h1>
+                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">
+                  v2.6 Enterprise
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 hidden sm:block">
+                All changes sync live with storefront instantly
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-neutral-100 text-neutral-600 text-[11px] font-medium border border-neutral-200/60">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>System Operational</span>
-            </div>
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            {/* Quick Visit Storefront Button */}
+            <Link
+              to="/"
+              target="_blank"
+              className="hidden sm:inline-flex items-center space-x-2 px-3.5 py-2 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all shadow-sm group"
+            >
+              <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+              <span>Live Store</span>
+              <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </Link>
 
-            {/* Admin User Chip */}
-            <div className="flex items-center space-x-3 pl-2 border-l border-neutral-200">
+            {/* Admin User Profile */}
+            <div className="flex items-center space-x-3 pl-2 sm:pl-3 border-l border-white/10">
               <div className="text-right hidden md:block">
-                <p className="text-xs font-bold text-neutral-900">{user.name}</p>
-                <p className="text-[10px] text-neutral-500 capitalize">{user.role}</p>
+                <p className="text-xs font-extrabold text-white">{user.name}</p>
+                <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider flex items-center justify-end space-x-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span>{user.role} Privilege</span>
+                </p>
               </div>
-              <div className="w-9 h-9 rounded-full bg-neutral-950 text-white text-xs font-extrabold flex items-center justify-center ring-2 ring-neutral-200">
-                {user.name ? user.name.charAt(0).toUpperCase() : 'A'}
+
+              <div className="relative group cursor-pointer">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 p-[1.5px] shadow-lg shadow-cyan-500/20">
+                  <div className="w-full h-full bg-[#0C111D] rounded-[14px] flex items-center justify-center font-black text-sm text-cyan-300">
+                    {user.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </header>
 
         {/* Dynamic Nested Route View */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
           <Outlet />
         </main>
       </div>
@@ -190,26 +288,26 @@ const AdminLayout = () => {
         <div className="fixed inset-0 z-50 flex lg:hidden animate-fade-in">
           <div
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
           />
-          <div className="relative w-72 max-w-xs bg-neutral-950 text-white h-full flex flex-col justify-between p-4 shadow-2xl z-10">
+          <div className="relative w-72 max-w-xs bg-[#0C111D] text-white h-full flex flex-col justify-between p-5 shadow-2xl z-10 border-r border-white/10">
             <div>
-              <div className="flex items-center justify-between pb-4 border-b border-neutral-900 px-2">
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg font-black tracking-tight text-white">VEXIVO</span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#C4301C] text-white">
+              <div className="flex items-center justify-between pb-5 border-b border-white/10">
+                <div className="flex items-center space-x-2.5">
+                  <span className="text-lg font-black tracking-wider text-white">VEXIVO</span>
+                  <span className="text-[9px] font-extrabold tracking-widest px-2 py-0.5 rounded-full bg-cyan-500 text-slate-950 font-black">
                     ADMIN
                   </span>
                 </div>
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="p-1 text-neutral-400 hover:text-white rounded-lg"
+                  className="p-1.5 text-slate-400 hover:text-white rounded-xl bg-white/5"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <nav className="space-y-1 pt-4 overflow-y-auto max-h-[calc(100vh-160px)]">
+              <nav className="space-y-1.5 pt-4 overflow-y-auto max-h-[calc(100vh-170px)] custom-scrollbar">
                 {adminNavItems.map((item) => {
                   const Icon = item.icon;
                   const active = isNavActive(item.path);
@@ -218,35 +316,42 @@ const AdminLayout = () => {
                       key={item.name}
                       to={item.path}
                       onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold ${
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold ${
                         active
-                          ? 'bg-white text-neutral-950 font-bold shadow'
-                          : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+                          ? 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/20'
+                          : 'text-slate-400 hover:text-white hover:bg-white/5'
                       }`}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span>{item.name}</span>
+                      <div className="flex items-center space-x-3">
+                        <Icon className="w-4 h-4" />
+                        <span>{item.name}</span>
+                      </div>
+                      {item.badge && (
+                        <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-white/20">
+                          {item.badge}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
               </nav>
             </div>
 
-            <div className="pt-4 border-t border-neutral-900 space-y-2">
+            <div className="pt-4 border-t border-white/10 space-y-2">
               <Link
                 to="/"
                 onClick={() => setSidebarOpen(false)}
-                className="flex items-center space-x-2 px-3 py-2 text-xs text-neutral-400 hover:text-white"
+                className="flex items-center space-x-2 px-3.5 py-2.5 text-xs font-bold text-slate-300 bg-white/5 rounded-xl"
               >
-                <ExternalLink className="w-4 h-4" />
-                <span>Storefront</span>
+                <ExternalLink className="w-4 h-4 text-cyan-400" />
+                <span>Open Storefront</span>
               </Link>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl text-xs text-neutral-400 hover:text-red-400 hover:bg-neutral-900"
+                className="w-full flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Log Out</span>
+                <span>Sign Out</span>
               </button>
             </div>
           </div>

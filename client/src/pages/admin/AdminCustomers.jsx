@@ -14,6 +14,7 @@ import {
   X,
   CheckCircle2,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -107,10 +108,10 @@ const AdminCustomers = () => {
   const activeCount = customers.filter((c) => c.isActive !== false).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-slate-100">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 bg-neutral-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl border border-neutral-700 animate-slide-up">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 bg-slate-900 text-white text-xs font-bold px-5 py-3.5 rounded-2xl shadow-2xl border border-emerald-500/40 glow-emerald animate-slide-up">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -119,71 +120,71 @@ const AdminCustomers = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-            Customer Directory
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            Customer Directory &amp; Client Telemetry
           </h2>
-          <p className="text-xs text-neutral-500 mt-0.5">
-            Manage buyer accounts, review lifetime spending, and monitor activity status.
+          <p className="text-xs text-slate-400 mt-0.5">
+            Audit registered accounts, review lifetime spending volume, and manage account access privileges.
           </p>
         </div>
       </div>
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-neutral-200/80 shadow-subtle flex items-center justify-between">
+        <div className="admin-card p-6 rounded-3xl flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-              Total Registered
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Registered Clients
             </p>
-            <p className="text-2xl font-black text-neutral-900 mt-1">{customers.length}</p>
+            <p className="text-2xl sm:text-3xl font-black text-white mt-1 font-mono">{customers.length}</p>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-900">
-            <Users className="w-5 h-5" />
+          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 glow-cyan">
+            <Users className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-neutral-200/80 shadow-subtle flex items-center justify-between">
+        <div className="admin-card p-6 rounded-3xl flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-              Active Accounts
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Active Buyers
             </p>
-            <p className="text-2xl font-black text-emerald-600 mt-1">{activeCount}</p>
+            <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1 font-mono">{activeCount}</p>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <UserCheck className="w-5 h-5" />
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 glow-emerald">
+            <UserCheck className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-neutral-200/80 shadow-subtle flex items-center justify-between">
+        <div className="admin-card p-6 rounded-3xl flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-              Customer Lifetime Spend
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Lifetime Spend Volume
             </p>
-            <p className="text-2xl font-black text-neutral-900 mt-1">
+            <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1 font-mono">
               £{totalSpentAll.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
             </p>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-900">
-            <PoundSterling className="w-5 h-5" />
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+            <PoundSterling className="w-6 h-6" />
           </div>
         </div>
       </div>
 
       {/* Search and Filter Controls */}
-      <div className="bg-white p-4 rounded-2xl border border-neutral-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-subtle">
-        <div className="flex-1 flex items-center space-x-3 bg-neutral-50 px-3.5 py-2.5 rounded-xl border border-neutral-200/60">
-          <Search className="w-4 h-4 text-neutral-400 flex-shrink-0" />
+      <div className="admin-card p-4 rounded-3xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-subtle">
+        <div className="flex-1 flex items-center space-x-3 bg-slate-900/60 px-4 py-3 rounded-2xl border border-white/10">
+          <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by customer name, email address, or phone..."
-            className="w-full bg-transparent text-xs outline-none text-neutral-900 placeholder-neutral-400 font-medium"
+            className="w-full bg-transparent text-xs outline-none text-white placeholder-slate-500 font-medium"
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="text-[11px] text-neutral-400 hover:text-black font-semibold"
+              className="text-[11px] text-slate-400 hover:text-white font-bold"
             >
               Clear
             </button>
@@ -191,7 +192,7 @@ const AdminCustomers = () => {
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex items-center space-x-1.5 p-1 bg-neutral-100 rounded-xl">
+        <div className="flex items-center space-x-1.5 p-1 bg-white/5 rounded-2xl border border-white/5">
           {[
             { id: 'all', label: 'All' },
             { id: 'active', label: 'Active' },
@@ -200,10 +201,10 @@ const AdminCustomers = () => {
             <button
               key={tab.id}
               onClick={() => setStatusFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 statusFilter === tab.id
-                  ? 'bg-white text-neutral-950 shadow-sm'
-                  : 'text-neutral-500 hover:text-neutral-900'
+                  ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/20'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               {tab.label}
@@ -213,54 +214,57 @@ const AdminCustomers = () => {
       </div>
 
       {/* Customers Table */}
-      <div className="bg-white rounded-3xl border border-neutral-200/80 overflow-hidden shadow-subtle">
+      <div className="admin-card rounded-3xl overflow-hidden shadow-2xl">
         {loading ? (
-          <div className="p-16 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+          <div className="p-20 flex flex-col items-center justify-center space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+            <p className="text-xs text-slate-400 font-bold">Querying customer accounts...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-neutral-50/80 border-b border-neutral-200 text-neutral-500 font-semibold uppercase tracking-wider">
+              <thead className="bg-white/[0.03] border-b border-white/10 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="py-4 px-6">Customer</th>
-                  <th className="py-4 px-4">Phone</th>
+                  <th className="py-4 px-4">Contact Phone</th>
                   <th className="py-4 px-4">Joined Date</th>
                   <th className="py-4 px-4">Orders</th>
-                  <th className="py-4 px-4">Total Spent</th>
-                  <th className="py-4 px-4">Status</th>
+                  <th className="py-4 px-4">Total Spent (£)</th>
+                  <th className="py-4 px-4">Account Status</th>
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 font-medium text-neutral-800">
+              <tbody className="divide-y divide-white/5 font-medium text-slate-300">
                 {filteredCustomers.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-12 text-center text-neutral-400">
-                      No customers match your criteria.
+                    <td colSpan="7" className="py-16 text-center text-slate-400 text-xs">
+                      No customer accounts match your search parameters.
                     </td>
                   </tr>
                 ) : (
                   filteredCustomers.map((cust) => {
                     const isCustActive = cust.isActive !== false;
                     return (
-                      <tr key={cust._id} className="hover:bg-neutral-50/60 transition-colors">
-                        <td className="py-3.5 px-6">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-9 h-9 rounded-full bg-neutral-950 text-white font-black text-xs flex items-center justify-center flex-shrink-0">
+                      <tr key={cust._id} className="hover:bg-white/[0.02] transition-colors group">
+                        <td className="py-4 px-6">
+                          <div className="flex items-center space-x-3.5">
+                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 text-slate-950 font-black text-sm flex items-center justify-center flex-shrink-0 shadow-md">
                               {cust.name ? cust.name.charAt(0).toUpperCase() : 'U'}
                             </div>
                             <div>
-                              <p className="font-bold text-neutral-900">{cust.name}</p>
-                              <p className="text-[11px] text-neutral-500">{cust.email}</p>
+                              <p className="font-bold text-white group-hover:text-cyan-300 transition-colors">
+                                {cust.name}
+                              </p>
+                              <p className="text-[11px] text-slate-400 font-mono">{cust.email}</p>
                             </div>
                           </div>
                         </td>
 
-                        <td className="py-3.5 px-4 font-mono text-neutral-600">
+                        <td className="py-4 px-4 font-mono text-slate-300">
                           {cust.phone || '—'}
                         </td>
 
-                        <td className="py-3.5 px-4 text-neutral-600">
+                        <td className="py-4 px-4 text-slate-400 font-mono">
                           {new Date(cust.createdAt).toLocaleDateString('en-GB', {
                             day: 'numeric',
                             month: 'short',
@@ -268,57 +272,57 @@ const AdminCustomers = () => {
                           })}
                         </td>
 
-                        <td className="py-3.5 px-4">
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-neutral-100 text-neutral-800">
+                        <td className="py-4 px-4">
+                          <span className="px-3 py-1 rounded-xl text-[11px] font-bold bg-white/5 border border-white/10 text-slate-200">
                             {cust.totalOrders || 0} orders
                           </span>
                         </td>
 
-                        <td className="py-3.5 px-4 font-bold text-neutral-900">
+                        <td className="py-4 px-4 font-black text-emerald-400 font-mono text-sm">
                           £{cust.totalSpent?.toFixed(2) || '0.00'}
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td className="py-4 px-4">
                           <span
-                            className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                            className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase ${
                               isCustActive
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                                : 'bg-red-50 text-red-600 border border-red-200/60'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                             }`}
                           >
                             <span
                               className={`w-1.5 h-1.5 rounded-full ${
-                                isCustActive ? 'bg-emerald-500' : 'bg-red-500'
+                                isCustActive ? 'bg-emerald-400' : 'bg-rose-400'
                               }`}
                             />
-                            <span>{isCustActive ? 'Active' : 'Deactivated'}</span>
+                            <span>{isCustActive ? 'Active' : 'Suspended'}</span>
                           </span>
                         </td>
 
-                        <td className="py-3.5 px-6 text-right space-x-2">
+                        <td className="py-4 px-6 text-right space-x-2">
                           <button
                             onClick={() => handleViewCustomer(cust)}
-                            className="p-1.5 rounded-xl border border-neutral-200 text-neutral-700 hover:border-black hover:text-black transition-colors"
+                            className="p-2 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-colors"
                             title="View Customer Profile & Orders"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleToggleStatus(cust)}
                             disabled={actionLoading === cust._id}
-                            className={`p-1.5 rounded-xl border transition-colors ${
+                            className={`p-2 rounded-xl border transition-colors ${
                               isCustActive
-                                ? 'border-neutral-200 text-neutral-700 hover:border-red-500 hover:text-red-500'
-                                : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+                                ? 'bg-white/5 border-white/10 text-slate-400 hover:border-rose-500/40 hover:text-rose-400'
+                                : 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/30'
                             }`}
-                            title={isCustActive ? 'Deactivate Account' : 'Activate Account'}
+                            title={isCustActive ? 'Suspend Account' : 'Reactivate Account'}
                           >
                             {actionLoading === cust._id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <Loader2 className="w-4 h-4 animate-spin" />
                             ) : isCustActive ? (
-                              <UserX className="w-3.5 h-3.5" />
+                              <UserX className="w-4 h-4" />
                             ) : (
-                              <UserCheck className="w-3.5 h-3.5" />
+                              <UserCheck className="w-4 h-4" />
                             )}
                           </button>
                         </td>
@@ -337,42 +341,42 @@ const AdminCustomers = () => {
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 animate-fade-in">
           <div
             onClick={() => setSelectedCustomer(null)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
           />
 
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 z-10 max-h-[90vh] overflow-y-auto border border-neutral-200">
+          <div className="relative w-full max-w-2xl bg-[#0F172A] rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 z-10 max-h-[90vh] overflow-y-auto border border-white/10 custom-scrollbar">
             {/* Modal Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+            <div className="flex items-start justify-between pb-4 border-b border-white/10">
               <div className="flex items-center space-x-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-neutral-950 text-white text-base font-black flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 text-slate-950 text-base font-black flex items-center justify-center">
                   {selectedCustomer.name ? selectedCustomer.name.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-neutral-900">
+                  <h3 className="text-base font-extrabold text-white">
                     {selectedCustomer.name}
                   </h3>
-                  <p className="text-xs text-neutral-500">{selectedCustomer.email}</p>
+                  <p className="text-xs text-slate-400 font-mono">{selectedCustomer.email}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedCustomer(null)}
-                className="p-1.5 text-neutral-400 hover:text-black rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-white rounded-xl bg-white/5"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Customer Details Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-neutral-50 p-4 rounded-2xl border border-neutral-200/60 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-900/60 p-4 rounded-2xl border border-white/10 text-xs">
               <div>
-                <p className="text-[10px] uppercase font-bold text-neutral-400">Phone</p>
-                <p className="font-semibold text-neutral-900 mt-0.5">
+                <p className="text-[10px] uppercase font-bold text-slate-400">Phone</p>
+                <p className="font-semibold text-white mt-1 font-mono">
                   {selectedCustomer.phone || 'N/A'}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] uppercase font-bold text-neutral-400">Joined Date</p>
-                <p className="font-semibold text-neutral-900 mt-0.5">
+                <p className="text-[10px] uppercase font-bold text-slate-400">Joined</p>
+                <p className="font-semibold text-white mt-1 font-mono">
                   {new Date(selectedCustomer.createdAt).toLocaleDateString('en-GB', {
                     day: 'numeric',
                     month: 'short',
@@ -381,56 +385,54 @@ const AdminCustomers = () => {
                 </p>
               </div>
               <div>
-                <p className="text-[10px] uppercase font-bold text-neutral-400">Total Spent</p>
-                <p className="font-bold text-neutral-900 mt-0.5">
+                <p className="text-[10px] uppercase font-bold text-slate-400">Total Spent</p>
+                <p className="font-black text-emerald-400 mt-1 font-mono">
                   £{selectedCustomer.totalSpent?.toFixed(2) || '0.00'}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] uppercase font-bold text-neutral-400">Account Status</p>
+                <p className="text-[10px] uppercase font-bold text-slate-400">Status</p>
                 <p
-                  className={`font-bold mt-0.5 ${
-                    selectedCustomer.isActive !== false ? 'text-emerald-600' : 'text-red-500'
+                  className={`font-black mt-1 uppercase text-[10px] ${
+                    selectedCustomer.isActive !== false ? 'text-emerald-400' : 'text-rose-400'
                   }`}
                 >
-                  {selectedCustomer.isActive !== false ? 'Active' : 'Deactivated'}
+                  {selectedCustomer.isActive !== false ? 'Active' : 'Suspended'}
                 </p>
               </div>
             </div>
 
             {/* Order History Section */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-neutral-900">
-                  Order History ({customerOrders.length})
-                </h4>
-              </div>
+              <h4 className="text-xs font-black uppercase tracking-widest text-slate-300">
+                Order History Records ({customerOrders.length})
+              </h4>
 
               {loadingOrders ? (
                 <div className="p-8 flex items-center justify-center">
-                  <Loader2 className="w-5 h-5 animate-spin text-neutral-400" />
+                  <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
                 </div>
               ) : customerOrders.length === 0 ? (
-                <div className="p-8 text-center text-xs text-neutral-400 bg-neutral-50 rounded-2xl">
-                  This customer has not placed any orders yet.
+                <div className="p-8 text-center text-xs text-slate-400 bg-slate-900/40 rounded-2xl">
+                  This client has not placed any orders yet.
                 </div>
               ) : (
-                <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
                   {customerOrders.map((ord) => (
                     <div
                       key={ord._id}
-                      className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200/60 flex items-center justify-between text-xs"
+                      className="p-4 bg-slate-900/60 rounded-2xl border border-white/10 flex items-center justify-between text-xs"
                     >
                       <div>
                         <div className="flex items-center space-x-2">
-                          <span className="font-mono font-bold text-neutral-900">
+                          <span className="font-mono font-bold text-cyan-300">
                             {ord.orderNumber}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-white border border-neutral-200 text-neutral-700">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-white/5 border border-white/10 text-slate-300">
                             {ord.orderStatus}
                           </span>
                         </div>
-                        <p className="text-[11px] text-neutral-500 mt-0.5">
+                        <p className="text-[11px] text-slate-400 mt-1 font-mono">
                           {new Date(ord.createdAt).toLocaleDateString('en-GB', {
                             day: 'numeric',
                             month: 'short',
@@ -441,10 +443,12 @@ const AdminCustomers = () => {
                       </div>
 
                       <div className="text-right">
-                        <p className="font-black text-neutral-900">£{ord.total?.toFixed(2)}</p>
+                        <p className="font-black text-emerald-400 font-mono text-sm">
+                          £{ord.total?.toFixed(2)}
+                        </p>
                         <span
-                          className={`text-[10px] font-bold ${
-                            ord.paymentStatus === 'paid' ? 'text-emerald-600' : 'text-amber-600'
+                          className={`text-[10px] font-bold uppercase ${
+                            ord.paymentStatus === 'paid' ? 'text-emerald-400' : 'text-amber-400'
                           }`}
                         >
                           {ord.paymentStatus}
@@ -457,23 +461,23 @@ const AdminCustomers = () => {
             </div>
 
             {/* Modal Actions */}
-            <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
+            <div className="pt-4 border-t border-white/10 flex items-center justify-between">
               <button
                 onClick={() => handleToggleStatus(selectedCustomer)}
                 disabled={actionLoading === selectedCustomer._id}
-                className={`btn-pill text-xs py-2.5 px-4 font-bold border transition-colors ${
+                className={`px-5 py-2.5 rounded-full text-xs font-bold border transition-colors ${
                   selectedCustomer.isActive !== false
-                    ? 'border-red-200 text-red-600 hover:bg-red-50'
-                    : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+                    ? 'border-rose-500/30 text-rose-400 hover:bg-rose-500/10'
+                    : 'border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10'
                 }`}
               >
                 {selectedCustomer.isActive !== false
-                  ? 'Deactivate This Account'
-                  : 'Activate This Account'}
+                  ? 'Suspend Account Access'
+                  : 'Reactivate Account'}
               </button>
               <button
                 onClick={() => setSelectedCustomer(null)}
-                className="btn-pill-dark text-xs py-2.5 px-6 font-bold"
+                className="px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs"
               >
                 Close
               </button>

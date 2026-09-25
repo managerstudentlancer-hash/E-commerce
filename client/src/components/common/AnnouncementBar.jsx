@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X, Globe, PhoneCall, Package, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSettings } from '../../context/SettingsContext';
 
-const defaultAnnouncements = [
-  '✨ COMPLIMENTARY UK NEXT-DAY COURIER ON ORDERS OVER £50',
-  '🔥 SPRING / SUMMER 2026 CAPSULE HAS ARRIVED | USE CODE VEX10 FOR 10% OFF',
-  '⭐ RATED 4.9/5 ACROSS 18,500+ VERIFIED BRITISH CLIENTELE REVIEWS',
-  '⚡ 30-DAY COMPLIMENTARY RETURNS & BESPOKE LUXURY PACKAGING',
-];
-
-const AnnouncementBar = ({ announcements = defaultAnnouncements }) => {
+const AnnouncementBar = ({ announcements: customAnnouncements }) => {
+  const { settings } = useSettings();
+  const announcements =
+    customAnnouncements && customAnnouncements.length > 0
+      ? customAnnouncements
+      : settings.announcements || [settings.announcementText];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
-  const [currency, setCurrency] = useState('GBP');
+  const [currency, setCurrency] = useState(settings.currencyCode || 'GBP');
 
   useEffect(() => {
     if (!announcements.length) return;
@@ -87,7 +86,7 @@ const AnnouncementBar = ({ announcements = defaultAnnouncements }) => {
             className="hover:text-white transition-colors flex items-center space-x-1"
           >
             <PhoneCall className="w-3 h-3 text-neutral-400" />
-            <span>Concierge (+44 20 7946 0991)</span>
+            <span>Concierge ({settings.contactInfo?.phone || '+44 20 7946 0991'})</span>
           </Link>
           <button
             onClick={() => setIsVisible(false)}

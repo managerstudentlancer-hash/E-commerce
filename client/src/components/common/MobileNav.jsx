@@ -3,27 +3,14 @@ import { Link } from 'react-router-dom';
 import { X, ChevronRight, User, Heart, ShoppingBag, ShieldCheck, Mail, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
-
-const navigationLinks = [
-  { name: 'New In (Spring/Summer 26)', href: '/collection/new-arrivals', badge: 'LIVE', isHighlight: true },
-  { name: 'Women’s Luxury', href: '/category/women' },
-  { name: 'Men’s Essentials', href: '/category/men' },
-  { name: 'Bags & Luggage', href: '/category/bags' },
-  { name: 'Audio & Tech Pro', href: '/category/electronics', badge: 'PRO' },
-  { name: 'Footwear & Loafers', href: '/category/shoes' },
-  { name: 'Fine Jewellery & 18K', href: '/category/jewellery' },
-  { name: 'Timepieces & Horology', href: '/category/watches' },
-  { name: 'Outerwear & Coats', href: '/category/outerwear' },
-  { name: 'Cashmere & Knitwear', href: '/category/knitwear' },
-  { name: 'Beauty & Parfum', href: '/category/beauty' },
-  { name: 'Eyewear & Optical', href: '/category/eyewear' },
-  { name: 'Bestsellers Archive', href: '/collection/bestsellers' },
-  { name: 'Summer Archive Sale', href: '/collection/special-offers', badge: 'UP TO 40%', isSale: true },
-];
+import { useSettings } from '../../context/SettingsContext';
+import { useCategories } from '../../context/CategoryContext';
 
 const MobileNav = ({ isOpen, onClose }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const { wishlistCount } = useWishlist();
+  const { settings } = useSettings();
+  const { categories } = useCategories();
 
   if (!isOpen) return null;
 
@@ -38,8 +25,8 @@ const MobileNav = ({ isOpen, onClose }) => {
           {/* Header */}
           <div className="p-5 border-b border-neutral-100 flex items-center justify-between">
             <Link to="/" onClick={onClose} className="flex items-center space-x-2">
-              <span className="text-xl font-extrabold tracking-tighter text-neutral-900">
-                VEXIVO
+              <span className="text-xl font-extrabold tracking-tighter text-neutral-900 uppercase">
+                {settings.siteName || 'VEXIVO'}
               </span>
             </Link>
             <button
@@ -53,28 +40,35 @@ const MobileNav = ({ isOpen, onClose }) => {
           {/* Navigation Links */}
           <div className="flex-1 overflow-y-auto px-5 py-4 divide-y divide-neutral-100">
             <div className="space-y-1 pb-4">
-              {navigationLinks.map((link) => (
+              <Link
+                to="/collection/new-arrivals"
+                onClick={onClose}
+                className="flex items-center justify-between py-3 text-sm font-semibold text-neutral-800 hover:text-black transition-colors"
+              >
+                <span>New In (Spring/Summer 26)</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-[#0D8756] text-white">
+                  LIVE
+                </span>
+              </Link>
+              <Link
+                to="/collection/special-offers"
+                onClick={onClose}
+                className="flex items-center justify-between py-3 text-sm font-bold text-[#C4301C] hover:text-black transition-colors"
+              >
+                <span>Special Offers & Sale</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-[#C4301C] text-white">
+                  SALE
+                </span>
+              </Link>
+              {categories.map((cat) => (
                 <Link
-                  key={link.name}
-                  to={link.href}
+                  key={cat.slug}
+                  to={`/category/${cat.slug}`}
                   onClick={onClose}
-                  className="flex items-center justify-between py-3 text-sm font-semibold text-neutral-800 hover:text-black transition-colors"
+                  className="flex items-center justify-between py-3 text-sm font-semibold text-neutral-800 hover:text-black transition-colors capitalize"
                 >
-                  <span className={link.isSale ? 'text-[#C4301C] font-bold' : ''}>
-                    {link.name}
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    {link.badge && (
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                          link.isSale ? 'bg-[#C4301C] text-white' : 'bg-[#0D8756] text-white'
-                        }`}
-                      >
-                        {link.badge}
-                      </span>
-                    )}
-                    <ChevronRight className="w-4 h-4 text-neutral-400" />
-                  </div>
+                  <span>{cat.name}</span>
+                  <ChevronRight className="w-4 h-4 text-neutral-400" />
                 </Link>
               ))}
             </div>
@@ -152,11 +146,11 @@ const MobileNav = ({ isOpen, onClose }) => {
           <div className="p-5 bg-neutral-50 border-t border-neutral-100 text-xs text-neutral-500 space-y-2">
             <div className="flex items-center space-x-2">
               <Phone className="w-3.5 h-3.5" />
-              <span>+44 20 7946 0991</span>
+              <span>{settings.contactInfo?.phone || '+44 20 7946 0991'}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Mail className="w-3.5 h-3.5" />
-              <span>arpit123@gmail.com</span>
+              <span>{settings.contactInfo?.email || 'concierge@vexivo.com'}</span>
             </div>
           </div>
         </div>

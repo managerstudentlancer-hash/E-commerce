@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuth } from './AuthContext';
+import { useSettings } from './SettingsContext';
 
 const CartContext = createContext(null);
 
 export const CartProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
+  const { settings } = useSettings();
   const [items, setItems] = useState(() => {
     try {
       const saved = localStorage.getItem('vexivo_cart');
@@ -16,7 +18,7 @@ export const CartProvider = ({ children }) => {
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  const freeShippingThreshold = 50;
+  const freeShippingThreshold = settings?.freeShippingThreshold !== undefined ? Number(settings.freeShippingThreshold) : 50;
 
   // Persist cart to localStorage
   useEffect(() => {

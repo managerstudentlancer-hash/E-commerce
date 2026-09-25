@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, Check } from 'lucide-react';
+import { useSettings } from '../../context/SettingsContext';
 
 const Contact = () => {
+  const { settings } = useSettings();
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
 
@@ -17,11 +19,11 @@ const Contact = () => {
           <span className="text-xs font-bold uppercase tracking-widest text-[#C4301C]">
             CLIENT CONCIERGE
           </span>
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-neutral-900 tracking-tight">
-            Contact VEXIVO
+          <h1 className="text-3xl sm:text-5xl font-extrabold text-neutral-900 tracking-tight uppercase">
+            Contact {settings.siteName || 'VEXIVO'}
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto">
-            Our London concierge team is on hand Monday to Saturday for styling advice, order tracking, and bespoke requests.
+            Our concierge team is on hand for styling advice, order tracking, and bespoke requests.
           </p>
         </div>
 
@@ -29,28 +31,26 @@ const Contact = () => {
           {/* Contact Details */}
           <div className="space-y-6">
             <div className="p-6 rounded-3xl bg-neutral-50 border border-neutral-100 space-y-4">
-              <h3 className="text-sm font-bold uppercase text-neutral-900">London Head Studio</h3>
+              <h3 className="text-sm font-bold uppercase text-neutral-900">Registered Office</h3>
               <div className="space-y-3 text-xs text-neutral-600">
                 <div className="flex items-start space-x-3">
                   <MapPin className="w-4 h-4 text-black flex-shrink-0 mt-0.5" />
-                  <span>71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, UK</span>
+                  <span>{settings.contactInfo?.address || '71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, UK'}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Phone className="w-4 h-4 text-black flex-shrink-0" />
-                  <span>+44 20 7946 0991</span>
+                  <span>{settings.contactInfo?.phone || '+44 20 7946 0991'}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="w-4 h-4 text-black flex-shrink-0" />
-                  <span>arpit123@gmail.com</span>
+                  <span>{settings.contactInfo?.email || 'concierge@vexivo.com'}</span>
                 </div>
               </div>
             </div>
 
             <div className="p-6 rounded-3xl bg-neutral-50 border border-neutral-100 space-y-2 text-xs text-neutral-600">
               <h3 className="text-sm font-bold uppercase text-neutral-900">Hours of Operation</h3>
-              <p>Monday – Friday: 9:00 AM – 6:00 PM GMT</p>
-              <p>Saturday: 10:00 AM – 4:00 PM GMT</p>
-              <p>Sunday: Closed</p>
+              <p>{settings.contactInfo?.hours || 'Monday – Saturday: 9:00 AM – 6:00 PM GMT'}</p>
             </div>
           </div>
 
