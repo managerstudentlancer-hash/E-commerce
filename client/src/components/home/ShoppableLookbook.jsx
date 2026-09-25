@@ -1,51 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Eye, Plus, Check, Sparkles, ArrowRight } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import api from '../../services/api';
 
-const lookbookItems = [
+const defaultLookbookItems = [
   {
     id: 'pin-1',
     name: "Women's Casual Tailored Blazer & Pleated Trouser",
-    price: 185.00,
-    compareAtPrice: 245.00,
+    price: 185.0,
+    compareAtPrice: 245.0,
     discount: 24,
     x: 48,
     y: 35,
-    slug: 'the-kensington-tailored-wool-pleated-trouser',
+    slug: 'vexivo-classic-venetian-suede-driving-loafers',
     image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
     category: "Women's Suiting",
   },
   {
     id: 'pin-2',
     name: 'Top-Grain Genuine Leather Crossbody Bag',
-    price: 140.00,
-    compareAtPrice: 195.00,
+    price: 140.0,
+    compareAtPrice: 195.0,
     discount: 28,
     x: 62,
     y: 65,
-    slug: 'the-mayfair-top-grain-leather-tote',
+    slug: 'vexivo-mountain-crest-all-weather-trail-walkers',
     image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80',
     category: 'Leather Goods',
   },
   {
     id: 'pin-3',
     name: 'Star Loop Wireless ANC Studio Earbuds',
-    price: 129.00,
-    compareAtPrice: 180.00,
+    price: 129.0,
+    compareAtPrice: 180.0,
     discount: 28,
     x: 42,
     y: 18,
-    slug: 'the-apex-studio-wireless-anc-headphones',
+    slug: 'vexivo-classic-venetian-suede-driving-loafers',
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80',
     category: 'Acoustic Audio',
   },
 ];
 
+const pinCoordinates = [
+  { x: 48, y: 35 },
+  { x: 62, y: 65 },
+  { x: 42, y: 18 },
+];
+
 const ShoppableLookbook = () => {
-  const [activePin, setActivePin] = useState(lookbookItems[0]);
+  const [items, setItems] = useState(defaultLookbookItems);
+  const [activePin, setActivePin] = useState(defaultLookbookItems[0]);
   const [addedItem, setAddedItem] = useState(null);
   const { addToCart } = useCart();
+
+  useEffect(() => {
+    const fetchLookbookProducts = async () => {
+      try {
+        const res = await api.products.getAll({ limit: 3 });
+        if (res.success && res.products && res.products.length >= 3) {
+          const dynamicItems = res.products.slice(0, 3).map((p, idx) => ({
+            id: p._id,
+            name: p.name,
+            price: p.price,
+            compareAtPrice: p.compareAtPrice || 0,
+            discount: p.discount || (p.compareAtPrice > p.price ? Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100) : 0),
+            x: pinCoordinates[idx].x,
+            y: pinCoordinates[idx].y,
+            slug: p.slug,
+            image: p.thumbnail || (p.images && p.images[0]) || defaultLookbookItems[idx].image,
+            category: p.category || 'Luxury Goods',
+            stock: p.stock || 50,
+          }));
+          setItems(dynamicItems);
+          setActivePin(dynamicItems[0]);
+        }
+      } catch (err) {
+        console.warn('Failed to load lookbook products from API:', err.message);
+      }
+    };
+
+    fetchLookbookProducts();
+  }, []);
 
   const handleQuickAdd = (item, e) => {
     e.preventDefault();
@@ -58,7 +95,7 @@ const ShoppableLookbook = () => {
       images: [item.image],
       category: item.category,
       slug: item.slug,
-      stock: 10,
+      stock: item.stock || 10,
     });
     setAddedItem(item.id);
     setTimeout(() => setAddedItem(null), 2000);
@@ -105,7 +142,7 @@ const ShoppableLookbook = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
 
             {/* Hotspot Pins */}
-            {lookbookItems.map((item) => {
+            {items.map((item) => {
               const isActive = activePin.id === item.id;
               return (
                 <div
@@ -123,7 +160,6 @@ const ShoppableLookbook = () => {
                         : 'bg-white/95 text-black hover:scale-110 shadow-lg'
                     }`}
                   >
-                    {/* Pulsing beacon ring animation (FoxTheme Hyper) */}
                     <span className="absolute -inset-2 rounded-full border-2 border-white/80 animate-pulse-ring pointer-events-none" />
                     <Plus className="w-4 h-4 font-bold" />
                   </button>
@@ -220,7 +256,7 @@ const ShoppableLookbook = () => {
 
             {/* Look Selector Pill Bar */}
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              {lookbookItems.map((item, idx) => {
+              {items.map((item, idx) => {
                 const isActive = activePin.id === item.id;
                 return (
                   <button

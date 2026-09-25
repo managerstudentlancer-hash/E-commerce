@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, ChevronLeft, ChevronRight, ShoppingBag, Eye, Check, Sparkles } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import api from '../../services/api';
 
-const favoriteSlides = [
+const defaultSlides = [
   {
     id: 1,
     bgImage: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1600&q=85',
@@ -12,10 +13,10 @@ const favoriteSlides = [
     product: {
       id: 'fav-1',
       name: 'French-Style Flower Lantern Sleeve Linen Dress',
-      slug: 'the-kensington-tailored-wool-pleated-trouser',
+      slug: 'vexivo-classic-venetian-suede-driving-loafers',
       category: 'Lady Dresses',
-      price: 95.00,
-      compareAtPrice: 135.00,
+      price: 95.0,
+      compareAtPrice: 135.0,
       discount: 30,
       rating: 5,
       reviewsCount: 48,
@@ -34,10 +35,10 @@ const favoriteSlides = [
     product: {
       id: 'fav-2',
       name: 'The Kensington Tailored Wool Pleated Trouser',
-      slug: 'the-kensington-tailored-wool-pleated-trouser',
+      slug: 'vexivo-mountain-crest-all-weather-trail-walkers',
       category: "Men's Tailoring",
-      price: 145.00,
-      compareAtPrice: 190.00,
+      price: 145.0,
+      compareAtPrice: 190.0,
       discount: 24,
       rating: 5,
       reviewsCount: 64,
@@ -48,43 +49,74 @@ const favoriteSlides = [
     location: 'Manchester, UK',
     verified: true,
   },
-  {
-    id: 3,
-    bgImage: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=1600&q=85',
-    colorScheme: 'bg-[#F7F2EB]',
-    accentColor: '#78350F',
-    product: {
-      id: 'fav-3',
-      name: 'Top-Grain Genuine Leather Crossbody Bag',
-      slug: 'the-mayfair-top-grain-leather-tote',
-      category: 'Luxury Bags',
-      price: 140.00,
-      compareAtPrice: 195.00,
-      discount: 28,
-      rating: 5,
-      reviewsCount: 52,
-      image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80',
-    },
-    quote: '“Crafted with care using Tuscan full-grain leather, each piece reflects true luxury.”',
-    author: 'John Doe',
-    location: 'Edinburgh, UK',
-    verified: true,
-  },
+];
+
+const quotes = [
+  '“Each piece is authentic and carefully sourced from its place of origin.”',
+  '“All products are authentic and imported directly with bespoke Savile Row craft.”',
+  '“Crafted with care using Tuscan full-grain leather, each piece reflects true luxury.”',
+  '“Pure studio-grade resolution. The acoustic depth and craftsmanship are breathtaking.”',
+];
+
+const authors = [
+  { name: 'Julie Mathers', location: 'London, UK' },
+  { name: 'Jenny Wilson', location: 'Manchester, UK' },
+  { name: 'Alexander Wright', location: 'Edinburgh, UK' },
+  { name: 'Marcus Sterling', location: 'Cambridge, UK' },
 ];
 
 const FavoriteProductsSection = () => {
+  const [slides, setSlides] = useState(defaultSlides);
   const [current, setCurrent] = useState(0);
   const [added, setAdded] = useState(false);
   const { addToCart } = useCart();
 
-  const slide = favoriteSlides[current];
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const res = await api.products.getAll({ limit: 4 });
+        if (res.success && res.products && res.products.length > 0) {
+          const dynamicSlides = res.products.map((p, idx) => ({
+            id: p._id || idx,
+            bgImage: (p.images && p.images[0]) || p.thumbnail || defaultSlides[0].bgImage,
+            colorScheme: idx % 2 === 0 ? 'bg-[#F9F6F0]' : 'bg-[#F2F5F8]',
+            accentColor: '#C4301C',
+            product: {
+              id: p._id,
+              name: p.name,
+              slug: p.slug,
+              category: p.category || 'Luxury Goods',
+              price: p.price || 99,
+              compareAtPrice: p.compareAtPrice || 0,
+              discount: p.discount || (p.compareAtPrice > p.price ? Math.round(((p.compareAtPrice - p.price) / p.compareAtPrice) * 100) : 0),
+              rating: Math.round(p.rating || 5),
+              reviewsCount: p.numReviews || 24,
+              image: p.thumbnail || (p.images && p.images[0]) || defaultSlides[0].product.image,
+              stock: p.stock || 50,
+            },
+            quote: quotes[idx % quotes.length],
+            author: authors[idx % authors.length].name,
+            location: authors[idx % authors.length].location,
+            verified: true,
+          }));
+          setSlides(dynamicSlides);
+        }
+      } catch (err) {
+        console.warn('Failed to load favorite products from API:', err.message);
+      }
+    };
+
+    fetchFavorites();
+  }, []);
+
+  const slide = slides[current] || defaultSlides[0];
 
   const handleNext = () => {
-    setCurrent((prev) => (prev + 1) % favoriteSlides.length);
+    setCurrent((prev) => (prev + 1) % slides.length);
   };
 
   const handlePrev = () => {
-    setCurrent((prev) => (prev - 1 + favoriteSlides.length) % favoriteSlides.length);
+    setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
   const handleAddToCart = (e) => {
@@ -99,7 +131,7 @@ const FavoriteProductsSection = () => {
         images: [slide.product.image],
         category: slide.product.category,
         slug: slide.product.slug,
-        stock: 12,
+        stock: slide.product.stock || 50,
       },
       1
     );
@@ -109,12 +141,9 @@ const FavoriteProductsSection = () => {
 
   return (
     <section className="relative w-full overflow-hidden border-b border-neutral-100 bg-white">
-      {/* 1:1 Shaporoo favorite-products container */}
       <div className="w-full grid grid-cols-1 lg:grid-cols-12 min-h-[560px] lg:min-h-[640px]">
-        
-        {/* LEFT SIDE: Lifestyle Backdrop with Centered Floating Product Card (7 Cols) */}
+        {/* LEFT SIDE: Lifestyle Backdrop with Centered Floating Product Card */}
         <div className="lg:col-span-7 xl:col-span-7 relative min-h-[460px] sm:min-h-[520px] lg:min-h-full overflow-hidden bg-neutral-900 group">
-          {/* Background Lifestyle Image with smooth crossfade */}
           <img
             key={`bg-${slide.id}`}
             src={slide.bgImage}
@@ -126,11 +155,9 @@ const FavoriteProductsSection = () => {
           />
           <div className="absolute inset-0 bg-black/25 pointer-events-none" />
 
-          {/* Centered Floating Product Card (1:1 Shaporoo floating card style) */}
+          {/* Centered Floating Product Card */}
           <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-6 z-10">
             <div className="w-full max-w-[310px] sm:max-w-[340px] bg-white/95 backdrop-blur-md rounded-2xl p-4 sm:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.22)] border border-white/60 transition-all duration-500 hover:shadow-[0_24px_60px_rgba(0,0,0,0.3)] hover:-translate-y-1">
-              
-              {/* Product Card Image Container */}
               <div className="relative aspect-square rounded-xl overflow-hidden bg-[#F3F4F6] mb-3.5 group/card">
                 <img
                   key={`card-img-${slide.product.id}`}
@@ -142,14 +169,12 @@ const FavoriteProductsSection = () => {
                   className="w-full h-full object-cover object-center transition-transform duration-700 [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] group-hover/card:scale-105"
                 />
 
-                {/* Badge */}
                 {slide.product.discount > 0 && (
                   <span className="absolute top-2.5 left-2.5 badge-sale shadow-sm">
                     -{slide.product.discount}%
                   </span>
                 )}
 
-                {/* Quick View Pill */}
                 <Link
                   to={`/product/${slide.product.slug}`}
                   className="absolute bottom-2.5 left-1/2 -translate-x-1/2 opacity-0 group-hover/card:opacity-100 transition-all duration-300 py-1.5 px-3.5 rounded-full bg-white/95 text-neutral-900 text-[11px] font-bold shadow-md hover:bg-white flex items-center space-x-1 whitespace-nowrap"
@@ -159,7 +184,6 @@ const FavoriteProductsSection = () => {
                 </Link>
               </div>
 
-              {/* Product Info */}
               <div className="space-y-1 text-left">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-600 block">
                   {slide.product.category}
@@ -172,10 +196,9 @@ const FavoriteProductsSection = () => {
                   {slide.product.name}
                 </Link>
 
-                {/* Star Rating */}
                 <div className="flex items-center space-x-1.5 pt-0.5">
                   <div className="flex text-amber-400">
-                    {[...Array(slide.product.rating)].map((_, i) => (
+                    {[...Array(Math.max(1, slide.product.rating))].map((_, i) => (
                       <Star key={i} className="w-3.5 h-3.5 fill-current" />
                     ))}
                   </div>
@@ -184,7 +207,6 @@ const FavoriteProductsSection = () => {
                   </span>
                 </div>
 
-                {/* Pricing & Add to Cart Row */}
                 <div className="flex items-center justify-between pt-2.5 border-t border-neutral-100 mt-2">
                   <div>
                     <div className="flex items-baseline space-x-1.5">
@@ -202,23 +224,14 @@ const FavoriteProductsSection = () => {
 
                   <button
                     onClick={handleAddToCart}
-                    className={`inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all shadow-sm active:scale-95 ${
+                    aria-label="Add to bag"
+                    className={`p-2.5 rounded-xl transition-all duration-200 ${
                       added
                         ? 'bg-emerald-600 text-white'
-                        : 'bg-black text-white hover:bg-neutral-800'
+                        : 'bg-neutral-900 text-white hover:bg-neutral-800 active:scale-95'
                     }`}
                   >
-                    {added ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Added</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>Add to cart</span>
-                      </>
-                    )}
+                    {added ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -226,84 +239,68 @@ const FavoriteProductsSection = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDE: Synchronized Testimonial & Review Content (5 Cols) */}
+        {/* RIGHT SIDE: Testimonial & Navigation */}
         <div
-          className={`lg:col-span-5 xl:col-span-5 relative flex flex-col justify-between p-8 sm:p-12 lg:p-16 transition-colors duration-700 ${slide.colorScheme}`}
+          className={`lg:col-span-5 xl:col-span-5 ${slide.colorScheme} p-8 sm:p-12 lg:p-14 flex flex-col justify-between transition-colors duration-700`}
         >
-          {/* Section Heading with 1:1 Shaporoo typography */}
           <div>
-            <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-neutral-600 mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#C4301C]" />
-              <span>Verified Customer Stories</span>
+            <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-neutral-500 mb-6 sm:mb-8">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span>Our Favorite Products</span>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-900 tracking-tight">
-              Our Favorite <strong className="font-extrabold text-[#C4301C]">Products</strong>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-neutral-900 leading-tight mb-6">
+              Verified British Clientele Feedback
             </h2>
-          </div>
 
-          {/* Review Quote Block */}
-          <div key={`quote-${slide.id}`} className="my-8 sm:my-10 space-y-5 animate-in fade-in duration-500">
-            {/* Stars */}
-            <div className="flex text-amber-400 space-x-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
-              ))}
-            </div>
-
-            {/* Quote text */}
-            <blockquote className="text-xl sm:text-2xl lg:text-[26px] font-bold text-neutral-900 leading-snug tracking-tight">
+            <blockquote className="text-base sm:text-lg lg:text-xl font-medium text-neutral-800 italic leading-relaxed mb-6">
               {slide.quote}
             </blockquote>
 
-            {/* Author */}
-            <div className="flex items-center space-x-3 pt-2">
-              <div className="w-10 h-10 rounded-full bg-black text-white font-bold flex items-center justify-center text-sm shadow-sm">
-                {slide.author.charAt(0)}
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-bold text-neutral-900">{slide.author}</span>
+                {slide.verified && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                    ✓ Verified Buyer
+                  </span>
+                )}
               </div>
-              <div>
-                <h4 className="text-sm font-extrabold text-neutral-900">
-                  {slide.author}
-                </h4>
-                <div className="flex items-center space-x-1 text-xs text-neutral-600 font-medium">
-                  <span>{slide.location}</span>
-                  <span>•</span>
-                  <span className="text-emerald-700 font-semibold">Verified Buyer</span>
-                </div>
-              </div>
+              <p className="text-xs text-neutral-500">{slide.location}</p>
             </div>
           </div>
 
-          {/* Navigation Controls: Grouped Fraction + Prev/Next Buttons (1:1 Shaporoo) */}
-          <div className="flex items-center justify-between pt-6 border-t border-neutral-300/60">
-            {/* Fraction Indicator (e.g. 01 / 03) */}
-            <div className="text-xs font-mono font-bold tracking-widest text-neutral-600">
-              <span className="text-neutral-950 text-sm font-extrabold">0{current + 1}</span>
-              <span className="mx-1.5 text-neutral-600">/</span>
-              <span>0{favoriteSlides.length}</span>
+          <div className="flex items-center justify-between pt-8 border-t border-neutral-200/80 mt-8">
+            <div className="flex items-center space-x-2">
+              {slides.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrent(idx)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    idx === current ? 'w-8 bg-neutral-900' : 'w-2 bg-neutral-300 hover:bg-neutral-400'
+                  }`}
+                />
+              ))}
             </div>
 
-            {/* Prev / Next Arrows */}
             <div className="flex items-center space-x-2">
               <button
                 onClick={handlePrev}
-                aria-label="Previous favorite product"
-                className="w-10 h-10 rounded-full bg-white border border-neutral-300 hover:border-black text-neutral-800 hover:text-black flex items-center justify-center shadow-sm transition-all active:scale-95 hover:bg-neutral-50"
+                aria-label="Previous review"
+                className="w-10 h-10 rounded-full bg-white border border-neutral-200 hover:border-black flex items-center justify-center text-neutral-700 hover:text-black transition-all shadow-sm active:scale-95"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4" />
               </button>
-
               <button
                 onClick={handleNext}
-                aria-label="Next favorite product"
-                className="w-10 h-10 rounded-full bg-black text-white hover:bg-neutral-800 flex items-center justify-center shadow-sm transition-all active:scale-95"
+                aria-label="Next review"
+                className="w-10 h-10 rounded-full bg-white border border-neutral-200 hover:border-black flex items-center justify-center text-neutral-700 hover:text-black transition-all shadow-sm active:scale-95"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
-
       </div>
     </section>
   );

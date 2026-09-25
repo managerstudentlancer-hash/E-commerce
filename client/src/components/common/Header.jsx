@@ -15,23 +15,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useSettings } from '../../context/SettingsContext';
+import { useCategories } from '../../context/CategoryContext';
 import MobileNav from './MobileNav';
 
-const searchCategories = [
-  'All Categories',
-  'Women Wear',
-  'Mens Wear',
-  'Kids Wear',
-  'Shoes',
-  'Beauty',
-  'Jewellery',
-  'Bags',
-  'Hats',
-  'Watches',
-  'Audio & Tech',
-];
-
 const Header = () => {
+  const { settings } = useSettings();
+  const { categories } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,6 +33,11 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef(null);
+
+  const searchCategoryNames = ['All Categories', ...categories.map((c) => c.name)];
+  const announcementsList = settings.announcements && settings.announcements.length > 0 
+    ? settings.announcements 
+    : [settings.announcementText || '✨ FREE UK NEXT-DAY DELIVERY OVER £50'];
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -71,20 +66,16 @@ const Header = () => {
 
   return (
     <header className="w-full bg-white border-b border-neutral-100 sticky top-0 z-40">
-      {/* 0. Infinite Marquee Announcement Ticker (FoxTheme Hyper Style) */}
+      {/* 0. Infinite Marquee Announcement Ticker (Dynamic from Settings) */}
       <div className="w-full bg-black text-white text-[11px] font-semibold tracking-wider uppercase py-1.5 overflow-hidden border-b border-neutral-800 select-none">
         <div className="animate-marquee space-x-10 whitespace-nowrap">
-          <span>🎃 HALLOWEEN SALE — UP TO 50% OFF TRENDING COLLECTIONS</span>
-          <span>⚡ COMPLIMENTARY UK TRACKED NEXT-DAY DELIVERY OVER £50</span>
-          <span>⭐ 18,500+ VERIFIED 5-STAR REVIEWS ACROSS THE UK</span>
-          <span>🏷️ USE CODE: <strong className="text-amber-300">AUTUMN30</strong> FOR 30% OFF</span>
-          <span>🔄 30-DAY HASSLE-FREE RETURNS & LIFETIME CRAFT WARRANTY</span>
+          {announcementsList.map((ann, idx) => (
+            <span key={idx}>{ann}</span>
+          ))}
           {/* Duplicate loop for continuous scrolling */}
-          <span>🎃 HALLOWEEN SALE — UP TO 50% OFF TRENDING COLLECTIONS</span>
-          <span>⚡ COMPLIMENTARY UK TRACKED NEXT-DAY DELIVERY OVER £50</span>
-          <span>⭐ 18,500+ VERIFIED 5-STAR REVIEWS ACROSS THE UK</span>
-          <span>🏷️ USE CODE: <strong className="text-amber-300">AUTUMN30</strong> FOR 30% OFF</span>
-          <span>🔄 30-DAY HASSLE-FREE RETURNS & LIFETIME CRAFT WARRANTY</span>
+          {announcementsList.map((ann, idx) => (
+            <span key={`dup-${idx}`}>{ann}</span>
+          ))}
         </div>
       </div>
 
@@ -170,7 +161,7 @@ const Header = () => {
             <Menu className="w-6 h-6" />
           </button>
 
-          {/* Logo: VEXIVO with Speedy Shopping Emblem */}
+          {/* Logo: Dynamic Site Name with Speedy Shopping Emblem */}
           <Link to="/" className="flex items-center space-x-2.5 flex-shrink-0 group">
             {/* Playful Speedy Cart Emblem */}
             <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 flex items-center justify-center text-white shadow-md transform group-hover:scale-105 transition-transform duration-300">
@@ -181,8 +172,8 @@ const Header = () => {
             </div>
             {/* Brand Wordmark */}
             <div className="flex flex-col">
-              <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-950 font-sans leading-none">
-                vexivo
+              <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-950 font-sans leading-none lowercase">
+                {settings.siteName || 'vexivo'}
               </span>
               <span className="text-[8px] font-extrabold uppercase tracking-[0.25em] text-neutral-400 mt-0.5">
                 London
@@ -213,7 +204,7 @@ const Header = () => {
               {/* Dropdown Menu */}
               {isCatDropdownOpen && (
                 <div className="absolute left-0 top-full mt-3 w-52 bg-white rounded-2xl shadow-xl border border-neutral-100 py-2 z-50 animate-fade-in max-h-80 overflow-y-auto">
-                  {searchCategories.map((cat) => (
+                  {searchCategoryNames.map((cat) => (
                     <button
                       key={cat}
                       type="button"
@@ -255,8 +246,9 @@ const Header = () => {
           </form>
 
           {/* Right Action Icons: Sign in / Register & Cart */}
-          <div className="flex items-center space-x-3 sm:space-x-6 flex-shrink-0">
-            {/* Sign in / Register */}
+          <div className="flex items-center space-x-3 sm:space-x-4 flex-shrink-0">
+
+            {/* Sign in / Register / Account */}
             <div className="relative group">
               <Link
                 to={isAuthenticated ? '/account' : '/login'}
@@ -271,25 +263,30 @@ const Header = () => {
               </Link>
 
               {/* Account Dropdown */}
-              <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-dropdown border border-neutral-100 p-2 hidden group-hover:block z-50 animate-fade-in">
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-dropdown border border-neutral-100 p-2 hidden group-hover:block z-50 animate-fade-in">
                 {isAuthenticated ? (
                   <div className="space-y-1">
                     <div className="px-3 py-2 border-b border-neutral-100">
                       <p className="text-xs font-bold text-neutral-900 truncate">{user?.name}</p>
                       <p className="text-[11px] text-neutral-500 truncate">{user?.email}</p>
+                      {isAdmin && (
+                        <span className="inline-block px-2 py-0.5 mt-1 bg-red-100 text-[#C4301C] text-[9px] font-extrabold rounded-full uppercase">
+                          Administrator
+                        </span>
+                      )}
                     </div>
+                    {isAdmin && (
+                      <Link to="/admin" className="flex items-center space-x-2 px-3 py-2 text-xs font-bold text-white bg-[#C4301C] hover:bg-red-700 rounded-xl my-1 transition-colors">
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>Go to Admin Portal</span>
+                      </Link>
+                    )}
                     <Link to="/account" className="block px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50 rounded-xl">
-                      My Account
+                      My Account Dashboard
                     </Link>
                     <Link to="/account/orders" className="block px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50 rounded-xl">
                       Order History
                     </Link>
-                    {isAdmin && (
-                      <Link to="/admin" className="flex items-center space-x-1.5 px-3 py-2 text-xs font-bold text-[#C4301C] hover:bg-red-50 rounded-xl">
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>Admin Portal</span>
-                      </Link>
-                    )}
                   </div>
                 ) : (
                   <div className="p-2 space-y-2">
@@ -394,25 +391,16 @@ const Header = () => {
 
             {/* Dropdown */}
             {activeDropdown === 'shop_by_categories' && (
-              <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 p-2 z-50 animate-fade-in">
-                <Link to="/category/women" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Women Wear
-                </Link>
-                <Link to="/category/men" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Mens Wear
-                </Link>
-                <Link to="/category/shoes" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Shoes
-                </Link>
-                <Link to="/category/beauty" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Beauty & Cosmetics
-                </Link>
-                <Link to="/category/jewellery" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Jewellery
-                </Link>
-                <Link to="/category/bags" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Bags & Handbags
-                </Link>
+              <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 p-2 z-50 animate-fade-in max-h-80 overflow-y-auto">
+                {categories.slice(0, 6).map((cat) => (
+                  <Link
+                    key={cat.slug}
+                    to={`/category/${cat.slug}`}
+                    className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl capitalize"
+                  >
+                    {cat.name}
+                  </Link>
+                ))}
               </div>
             )}
           </div>
@@ -430,22 +418,16 @@ const Header = () => {
 
             {/* Dropdown */}
             {activeDropdown === 'more_category' && (
-              <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 p-2 z-50 animate-fade-in">
-                <Link to="/category/watches" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Watches & Horology
-                </Link>
-                <Link to="/category/electronics" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Audio & Tech
-                </Link>
-                <Link to="/category/hats" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Hats & Headwear
-                </Link>
-                <Link to="/category/home-living" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Home & Living
-                </Link>
-                <Link to="/category/activewear" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Activewear & Studio
-                </Link>
+              <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 p-2 z-50 animate-fade-in max-h-80 overflow-y-auto">
+                {categories.slice(6).map((cat) => (
+                  <Link
+                    key={cat.slug}
+                    to={`/category/${cat.slug}`}
+                    className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl capitalize"
+                  >
+                    {cat.name}
+                  </Link>
+                ))}
               </div>
             )}
           </div>

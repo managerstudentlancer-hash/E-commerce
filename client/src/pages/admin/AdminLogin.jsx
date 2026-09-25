@@ -265,13 +265,22 @@ const AdminLogin = () => {
             <p className="text-[11px] text-neutral-400 mb-3">
               Click below to autofill verified administrator credentials:
             </p>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('admin@vexivo.com', 'AdminPass123!')}
-              className="w-full py-2.5 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white text-xs font-bold text-center transition-all flex items-center justify-center space-x-2 shadow-sm"
-            >
-              <span>⚡ Auto-Fill Admin Account (`admin@vexivo.com`)</span>
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleQuickFill('arpit123@gmail.com', 'AdminPass123!')}
+                className="py-2.5 px-3 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-bold text-center transition-all flex items-center justify-center space-x-1.5"
+              >
+                <span>⚡ Admin (arpit123)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickFill('admin@vexivo.com', 'AdminPass123!')}
+                className="py-2.5 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white text-xs font-bold text-center transition-all flex items-center justify-center space-x-1.5"
+              >
+                <span>⚡ Admin (Default)</span>
+              </button>
+            </div>
           </div>
 
           {/* Footer Back to Customer Login */}

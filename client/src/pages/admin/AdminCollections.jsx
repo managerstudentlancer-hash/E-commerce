@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, X, Star, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Star, Loader2, Sparkles, Check } from 'lucide-react';
 import api from '../../services/api';
 
 const AdminCollections = () => {
@@ -86,96 +86,99 @@ const AdminCollections = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 text-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-900">
-            Collection Management
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            Curated Collections Management
           </h2>
-          <p className="text-xs text-neutral-500 mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Curate thematic product showcases, seasonal catalogs, and promotional landing pages.
           </p>
         </div>
         <button
           onClick={() => handleOpenModal()}
-          className="btn-pill-dark text-xs py-2.5 px-5 flex items-center space-x-1.5"
+          className="px-5 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-slate-950 font-black text-xs flex items-center space-x-2 self-start sm:self-auto shadow-lg shadow-cyan-500/20 active:scale-95 transition-all"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 text-slate-950" />
           <span>Add Collection</span>
         </button>
       </div>
 
-      <div className="bg-white rounded-3xl border border-neutral-200 overflow-hidden shadow-subtle">
+      <div className="admin-card rounded-3xl overflow-hidden shadow-2xl">
         {loading ? (
-          <div className="p-16 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+          <div className="p-20 flex flex-col items-center justify-center space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+            <p className="text-xs text-slate-400 font-bold">Loading curated collections...</p>
           </div>
         ) : collections.length === 0 ? (
-          <div className="p-12 text-center text-neutral-400 text-xs">
+          <div className="p-16 text-center text-slate-400 text-xs">
             No collections found. Click "Add Collection" above to create one.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 font-semibold uppercase tracking-wider">
+              <thead className="bg-white/[0.03] border-b border-white/10 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="py-4 px-6">Image</th>
-                  <th className="py-4 px-4">Name</th>
-                  <th className="py-4 px-4">Slug</th>
-                  <th className="py-4 px-4">Featured</th>
+                  <th className="py-4 px-4">Collection Title</th>
+                  <th className="py-4 px-4">Slug URL</th>
+                  <th className="py-4 px-4">Homepage Spotlight</th>
                   <th className="py-4 px-4">Status</th>
                   <th className="py-4 px-4">Sort Order</th>
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 font-medium text-neutral-800">
+              <tbody className="divide-y divide-white/5 font-medium text-slate-300">
                 {collections.map((col) => (
-                  <tr key={col._id} className="hover:bg-neutral-50">
-                    <td className="py-3 px-6">
+                  <tr key={col._id} className="hover:bg-white/[0.02] transition-colors group">
+                    <td className="py-4 px-6">
                       <img
                         src={col.image || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=100&q=80'}
                         alt=""
-                        className="w-10 h-10 rounded-full object-cover border border-neutral-200"
+                        className="w-11 h-11 rounded-2xl object-cover border border-white/10"
                       />
                     </td>
-                    <td className="py-3 px-4 font-bold text-neutral-900">{col.name}</td>
-                    <td className="py-3 px-4 font-mono text-neutral-500">{col.slug}</td>
-                    <td className="py-3 px-4">
+                    <td className="py-4 px-4 font-bold text-white group-hover:text-cyan-300 transition-colors">
+                      {col.name}
+                    </td>
+                    <td className="py-4 px-4 font-mono text-cyan-300">/{col.slug}</td>
+                    <td className="py-4 px-4">
                       {col.featured ? (
-                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                          <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                        <span className="inline-flex items-center space-x-1 px-3 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                           <span>Featured</span>
                         </span>
                       ) : (
-                        <span className="text-neutral-400">—</span>
+                        <span className="text-slate-500">—</span>
                       )}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-4 px-4">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        className={`inline-block px-3 py-0.5 rounded-full text-[10px] font-black uppercase ${
                           col.status === 'active'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-neutral-100 text-neutral-600'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : 'bg-white/5 text-slate-400 border border-white/10'
                         }`}
                       >
                         {col.status || 'active'}
                       </span>
                     </td>
-                    <td className="py-3 px-4">{col.sortOrder ?? 0}</td>
-                    <td className="py-3 px-6 text-right space-x-2">
+                    <td className="py-4 px-4 font-mono text-slate-400">{col.sortOrder ?? 0}</td>
+                    <td className="py-4 px-6 text-right space-x-2">
                       <button
                         onClick={() => handleOpenModal(col)}
-                        className="p-1.5 rounded-lg border border-neutral-200 text-neutral-700 hover:border-black"
+                        className="p-2 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-colors"
                         title="Edit collection"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(col._id)}
-                        className="p-1.5 rounded-lg border border-neutral-200 text-neutral-700 hover:text-red-600 hover:border-red-600"
+                        className="p-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-colors"
                         title="Delete collection"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>
@@ -189,72 +192,75 @@ const AdminCollections = () => {
       {/* Collection Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div onClick={() => setIsModalOpen(false)} className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl space-y-4 z-10 text-xs max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center pb-2 border-b border-neutral-100">
-              <h3 className="text-sm font-bold text-neutral-900">
-                {editingCollection ? 'Edit Collection' : 'Create Collection'}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-neutral-400 hover:text-black">
+          <div onClick={() => setIsModalOpen(false)} className="fixed inset-0 bg-black/80 backdrop-blur-md" />
+          <div className="relative w-full max-w-md bg-[#0F172A] rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 z-10 text-xs max-h-[90vh] overflow-y-auto border border-white/10 custom-scrollbar">
+            <div className="flex justify-between items-center pb-3 border-b border-white/10">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-base font-extrabold text-white">
+                  {editingCollection ? 'Edit Collection' : 'Create Collection'}
+                </h3>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="p-1.5 text-slate-400 hover:text-white rounded-xl bg-white/5">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block font-bold uppercase text-neutral-700 mb-1">Name *</label>
+                <label className="block font-bold uppercase text-slate-300 mb-1.5">Collection Name *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Summer Essentials"
-                  className="input-pill"
+                  className="w-full px-4 py-3 rounded-2xl admin-input"
                 />
               </div>
 
               <div>
-                <label className="block font-bold uppercase text-neutral-700 mb-1">Image URL</label>
+                <label className="block font-bold uppercase text-slate-300 mb-1.5">Image URL</label>
                 <input
                   type="url"
                   value={formData.image}
                   onChange={(e) => setFormData({ ...formData, image: e.target.value })}
                   placeholder="https://images.unsplash.com/..."
-                  className="input-pill"
+                  className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
                 />
               </div>
 
               <div>
-                <label className="block font-bold uppercase text-neutral-700 mb-1">Description</label>
+                <label className="block font-bold uppercase text-slate-300 mb-1.5">Description</label>
                 <textarea
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Short description of this collection..."
-                  className="w-full px-4 py-2.5 rounded-2xl border border-neutral-200 text-xs focus:outline-none focus:border-black"
+                  className="w-full px-4 py-3 rounded-2xl admin-input leading-relaxed"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-bold uppercase text-neutral-700 mb-1">Sort Order</label>
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">Sort Order</label>
                   <input
                     type="number"
                     value={formData.sortOrder}
                     onChange={(e) => setFormData({ ...formData, sortOrder: Number(e.target.value) })}
-                    className="input-pill"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold uppercase text-neutral-700 mb-1">Status</label>
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">Status</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="input-pill"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-bold"
                   >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="active" className="bg-slate-900 text-white">Active</option>
+                    <option value="inactive" className="bg-slate-900 text-white">Inactive</option>
                   </select>
                 </div>
               </div>
@@ -265,22 +271,25 @@ const AdminCollections = () => {
                   id="col-featured"
                   checked={formData.featured}
                   onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                  className="w-4 h-4 text-black border-neutral-300 rounded focus:ring-0"
+                  className="rounded border-white/20 text-cyan-500 w-4 h-4 bg-slate-900"
                 />
-                <label htmlFor="col-featured" className="text-xs font-bold text-neutral-700 cursor-pointer">
-                  Feature on Homepage
+                <label htmlFor="col-featured" className="text-xs font-bold text-slate-300 cursor-pointer">
+                  Feature on Storefront Homepage
                 </label>
               </div>
 
-              <div className="pt-2 flex justify-end space-x-2">
+              <div className="pt-3 flex justify-end space-x-2.5">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="btn-pill-light py-2 px-5"
+                  className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 font-bold"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-pill-dark py-2 px-6">
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black shadow-lg shadow-cyan-500/20"
+                >
                   {editingCollection ? 'Update Collection' : 'Create Collection'}
                 </button>
               </div>

@@ -17,6 +17,7 @@ import {
   MapPin,
   PoundSterling,
   CreditCard,
+  Sparkles,
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -128,28 +129,28 @@ const AdminOrders = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'delivered':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
+        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
       case 'shipped':
       case 'out_for_delivery':
-        return 'bg-blue-50 text-blue-700 border-blue-200/60';
+        return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
       case 'processing':
       case 'confirmed':
-        return 'bg-purple-50 text-purple-700 border-purple-200/60';
+        return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
       case 'pending':
-        return 'bg-amber-50 text-amber-700 border-amber-200/60';
+        return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
       case 'cancelled':
       case 'returned':
-        return 'bg-red-50 text-red-600 border-red-200/60';
+        return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
       default:
-        return 'bg-neutral-100 text-neutral-800 border-neutral-200';
+        return 'bg-white/5 text-slate-300 border-white/10';
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-slate-100">
       {/* Toast */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 bg-neutral-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl border border-neutral-700 animate-slide-up">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 bg-slate-900 text-white text-xs font-bold px-5 py-3.5 rounded-2xl shadow-2xl border border-emerald-500/40 glow-emerald animate-slide-up">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -158,25 +159,25 @@ const AdminOrders = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-            Order Fulfillment Center
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            Order Fulfillment & Logistics
           </h2>
-          <p className="text-xs text-neutral-500 mt-0.5">
-            Process incoming orders, track shipping logistics, and manage returns & refunds.
+          <p className="text-xs text-slate-400 mt-0.5">
+            Process client orders, dispatch courier tracking numbers, and manage returns & refunds.
           </p>
         </div>
 
         <button
           onClick={fetchOrders}
-          className="btn-pill-light text-xs py-2 px-4 flex items-center space-x-1.5 self-start sm:self-auto font-bold"
+          className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold border border-white/10 flex items-center space-x-2 self-start sm:self-auto transition-all"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
           <span>Refresh Orders</span>
         </button>
       </div>
 
       {/* Status Filter Tabs Bar */}
-      <div className="bg-white p-2 rounded-2xl border border-neutral-200/80 shadow-subtle flex items-center gap-1.5 overflow-x-auto">
+      <div className="admin-card p-2 rounded-2xl flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
         {[
           { id: 'all', label: 'All Orders', count: statusCounts.all },
           { id: 'pending', label: 'Pending', count: statusCounts.pending },
@@ -191,17 +192,17 @@ const AdminOrders = () => {
           <button
             key={tab.id}
             onClick={() => setStatusFilter(tab.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors flex items-center space-x-1.5 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-2 ${
               statusFilter === tab.id
-                ? 'bg-neutral-950 text-white shadow-sm'
-                : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             <span>{tab.label}</span>
             {tab.count !== undefined && tab.count > 0 && (
               <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                  statusFilter === tab.id ? 'bg-white/20 text-white' : 'bg-neutral-200 text-neutral-800'
+                className={`px-2 py-0.2 rounded-full text-[10px] font-black ${
+                  statusFilter === tab.id ? 'bg-slate-950/30 text-slate-950' : 'bg-white/10 text-slate-300'
                 }`}
               >
                 {tab.count}
@@ -212,19 +213,19 @@ const AdminOrders = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-neutral-200/80 shadow-subtle flex items-center space-x-3">
-        <Search className="w-4 h-4 text-neutral-400 flex-shrink-0" />
+      <div className="admin-card p-4 rounded-3xl flex items-center space-x-3">
+        <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search by order #, customer name, email address, tracking #..."
-          className="w-full text-xs outline-none text-neutral-900 placeholder-neutral-400 font-medium"
+          className="w-full bg-transparent text-xs outline-none text-white placeholder-slate-500 font-medium"
         />
         {searchTerm && (
           <button
             onClick={() => setSearchTerm('')}
-            className="text-[11px] text-neutral-400 hover:text-black font-semibold"
+            className="text-[11px] text-slate-400 hover:text-white font-bold"
           >
             Clear
           </button>
@@ -232,41 +233,42 @@ const AdminOrders = () => {
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-3xl border border-neutral-200/80 overflow-hidden shadow-subtle">
+      <div className="admin-card rounded-3xl overflow-hidden shadow-2xl">
         {loading ? (
-          <div className="p-16 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+          <div className="p-20 flex flex-col items-center justify-center space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+            <p className="text-xs text-slate-400 font-bold">Querying order fulfillment...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-neutral-50/80 border-b border-neutral-200 text-neutral-500 font-semibold uppercase tracking-wider">
+              <thead className="bg-white/[0.03] border-b border-white/10 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="py-4 px-6">Order ID</th>
                   <th className="py-4 px-4">Date</th>
-                  <th className="py-4 px-4">Customer</th>
+                  <th className="py-4 px-4">Client</th>
                   <th className="py-4 px-4">Items</th>
-                  <th className="py-4 px-4">Total</th>
+                  <th className="py-4 px-4">Amount (£)</th>
                   <th className="py-4 px-4">Payment</th>
-                  <th className="py-4 px-4">Status</th>
+                  <th className="py-4 px-4">Fulfillment Status</th>
                   <th className="py-4 px-6 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 font-medium text-neutral-800">
+              <tbody className="divide-y divide-white/5 font-medium text-slate-300">
                 {filteredOrders.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="py-12 text-center text-neutral-400">
-                      No orders found under this status filter.
+                    <td colSpan="8" className="py-16 text-center text-slate-400 text-xs">
+                      No customer orders found matching this filter criteria.
                     </td>
                   </tr>
                 ) : (
                   filteredOrders.map((ord) => (
-                    <tr key={ord._id} className="hover:bg-neutral-50/60 transition-colors">
-                      <td className="py-3.5 px-6 font-mono font-bold text-neutral-900">
+                    <tr key={ord._id} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="py-4 px-6 font-mono font-bold text-cyan-300">
                         {ord.orderNumber}
                       </td>
 
-                      <td className="py-3.5 px-4 text-neutral-500">
+                      <td className="py-4 px-4 text-slate-400 font-mono">
                         {new Date(ord.createdAt).toLocaleDateString('en-GB', {
                           day: 'numeric',
                           month: 'short',
@@ -274,44 +276,44 @@ const AdminOrders = () => {
                         })}
                       </td>
 
-                      <td className="py-3.5 px-4">
-                        <p className="font-bold text-neutral-900">
+                      <td className="py-4 px-4">
+                        <p className="font-bold text-white">
                           {ord.shippingAddress?.firstName
                             ? `${ord.shippingAddress.firstName} ${ord.shippingAddress.lastName || ''}`
                             : ord.user?.name || 'Direct Buyer'}
                         </p>
-                        <p className="text-[10px] text-neutral-500">
+                        <p className="text-[10px] text-slate-400">
                           {ord.user?.email || ord.guestEmail || 'N/A'}
                         </p>
                       </td>
 
-                      <td className="py-3.5 px-4">
-                        <span className="font-semibold text-neutral-700">
+                      <td className="py-4 px-4">
+                        <span className="font-bold text-slate-300 px-2.5 py-1 rounded-xl bg-white/5 border border-white/10">
                           {ord.items?.length || 0} items
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-4 font-black text-neutral-900">
+                      <td className="py-4 px-4 font-black text-emerald-400 font-mono text-sm">
                         £{ord.total?.toFixed(2)}
                       </td>
 
-                      <td className="py-3.5 px-4">
+                      <td className="py-4 px-4">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
                             ord.paymentStatus === 'paid'
-                              ? 'bg-emerald-50 text-emerald-700'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                               : ord.paymentStatus === 'refunded'
-                              ? 'bg-purple-50 text-purple-700'
-                              : 'bg-amber-50 text-amber-700'
+                              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                           }`}
                         >
                           {ord.paymentStatus}
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-4">
+                      <td className="py-4 px-4">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${getStatusBadge(
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getStatusBadge(
                             ord.orderStatus
                           )}`}
                         >
@@ -319,10 +321,10 @@ const AdminOrders = () => {
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-6 text-right">
+                      <td className="py-4 px-6 text-right">
                         <button
                           onClick={() => handleOpenOrder(ord)}
-                          className="btn-pill-dark text-xs py-1.5 px-3.5 font-bold inline-flex items-center space-x-1"
+                          className="px-4 py-2 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs inline-flex items-center space-x-1.5 shadow-md shadow-cyan-500/20 active:scale-95 transition-all"
                         >
                           <Eye className="w-3.5 h-3.5" />
                           <span>Details</span>
@@ -342,26 +344,26 @@ const AdminOrders = () => {
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 animate-fade-in">
           <div
             onClick={() => setSelectedOrder(null)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
           />
 
-          <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 z-10 max-h-[90vh] overflow-y-auto border border-neutral-200">
+          <div className="relative w-full max-w-3xl bg-[#0F172A] rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 z-10 max-h-[90vh] overflow-y-auto border border-white/10 custom-scrollbar">
             {/* Modal Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+            <div className="flex items-start justify-between pb-4 border-b border-white/10">
               <div>
                 <div className="flex items-center space-x-3">
-                  <h3 className="text-lg font-black text-neutral-900 font-mono">
+                  <h3 className="text-lg font-black text-white font-mono">
                     {selectedOrder.orderNumber}
                   </h3>
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${getStatusBadge(
+                    className={`inline-flex items-center px-3 py-0.5 rounded-full text-[10px] font-black uppercase border ${getStatusBadge(
                       selectedOrder.orderStatus
                     )}`}
                   >
                     {selectedOrder.orderStatus?.replace('_', ' ')}
                   </span>
                 </div>
-                <p className="text-xs text-neutral-500 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   Placed on{' '}
                   {new Date(selectedOrder.createdAt).toLocaleDateString('en-GB', {
                     day: 'numeric',
@@ -374,7 +376,7 @@ const AdminOrders = () => {
               </div>
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="p-1 text-neutral-400 hover:text-black rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-white rounded-xl bg-white/5"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -382,9 +384,9 @@ const AdminOrders = () => {
 
             {/* Clean Order Timeline (6 Stages) */}
             {selectedOrder.orderStatus !== 'cancelled' && selectedOrder.orderStatus !== 'returned' ? (
-              <div className="bg-neutral-50 p-4 sm:p-6 rounded-2xl border border-neutral-200/60 space-y-2">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400">
-                  Fulfillment Timeline Progression
+              <div className="bg-slate-900/80 p-5 sm:p-6 rounded-2xl border border-white/10 space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Fulfillment Progression Timeline
                 </p>
                 <div className="grid grid-cols-6 gap-1 sm:gap-2 text-center pt-2">
                   {ORDER_STATUS_ORDER.map((stage, idx) => {
@@ -395,17 +397,17 @@ const AdminOrders = () => {
                     return (
                       <div key={stage} className="flex flex-col items-center">
                         <div
-                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all ${
                             isPassed
-                              ? 'bg-neutral-950 text-white'
-                              : 'bg-neutral-200 text-neutral-400'
-                          } ${isCurrent ? 'ring-4 ring-neutral-200' : ''}`}
+                              ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
+                              : 'bg-white/10 text-slate-500'
+                          } ${isCurrent ? 'ring-4 ring-cyan-500/20' : ''}`}
                         >
                           {idx + 1}
                         </div>
                         <span
-                          className={`text-[9px] sm:text-[10px] font-bold mt-1.5 capitalize ${
-                            isPassed ? 'text-neutral-900' : 'text-neutral-400'
+                          className={`text-[9px] sm:text-[10px] font-bold mt-2 capitalize ${
+                            isPassed ? 'text-white' : 'text-slate-500'
                           }`}
                         >
                           {stage.replace('_', ' ')}
@@ -416,24 +418,23 @@ const AdminOrders = () => {
                 </div>
               </div>
             ) : (
-              <div className="bg-red-50 p-4 rounded-2xl border border-red-200 flex items-center space-x-3 text-red-700 text-xs font-bold">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <div className="bg-rose-500/10 p-4 rounded-2xl border border-rose-500/30 flex items-center space-x-3 text-rose-300 text-xs font-bold">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400" />
                 <span>
-                  This order is marked as{' '}
-                  <strong className="uppercase">{selectedOrder.orderStatus}</strong>. Reserved inventory has been automatically released back to stock.
+                  This order is marked as <strong className="uppercase">{selectedOrder.orderStatus}</strong>. Reserved inventory units have been automatically released.
                 </span>
               </div>
             )}
 
             {/* Quick Status Update Selector */}
-            <div className="p-4 bg-white rounded-2xl border border-neutral-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <div className="flex items-center space-x-2">
-                <label className="text-xs font-bold uppercase text-neutral-700">Change Status:</label>
+            <div className="p-4 bg-slate-900/60 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5">
+              <div className="flex items-center space-x-2.5">
+                <label className="text-xs font-bold uppercase text-slate-300">Change Status:</label>
                 <select
                   value={selectedOrder.orderStatus}
                   onChange={(e) => handleUpdateStatus(e.target.value)}
                   disabled={updatingStatus}
-                  className="px-3 py-1.5 rounded-xl border border-neutral-200 bg-neutral-50 font-bold text-xs text-neutral-900 focus:outline-none focus:border-black uppercase"
+                  className="px-3.5 py-2 rounded-xl bg-slate-900 border border-white/10 font-bold text-xs text-white focus:border-cyan-400 uppercase"
                 >
                   <option value="pending">PENDING</option>
                   <option value="confirmed">CONFIRMED</option>
@@ -450,15 +451,15 @@ const AdminOrders = () => {
               <div className="flex items-center space-x-2">
                 <input
                   type="text"
-                  placeholder="Royal Mail Tracking #"
+                  placeholder="Royal Mail / DPD Tracking #"
                   value={trackingNumberInput}
                   onChange={(e) => setTrackingNumberInput(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl border border-neutral-200 text-xs font-mono w-44 outline-none focus:border-black"
+                  className="px-3.5 py-2 rounded-xl admin-input text-xs font-mono w-48"
                 />
                 <button
                   onClick={() => handleUpdateStatus(selectedOrder.orderStatus)}
                   disabled={updatingStatus}
-                  className="btn-pill-dark text-xs py-1.5 px-3 font-bold"
+                  className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs shadow-md shadow-cyan-500/20"
                 >
                   {updatingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
                 </button>
@@ -467,35 +468,35 @@ const AdminOrders = () => {
 
             {/* Customer & Shipping Addresses */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-200/60 space-y-2">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 flex items-center space-x-1">
-                  <User className="w-3.5 h-3.5" />
-                  <span>Customer Details</span>
+              <div className="p-4 bg-slate-900/60 rounded-2xl border border-white/10 space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center space-x-1.5">
+                  <User className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Client Contact</span>
                 </p>
-                <p className="font-bold text-neutral-900">
+                <p className="font-bold text-white text-sm">
                   {selectedOrder.shippingAddress?.firstName}{' '}
                   {selectedOrder.shippingAddress?.lastName}
                 </p>
-                <p className="text-neutral-600">
+                <p className="text-slate-300 font-mono">
                   {selectedOrder.user?.email || selectedOrder.guestEmail}
                 </p>
-                <p className="text-neutral-600 font-mono">
-                  {selectedOrder.shippingAddress?.phone || 'No phone provided'}
+                <p className="text-slate-400 font-mono">
+                  {selectedOrder.shippingAddress?.phone || 'No phone supplied'}
                 </p>
               </div>
 
-              <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-200/60 space-y-2">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 flex items-center space-x-1">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>Shipping Address</span>
+              <div className="p-4 bg-slate-900/60 rounded-2xl border border-white/10 space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center space-x-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Dispatch Address</span>
                 </p>
-                <p className="font-semibold text-neutral-800">
+                <p className="font-semibold text-slate-200">
                   {selectedOrder.shippingAddress?.address}
                 </p>
-                <p className="text-neutral-600">
+                <p className="text-slate-300">
                   {selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.postalCode}
                 </p>
-                <p className="text-neutral-600">
+                <p className="text-slate-400">
                   {selectedOrder.shippingAddress?.country || 'United Kingdom'}
                 </p>
               </div>
@@ -503,31 +504,31 @@ const AdminOrders = () => {
 
             {/* Ordered Items List */}
             <div className="space-y-3">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-neutral-900">
-                Purchased Line Items ({selectedOrder.items?.length || 0})
+              <h4 className="text-xs font-black uppercase tracking-widest text-slate-300">
+                Purchased Items ({selectedOrder.items?.length || 0})
               </h4>
-              <div className="divide-y divide-neutral-100 border-y border-neutral-100">
+              <div className="divide-y divide-white/5 border-y border-white/10">
                 {selectedOrder.items?.map((item, idx) => (
                   <div key={idx} className="py-3 flex items-center justify-between space-x-3 text-xs">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3.5">
                       <img
                         src={item.image}
                         alt=""
-                        className="w-11 h-11 object-cover rounded-xl bg-neutral-100 flex-shrink-0"
+                        className="w-12 h-12 object-cover rounded-2xl bg-slate-900 border border-white/10 flex-shrink-0"
                       />
                       <div>
-                        <p className="font-bold text-neutral-900">{item.name}</p>
+                        <p className="font-bold text-white">{item.name}</p>
                         {item.variant && (
-                          <p className="text-[10px] text-neutral-500">Variant: {item.variant}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">Option: {item.variant}</p>
                         )}
-                        <p className="text-[11px] text-neutral-500">Qty: {item.quantity}</p>
+                        <p className="text-[11px] text-slate-400">Quantity: {item.quantity}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-black text-neutral-900">
+                      <p className="font-black text-emerald-400 font-mono text-sm">
                         £{(item.price * item.quantity).toFixed(2)}
                       </p>
-                      <p className="text-[10px] text-neutral-400">£{item.price?.toFixed(2)} each</p>
+                      <p className="text-[10px] text-slate-400 font-mono">£{item.price?.toFixed(2)} each</p>
                     </div>
                   </div>
                 ))}
@@ -535,38 +536,38 @@ const AdminOrders = () => {
             </div>
 
             {/* Financial Summary */}
-            <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-200/60 space-y-1.5 text-xs">
-              <div className="flex justify-between text-neutral-500">
+            <div className="p-4 bg-slate-900/60 rounded-2xl border border-white/10 space-y-1.5 text-xs font-medium">
+              <div className="flex justify-between text-slate-400">
                 <span>Subtotal</span>
-                <span className="font-semibold text-neutral-900">
+                <span className="font-bold text-white font-mono">
                   £{selectedOrder.subtotal?.toFixed(2)}
                 </span>
               </div>
               {selectedOrder.discount > 0 && (
-                <div className="flex justify-between text-emerald-600 font-semibold">
-                  <span>Discount Applied ({selectedOrder.coupon || 'PROMO'})</span>
-                  <span>-£{selectedOrder.discount?.toFixed(2)}</span>
+                <div className="flex justify-between text-emerald-400 font-bold">
+                  <span>Coupon Discount ({selectedOrder.coupon || 'PROMO'})</span>
+                  <span className="font-mono">-£{selectedOrder.discount?.toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-neutral-500">
-                <span>Standard Delivery</span>
-                <span className="font-semibold text-neutral-900">
+              <div className="flex justify-between text-slate-400">
+                <span>Delivery</span>
+                <span className="font-bold text-white font-mono">
                   {selectedOrder.shipping === 0 ? 'FREE' : `£${selectedOrder.shipping?.toFixed(2)}`}
                 </span>
               </div>
-              <div className="flex justify-between text-sm font-black text-neutral-900 pt-2 border-t border-neutral-200/60">
-                <span>Total Amount</span>
-                <span>£{selectedOrder.total?.toFixed(2)}</span>
+              <div className="flex justify-between text-base font-black text-white pt-2 border-t border-white/10">
+                <span>Total Charged</span>
+                <span className="text-emerald-400 font-mono">£{selectedOrder.total?.toFixed(2)}</span>
               </div>
             </div>
 
-            {/* Dangerous Actions & Close */}
-            <div className="pt-2 border-t border-neutral-100 flex flex-wrap items-center justify-between gap-3">
+            {/* Actions & Close */}
+            <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center space-x-2">
                 {selectedOrder.orderStatus !== 'cancelled' && (
                   <button
                     onClick={handleCancelOrder}
-                    className="btn-pill py-2 px-4 text-xs font-bold border border-red-200 text-red-600 hover:bg-red-50 flex items-center space-x-1"
+                    className="px-4 py-2 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 text-xs font-bold flex items-center space-x-1.5"
                   >
                     <Ban className="w-3.5 h-3.5" />
                     <span>Cancel Order</span>
@@ -576,17 +577,17 @@ const AdminOrders = () => {
                 {selectedOrder.paymentStatus !== 'refunded' && (
                   <button
                     onClick={handleProcessRefund}
-                    className="btn-pill py-2 px-4 text-xs font-bold border border-purple-200 text-purple-700 hover:bg-purple-50 flex items-center space-x-1"
+                    className="px-4 py-2 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 hover:bg-purple-500/20 text-xs font-bold flex items-center space-x-1.5"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Process Return & Refund</span>
+                    <span>Process Refund</span>
                   </button>
                 )}
               </div>
 
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="btn-pill-dark text-xs py-2.5 px-6 font-bold"
+                className="px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs"
               >
                 Close Window
               </button>

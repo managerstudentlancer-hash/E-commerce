@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Image,
+  Image as ImageIcon,
   Plus,
   Trash2,
   Edit2,
@@ -9,6 +9,8 @@ import {
   Loader2,
   ExternalLink,
   CheckCircle2,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -104,10 +106,10 @@ const AdminBanners = () => {
     try {
       if (editingBanner) {
         await api.banners.update(editingBanner._id, formData);
-        showToast('Banner updated successfully!');
+        showToast('Banner updated successfully on live storefront!');
       } else {
         await api.banners.create(formData);
-        showToast('New promotional banner created!');
+        showToast('New promotional banner created and published!');
       }
 
       setIsModalOpen(false);
@@ -125,7 +127,7 @@ const AdminBanners = () => {
       setBanners((prev) =>
         prev.map((b) => (b._id === banner._id ? { ...b, active: !b.active } : b))
       );
-      showToast(`Banner visibility updated`);
+      showToast(`Banner visibility updated on storefront`);
     } catch (err) {
       showToast(err.message || 'Failed to toggle banner');
     }
@@ -147,10 +149,10 @@ const AdminBanners = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-slate-100">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 bg-neutral-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl border border-neutral-700 animate-slide-up">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 bg-slate-900 text-white text-xs font-bold px-5 py-3.5 rounded-2xl shadow-2xl border border-emerald-500/40 glow-emerald animate-slide-up">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -159,86 +161,87 @@ const AdminBanners = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
             Marketing &amp; Hero Banners
           </h2>
-          <p className="text-xs text-neutral-500 mt-0.5">
-            Configure homepage hero showcases, seasonal campaign banners, and call-to-action buttons.
+          <p className="text-xs text-slate-400 mt-0.5">
+            Configure homepage hero carousels, seasonal promotional slots, and direct CTA actions.
           </p>
         </div>
 
         <button
           onClick={() => handleOpenModal()}
-          className="btn-pill-dark text-xs py-2.5 px-5 flex items-center space-x-1.5 self-start sm:self-auto font-bold shadow-md"
+          className="px-5 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-slate-950 font-black text-xs flex items-center space-x-2 self-start sm:self-auto shadow-lg shadow-cyan-500/20 active:scale-95 transition-all"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 text-slate-950" />
           <span>Add New Banner</span>
         </button>
       </div>
 
       {/* Banners Grid */}
       {loading ? (
-        <div className="p-16 flex items-center justify-center bg-white rounded-3xl border border-neutral-200">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+        <div className="p-20 flex flex-col items-center justify-center space-y-3 admin-card rounded-3xl">
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+          <p className="text-xs text-slate-400 font-bold">Loading promotional banners...</p>
         </div>
       ) : banners.length === 0 ? (
-        <div className="p-16 text-center text-xs text-neutral-400 bg-white rounded-3xl border border-neutral-200">
-          No promotional banners configured. Create your first banner above.
+        <div className="p-16 text-center text-xs text-slate-400 admin-card rounded-3xl">
+          No promotional banners configured yet. Create your first banner above.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {banners.map((banner) => (
             <div
               key={banner._id}
-              className="bg-white rounded-3xl border border-neutral-200/80 overflow-hidden shadow-subtle flex flex-col justify-between group"
+              className="admin-card rounded-3xl overflow-hidden flex flex-col justify-between group relative"
             >
               {/* Image Preview Banner */}
-              <div className="relative h-48 sm:h-56 bg-neutral-900 overflow-hidden">
+              <div className="relative h-52 sm:h-60 bg-slate-950 overflow-hidden">
                 <img
                   src={banner.image}
                   alt=""
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-75"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
                 {/* Badge Position */}
                 <div className="absolute top-4 left-4 flex items-center space-x-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-white text-black shadow">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-white text-slate-950 shadow-md">
                     {banner.position}
                   </span>
                   {banner.highlight && (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-[#C4301C] text-white">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-md">
                       {banner.highlight}
                     </span>
                   )}
                 </div>
 
                 {/* Overlay Text */}
-                <div className="absolute bottom-4 left-4 right-4 text-white">
-                  <p className="text-base font-black line-clamp-1">{banner.title}</p>
-                  <p className="text-xs text-neutral-300 line-clamp-1 mt-0.5">
-                    {banner.subtitle || 'Promotional Campaign'}
+                <div className="absolute bottom-4 left-5 right-5 text-white">
+                  <p className="text-lg font-black line-clamp-1">{banner.title}</p>
+                  <p className="text-xs text-slate-300 line-clamp-1 mt-1 font-medium">
+                    {banner.subtitle || 'Seasonal Promotional Campaign'}
                   </p>
                 </div>
               </div>
 
               {/* Banner Details & Action Footer */}
-              <div className="p-5 flex items-center justify-between gap-4 border-t border-neutral-100">
+              <div className="p-5 flex items-center justify-between gap-4 bg-white/[0.02] border-t border-white/10">
                 <div className="text-xs">
-                  <span className="font-semibold text-neutral-800 flex items-center space-x-1">
+                  <span className="font-semibold text-slate-300 flex items-center space-x-1.5">
                     <span>CTA:</span>
-                    <strong className="text-neutral-900 font-bold">"{banner.buttonText}"</strong>
-                    <span className="text-neutral-400 font-mono">({banner.buttonLink})</span>
+                    <strong className="text-white font-bold font-mono">"{banner.buttonText}"</strong>
+                    <span className="text-cyan-400 font-mono text-[11px]">({banner.buttonLink})</span>
                   </span>
                 </div>
 
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => handleToggleActive(banner)}
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase transition-colors ${
+                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase transition-all ${
                       banner.active
-                        ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                        : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : 'bg-white/5 text-slate-400 border border-white/10'
                     }`}
                   >
                     {banner.active ? 'Active' : 'Disabled'}
@@ -246,18 +249,18 @@ const AdminBanners = () => {
 
                   <button
                     onClick={() => handleOpenModal(banner)}
-                    className="p-1.5 rounded-xl border border-neutral-200 text-neutral-700 hover:border-black hover:text-black transition-colors"
+                    className="p-2 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-colors"
                     title="Edit Banner"
                   >
-                    <Edit2 className="w-3.5 h-3.5" />
+                    <Edit2 className="w-4 h-4" />
                   </button>
 
                   <button
                     onClick={() => setDeleteConfirmId(banner._id)}
-                    className="p-1.5 rounded-xl border border-neutral-200 text-neutral-700 hover:border-red-600 hover:text-red-600 transition-colors"
+                    className="p-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-colors"
                     title="Delete Banner"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -271,31 +274,34 @@ const AdminBanners = () => {
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 animate-fade-in">
           <div
             onClick={() => setIsModalOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
           />
 
-          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 z-10 max-h-[90vh] overflow-y-auto border border-neutral-200">
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
-              <h3 className="text-base font-extrabold text-neutral-900">
-                {editingBanner ? 'Edit Banner' : 'Create Promotional Banner'}
-              </h3>
+          <div className="relative w-full max-w-lg bg-[#0F172A] rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 z-10 max-h-[90vh] overflow-y-auto border border-white/10 custom-scrollbar">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-base font-extrabold text-white">
+                  {editingBanner ? 'Edit Banner' : 'Create Promotional Banner'}
+                </h3>
+              </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-neutral-400 hover:text-black rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-white rounded-xl bg-white/5"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3.5 rounded-xl bg-red-50 text-[#C4301C] text-xs font-bold border border-red-200">
+              <div className="p-4 rounded-2xl bg-rose-500/10 text-rose-400 text-xs font-bold border border-rose-500/30">
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleSaveBanner} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold uppercase text-neutral-700 mb-1">
+                <label className="block font-bold uppercase text-slate-300 mb-1.5">
                   Banner Headline *
                 </label>
                 <input
@@ -304,55 +310,55 @@ const AdminBanners = () => {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g. THE AUTUMN ELEGANCE COLLECTION"
-                  className="input-pill"
+                  className="w-full px-4 py-3 rounded-2xl admin-input"
                 />
               </div>
 
               <div>
-                <label className="block font-bold uppercase text-neutral-700 mb-1">
-                  Subtitle / Sub-headline
+                <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                  Subtitle / Synopsis
                 </label>
                 <input
                   type="text"
                   value={formData.subtitle}
                   onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                  placeholder="e.g. Crafted in London with sustainable fine fabrics"
-                  className="input-pill"
+                  placeholder="e.g. Crafted in London with sustainable Italian fine fabrics"
+                  className="w-full px-4 py-3 rounded-2xl admin-input"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-bold uppercase text-neutral-700 mb-1">
-                    Highlight Tag
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                    Highlight Badge Tag
                   </label>
                   <input
                     type="text"
                     value={formData.highlight}
                     onChange={(e) => setFormData({ ...formData, highlight: e.target.value })}
                     placeholder="e.g. NEW SEASON"
-                    className="input-pill"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold uppercase text-neutral-700 mb-1">
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">
                     Display Position
                   </label>
                   <select
                     value={formData.position}
                     onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                    className="w-full px-4 py-3 rounded-full border border-neutral-200 bg-white font-medium focus:outline-none focus:border-black"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-bold"
                   >
-                    <option value="hero">Homepage Main Hero</option>
-                    <option value="promotional">Mid-page Promotional</option>
-                    <option value="split">Split Double Feature</option>
+                    <option value="hero" className="bg-slate-900 text-white">Homepage Main Hero</option>
+                    <option value="promotional" className="bg-slate-900 text-white">Mid-page Promotional</option>
+                    <option value="split" className="bg-slate-900 text-white">Split Double Feature</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold uppercase text-neutral-700 mb-1">
+                <label className="block font-bold uppercase text-slate-300 mb-1.5">
                   Banner Image URL *
                 </label>
                 <input
@@ -361,13 +367,13 @@ const AdminBanners = () => {
                   value={formData.image}
                   onChange={(e) => setFormData({ ...formData, image: e.target.value })}
                   placeholder="https://images.unsplash.com/photo-..."
-                  className="input-pill"
+                  className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-bold uppercase text-neutral-700 mb-1">
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">
                     CTA Button Text
                   </label>
                   <input
@@ -375,33 +381,33 @@ const AdminBanners = () => {
                     value={formData.buttonText}
                     onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
                     placeholder="Explore Collection"
-                    className="input-pill"
+                    className="w-full px-4 py-3 rounded-2xl admin-input"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold uppercase text-neutral-700 mb-1">
-                    CTA Target Link
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                    CTA Target URL
                   </label>
                   <input
                     type="text"
                     value={formData.buttonLink}
                     onChange={(e) => setFormData({ ...formData, buttonLink: e.target.value })}
                     placeholder="/shop or /category/women"
-                    className="input-pill"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
                   />
                 </div>
               </div>
 
               <div className="pt-2">
-                <label className="flex items-center space-x-2 font-semibold text-neutral-800 cursor-pointer">
+                <label className="flex items-center space-x-2 font-bold text-slate-300 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formData.active}
                     onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                    className="rounded border-neutral-300 text-black w-4 h-4"
+                    className="rounded border-white/20 text-cyan-500 w-4 h-4 bg-slate-900"
                   />
-                  <span>Active &amp; published to live storefront</span>
+                  <span>Active &amp; published immediately to live storefront</span>
                 </label>
               </div>
 
@@ -409,19 +415,19 @@ const AdminBanners = () => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="btn-pill-light py-2.5 px-6 font-bold"
+                  className="px-6 py-3 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="btn-pill-dark py-2.5 px-7 flex items-center space-x-2 font-bold shadow-md"
+                  className="px-8 py-3 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black flex items-center space-x-2 shadow-lg shadow-cyan-500/20"
                 >
                   {isSaving ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
                   ) : (
-                    <Check className="w-3.5 h-3.5" />
+                    <Check className="w-4 h-4 text-slate-950" />
                   )}
                   <span>{isSaving ? 'Saving...' : 'Save Banner'}</span>
                 </button>
@@ -436,26 +442,26 @@ const AdminBanners = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
           <div
             onClick={() => setDeleteConfirmId(null)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
           />
-          <div className="relative w-full max-w-sm bg-white p-6 rounded-3xl shadow-2xl space-y-4 z-10 border border-neutral-200">
-            <h3 className="text-base font-extrabold text-neutral-900">Delete Banner</h3>
-            <p className="text-xs text-neutral-500">
-              Are you sure you want to delete this homepage banner?
+          <div className="relative w-full max-w-sm bg-[#0F172A] p-6 rounded-3xl shadow-2xl space-y-4 z-10 border border-white/10">
+            <h3 className="text-base font-extrabold text-white">Delete Banner</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Are you sure you want to remove this promotional banner from the homepage?
             </p>
             <div className="pt-2 flex justify-end space-x-2.5">
               <button
                 onClick={() => setDeleteConfirmId(null)}
-                className="btn-pill-light py-2 px-4 text-xs font-bold"
+                className="px-4 py-2 rounded-full bg-white/5 text-slate-300 font-bold text-xs hover:bg-white/10"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteBanner}
                 disabled={isDeleting}
-                className="btn-pill-dark bg-red-600 hover:bg-red-700 text-white py-2 px-4 text-xs font-bold flex items-center space-x-1"
+                className="px-5 py-2 rounded-full bg-rose-500 hover:bg-rose-600 text-white font-black text-xs flex items-center space-x-1 shadow-lg shadow-rose-500/20"
               >
-                {isDeleting && <Loader2 className="w-3 h-3 animate-spin" />}
+                {isDeleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
               </button>
             </div>

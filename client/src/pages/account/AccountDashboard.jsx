@@ -62,6 +62,34 @@ const AccountDashboard = () => {
           </div>
         </div>
 
+        {/* Highlighted Admin Control Center Banner for Admin Accounts */}
+        {isAdmin && (
+          <div className="mt-6 p-5 rounded-3xl bg-gradient-to-r from-neutral-900 to-neutral-800 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg border border-neutral-700 animate-fade-in">
+            <div className="flex items-center space-x-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-[#C4301C] flex items-center justify-center text-white flex-shrink-0 shadow-md">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-extrabold text-white flex items-center space-x-2">
+                  <span>Store Administrator Privileges Active</span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] uppercase font-black">
+                    Superadmin
+                  </span>
+                </p>
+                <p className="text-xs text-neutral-300 mt-0.5">
+                  Manage products, inventory, orders, customer accounts, coupons, and system settings.
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/admin"
+              className="btn-pill-light text-xs py-2.5 px-6 font-bold flex-shrink-0 text-center"
+            >
+              Open Admin Control Center →
+            </Link>
+          </div>
+        )}
+
         {/* Dashboard Quick Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
           <Link

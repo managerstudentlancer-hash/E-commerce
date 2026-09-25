@@ -45,7 +45,9 @@ const promoCards = [
   },
 ];
 
-const PromotionalBanners = () => {
+const PromotionalBanners = ({ banners: customBanners }) => {
+  const cards = customBanners && customBanners.length > 0 ? customBanners : promoCards;
+
   return (
     <section className="py-10 sm:py-14 bg-white border-b border-neutral-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -61,9 +63,9 @@ const PromotionalBanners = () => {
 
         {/* 4-Card Bento Grid (Matches Shaporoo grid-banner) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {promoCards.map((card) => (
+          {cards.map((card, idx) => (
             <div
-              key={card.id}
+              key={card._id || card.id || idx}
               className="group relative rounded-3xl overflow-hidden min-h-[380px] sm:min-h-[420px] flex flex-col justify-between p-6 shadow-sm border border-neutral-100 transition-all duration-300 hover:shadow-[0_16px_36px_rgba(0,0,0,0.08)]"
             >
               {/* Background Image with 1:1 Shaporoo 0.85s material zoom */}
@@ -80,9 +82,9 @@ const PromotionalBanners = () => {
               {/* Top Tag */}
               <div className="relative z-10">
                 <span
-                  className={`inline-block px-3 py-1 rounded-full text-white text-[10px] font-extrabold uppercase tracking-widest shadow-md ${card.tagBg}`}
+                  className={`inline-block px-3 py-1 rounded-full text-white text-[10px] font-extrabold uppercase tracking-widest shadow-md ${card.tagBg || 'bg-[#C4301C]'}`}
                 >
-                  {card.tag}
+                  {card.tag || card.highlight || 'TRENDING'}
                 </span>
               </div>
 
@@ -96,10 +98,10 @@ const PromotionalBanners = () => {
                 </p>
                 <div className="pt-2">
                   <Link
-                    to={card.link}
+                    to={card.buttonLink || card.link || '/shop'}
                     className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-white/95 text-black hover:bg-white text-xs font-bold uppercase tracking-wider shadow-md hover:scale-105 active:scale-95 transition-all"
                   >
-                    <span>{card.btnText}</span>
+                    <span>{card.buttonText || card.btnText || 'Explore'}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>

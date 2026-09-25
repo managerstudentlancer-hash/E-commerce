@@ -241,10 +241,112 @@ const resetPassword = async (req, res) => {
   res.json({ success: true, message: 'Password has been successfully reset. Please log in.' });
 };
 
+const crypto = require('crypto');
+const { verifyFirebaseToken } = require('../config/firebase');
+
+// @desc Firebase Phone Auth - OTP is handled entirely by Firebase on the client side
+// @desc This endpoint is kept for backward compatibility but is now a no-op
+// @route POST /api/auth/send-otp
+const sendOtp = async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone || typeof phone !== 'string' || phone.trim().replace(/[^0-9]/g, '').length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid mobile phone number with country code.',
+      });
+    }
+
+    // Firebase handles OTP sending on the client side via signInWithPhoneNumber()
+    // No server-side SMS sending needed - Firebase sends SMS automatically (FREE!)
+    res.json({
+      success: true,
+      message: `Firebase Phone Authentication active. OTP will be sent via Google's servers.`,
+      phone: phone.trim(),
+      provider: 'Google Firebase (Free)',
+      realSmsSent: true,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Verify Firebase Phone Auth Token and Login / Register Customer
+// @route POST /api/auth/verify-firebase-phone
+const verifyOtp = async (req, res, next) => {
+  try {
+    const { firebaseIdToken, name } = req.body;
+
+    if (!firebaseIdToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Firebase verification token is required.',
+      });
+    }
+
+    // Verify the Firebase ID token using Firebase Admin SDK
+    const firebaseUser = await verifyFirebaseToken(firebaseIdToken);
+    
+    if (!firebaseUser || !firebaseUser.phoneNumber) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone verification failed. Please try again.',
+      });
+    }
+
+    const verifiedPhone = firebaseUser.phoneNumber; // e.g., "+919876543210"
+
+    // Look for existing user with this phone or phone-based placeholder email
+    const digitsOnly = verifiedPhone.replace(/[^0-9]/g, '');
+    const placeholderEmail = `user_${digitsOnly}@vexivo.user`;
+    let user = await User.findOne({
+      $or: [{ phone: verifiedPhone }, { email: placeholderEmail }],
+    });
+
+    if (!user) {
+      // Auto-create new customer account
+      const defaultName = name && name.trim() ? name.trim() : `Member ${verifiedPhone.slice(-4)}`;
+      user = await User.create({
+        name: defaultName,
+        phone: verifiedPhone,
+        email: placeholderEmail,
+        passwordHash: `firebase_auth_${Date.now()}_${crypto.randomBytes(16).toString('hex')}`,
+        role: 'customer',
+        isActive: true,
+      });
+    } else if (name && name.trim() && user.name.startsWith('Member ')) {
+      user.name = name.trim();
+      await user.save();
+    }
+
+    // Generate JWT Auth Token for our app
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      message: 'Successfully verified and logged in via Firebase Phone Auth',
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || verifiedPhone,
+        role: user.role,
+        addresses: user.addresses || [],
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
   adminLogin,
+  sendOtp,
+  verifyOtp,
   logout,
   getMe,
   updateProfile,
@@ -252,3 +354,4 @@ module.exports = {
   forgotPassword,
   resetPassword,
 };
+
