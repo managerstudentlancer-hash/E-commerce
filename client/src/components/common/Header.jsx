@@ -12,6 +12,13 @@ import {
   Youtube,
   ShieldCheck,
   Package,
+  Heart,
+  Store,
+  Gift,
+  CreditCard,
+  Bell,
+  Headphones,
+  LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -27,8 +34,12 @@ const searchCategories = [
   'Jewellery',
   'Bags',
   'Hats',
-  'Watches',
-  'Audio & Tech',
+  'Vision Care',
+  'Pets Care',
+  'Toys',
+  'Health & Fitness',
+  'Electronics',
+  'Home & Living',
 ];
 
 const Header = () => {
@@ -38,7 +49,7 @@ const Header = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  const { user, isAuthenticated, isAdmin } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { itemCount, openCart } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
@@ -74,15 +85,15 @@ const Header = () => {
       {/* 0. Infinite Marquee Announcement Ticker (FoxTheme Hyper Style) */}
       <div className="w-full bg-black text-white text-[11px] font-semibold tracking-wider uppercase py-1.5 overflow-hidden border-b border-neutral-800 select-none">
         <div className="animate-marquee space-x-10 whitespace-nowrap">
-          <span>🎃 HALLOWEEN SALE — UP TO 50% OFF TRENDING COLLECTIONS</span>
-          <span>⚡ COMPLIMENTARY UK TRACKED NEXT-DAY DELIVERY OVER £50</span>
-          <span>⭐ 18,500+ VERIFIED 5-STAR REVIEWS ACROSS THE UK</span>
+          <span>🎃 FESTIVE SALE — UP TO 50% OFF TRENDING COLLECTIONS</span>
+          <span>⚡ COMPLIMENTARY PAN-INDIA EXPRESS DELIVERY OVER ₹499</span>
+          <span>⭐ 18,500+ VERIFIED 5-STAR REVIEWS ACROSS INDIA</span>
           <span>🏷️ USE CODE: <strong className="text-amber-300">AUTUMN30</strong> FOR 30% OFF</span>
           <span>🔄 30-DAY HASSLE-FREE RETURNS & LIFETIME CRAFT WARRANTY</span>
           {/* Duplicate loop for continuous scrolling */}
-          <span>🎃 HALLOWEEN SALE — UP TO 50% OFF TRENDING COLLECTIONS</span>
-          <span>⚡ COMPLIMENTARY UK TRACKED NEXT-DAY DELIVERY OVER £50</span>
-          <span>⭐ 18,500+ VERIFIED 5-STAR REVIEWS ACROSS THE UK</span>
+          <span>🎃 FESTIVE SALE — UP TO 50% OFF TRENDING COLLECTIONS</span>
+          <span>⚡ COMPLIMENTARY PAN-INDIA EXPRESS DELIVERY OVER ₹499</span>
+          <span>⭐ 18,500+ VERIFIED 5-STAR REVIEWS ACROSS INDIA</span>
           <span>🏷️ USE CODE: <strong className="text-amber-300">AUTUMN30</strong> FOR 30% OFF</span>
           <span>🔄 30-DAY HASSLE-FREE RETURNS & LIFETIME CRAFT WARRANTY</span>
         </div>
@@ -270,37 +281,126 @@ const Header = () => {
                 </span>
               </Link>
 
-              {/* Account Dropdown */}
-              <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-dropdown border border-neutral-100 p-2 hidden group-hover:block z-50 animate-fade-in">
+              {/* Flipkart-Style Account Dropdown */}
+              <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-neutral-200/80 p-2 hidden group-hover:block z-50 animate-fade-in font-sans">
+                {/* Header Row */}
                 {isAuthenticated ? (
-                  <div className="space-y-1">
-                    <div className="px-3 py-2 border-b border-neutral-100">
-                      <p className="text-xs font-bold text-neutral-900 truncate">{user?.name}</p>
-                      <p className="text-[11px] text-neutral-500 truncate">{user?.email}</p>
+                  <div className="px-3 py-2.5 border-b border-neutral-100 flex items-center justify-between">
+                    <div>
+                      <p className="text-[11px] text-neutral-400 font-medium">Hello,</p>
+                      <p className="text-xs font-bold text-neutral-900 truncate max-w-[150px]">{user?.name}</p>
                     </div>
-                    <Link to="/account" className="block px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50 rounded-xl">
-                      My Account
-                    </Link>
-                    <Link to="/account/orders" className="block px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-50 rounded-xl">
-                      Order History
-                    </Link>
-                    {isAdmin && (
-                      <Link to="/admin" className="flex items-center space-x-1.5 px-3 py-2 text-xs font-bold text-[#C4301C] hover:bg-red-50 rounded-xl">
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>Admin Portal</span>
-                      </Link>
+                    {user?.isSeller && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                        Seller
+                      </span>
                     )}
                   </div>
                 ) : (
-                  <div className="p-2 space-y-2">
-                    <Link to="/login" className="btn-pill-dark w-full py-2.5 text-xs text-center block">
-                      Sign In
-                    </Link>
-                    <Link to="/register" className="btn-pill-light w-full py-2.5 text-xs text-center block">
-                      Create Account
+                  <div className="px-3 py-2.5 border-b border-neutral-100 flex items-center justify-between">
+                    <span className="text-xs text-neutral-800">New customer?</span>
+                    <Link to="/register" className="text-xs font-bold text-blue-600 hover:underline">
+                      Sign Up
                     </Link>
                   </div>
                 )}
+
+                {/* Menu List matching Flipkart reference */}
+                <div className="py-1 space-y-0.5">
+                  <Link
+                    to="/account?tab=profile"
+                    className="flex items-center space-x-3 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-colors"
+                  >
+                    <User className="w-4 h-4 text-neutral-500 flex-shrink-0" />
+                    <span>My Profile</span>
+                  </Link>
+
+                  <Link
+                    to="/account?tab=rewards"
+                    className="flex items-center space-x-3 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-colors"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                    <span>VEXIVO Plus Zone</span>
+                  </Link>
+
+                  <Link
+                    to="/account?tab=orders"
+                    className="flex items-center space-x-3 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-colors"
+                  >
+                    <Package className="w-4 h-4 text-neutral-500 flex-shrink-0" />
+                    <span>Orders</span>
+                  </Link>
+
+                  <Link
+                    to="/account?tab=wishlist"
+                    className="flex items-center space-x-3 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-colors"
+                  >
+                    <Heart className="w-4 h-4 text-neutral-500 flex-shrink-0" />
+                    <span>Wishlist</span>
+                  </Link>
+
+                  <Link
+                    to={user?.isSeller ? '/account/seller' : '/become-a-seller'}
+                    className="flex items-center space-x-3 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-colors"
+                  >
+                    <Store className="w-4 h-4 text-neutral-500 flex-shrink-0" />
+                    <span>{user?.isSeller ? 'Seller Dashboard' : 'Become a Seller'}</span>
+                  </Link>
+
+                  <Link
+                    to="/account?tab=rewards"
+                    className="flex items-center space-x-3 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-colors"
+                  >
+                    <Gift className="w-4 h-4 text-neutral-500 flex-shrink-0" />
+                    <span>Rewards</span>
+                  </Link>
+
+                  <Link
+                    to="/account?tab=coupons"
+                    className="flex items-center space-x-3 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-colors"
+                  >
+                    <CreditCard className="w-4 h-4 text-neutral-500 flex-shrink-0" />
+                    <span>Gift Cards</span>
+                  </Link>
+
+                  <Link
+                    to="/account?tab=notifications"
+                    className="flex items-center space-x-3 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-colors"
+                  >
+                    <Bell className="w-4 h-4 text-neutral-500 flex-shrink-0" />
+                    <span>Notification Preferences</span>
+                  </Link>
+
+                  <Link
+                    to="/account?tab=support"
+                    className="flex items-center space-x-3 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 rounded-xl transition-colors"
+                  >
+                    <Headphones className="w-4 h-4 text-neutral-500 flex-shrink-0" />
+                    <span>24x7 Customer Care</span>
+                  </Link>
+
+                  {/* Sign In button for guest / Log Out for authenticated */}
+                  {isAuthenticated ? (
+                    <div className="pt-1 mt-1 border-t border-neutral-100">
+                      <button
+                        onClick={logout}
+                        className="flex items-center space-x-3 w-full px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                      >
+                        <LogOut className="w-4 h-4 flex-shrink-0" />
+                        <span>Log Out</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="pt-2 mt-1 border-t border-neutral-100">
+                      <Link
+                        to="/login"
+                        className="block w-full text-center py-2 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-bold transition-colors"
+                      >
+                        Sign In
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -350,7 +450,7 @@ const Header = () => {
             onMouseLeave={() => setActiveDropdown(null)}
           >
             <Link
-              to="/category/women"
+              to="/category/women-wear"
               className="flex items-center space-x-1.5 text-purple-700 hover:text-purple-900 font-extrabold whitespace-nowrap transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5 text-purple-600 animate-pulse" />
@@ -362,20 +462,20 @@ const Header = () => {
             {/* Fashion Dropdown */}
             {activeDropdown === 'fashion' && (
               <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 p-2 z-50 animate-fade-in">
-                <Link to="/category/women" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Women's Wear
+                <Link to="/category/women-wear" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
+                  Women Wear
                 </Link>
-                <Link to="/category/men" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Men's Wear
+                <Link to="/category/men-wear" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
+                  Men Wear
                 </Link>
-                <Link to="/category/kids" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Kids' Wear
+                <Link to="/category/kids-wear" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
+                  Kids Wear
                 </Link>
                 <Link to="/category/shoes" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Footwear & Shoes
+                  Shoes
                 </Link>
                 <Link to="/category/hats" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Hats & Caps
+                  Hats
                 </Link>
               </div>
             )}
@@ -395,23 +495,26 @@ const Header = () => {
             {/* Dropdown */}
             {activeDropdown === 'shop_by_categories' && (
               <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 p-2 z-50 animate-fade-in">
-                <Link to="/category/women" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
+                <Link to="/category/women-wear" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
                   Women Wear
                 </Link>
-                <Link to="/category/men" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Mens Wear
+                <Link to="/category/men-wear" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
+                  Men Wear
+                </Link>
+                <Link to="/category/kids-wear" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
+                  Kids Wear
                 </Link>
                 <Link to="/category/shoes" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
                   Shoes
                 </Link>
                 <Link to="/category/beauty" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Beauty & Cosmetics
+                  Beauty
                 </Link>
                 <Link to="/category/jewellery" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
                   Jewellery
                 </Link>
                 <Link to="/category/bags" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Bags & Handbags
+                  Bags
                 </Link>
               </div>
             )}
@@ -431,20 +534,26 @@ const Header = () => {
             {/* Dropdown */}
             {activeDropdown === 'more_category' && (
               <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 p-2 z-50 animate-fade-in">
-                <Link to="/category/watches" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Watches & Horology
+                <Link to="/category/hats" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
+                  Hats
+                </Link>
+                <Link to="/category/vision-care" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
+                  Vision Care
+                </Link>
+                <Link to="/category/pets-care" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
+                  Pets Care
+                </Link>
+                <Link to="/category/toys" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
+                  Toys
+                </Link>
+                <Link to="/category/health-fitness" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
+                  Health & Fitness
                 </Link>
                 <Link to="/category/electronics" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Audio & Tech
-                </Link>
-                <Link to="/category/hats" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Hats & Headwear
+                  Electronics
                 </Link>
                 <Link to="/category/home-living" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
                   Home & Living
-                </Link>
-                <Link to="/category/activewear" className="block px-3 py-2 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 rounded-xl">
-                  Activewear & Studio
                 </Link>
               </div>
             )}

@@ -4,8 +4,8 @@ import { Truck, Headphones, RotateCcw, ShieldCheck } from 'lucide-react';
 const trustItems = [
   {
     icon: Truck,
-    title: 'Free UK Delivery',
-    description: 'Complimentary tracked delivery on all domestic UK orders over £50.',
+    title: 'Free Pan-India Delivery',
+    description: 'Complimentary express delivery on all domestic orders over ₹499.',
   },
   {
     icon: Headphones,
@@ -20,7 +20,7 @@ const trustItems = [
   {
     icon: ShieldCheck,
     title: '100% Secure Checkout',
-    description: 'Encrypted 256-bit SSL transaction gateway supporting Apple Pay, Visa & PayPal.',
+    description: 'Encrypted 256-bit SSL transaction gateway supporting UPI, RuPay, Visa & Net Banking.',
   },
 ];
 

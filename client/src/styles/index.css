@@ -108,6 +108,65 @@
   animation: floatBob 3s ease-in-out infinite;
 }
 
+/* Promotional Banner Animations (Phase 8) */
+@keyframes textLightSweep {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-text-shimmer {
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #fef08a 25%,
+    #ffffff 50%,
+    #fef08a 75%,
+    #ffffff 100%
+  );
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: textLightSweep 4s linear infinite;
+}
+
+@keyframes firePulse {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.15) rotate(-3deg);
+  }
+  75% {
+    transform: scale(1.08) rotate(3deg);
+  }
+}
+
+.animate-fire-pulse {
+  display: inline-block;
+  animation: firePulse 2s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes discountBadgePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(253, 224, 71, 0.4);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 16px 2px rgba(253, 224, 71, 0.3);
+  }
+}
+
+.animate-discount-pulse {
+  animation: discountBadgePulse 2.5s ease-in-out infinite;
+}
+
 @keyframes shimmerEffect {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(200%); }
@@ -192,6 +251,213 @@
 
 .animate-marquee:hover {
   animation-play-state: paused;
+}
+
+/* Category-Specific Product Card Animations (14 Unique Visual Interactions) */
+
+/* 1. Women's Fashion: Editorial Silk Float & Gentle Elevation */
+.product-card-women, .product-card-fashion {
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.45s ease;
+}
+.product-card-women:hover, .product-card-fashion:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 38px -8px rgba(196, 48, 28, 0.12), 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+.product-card-women:hover .product-primary-img, .product-card-fashion:hover .product-primary-img {
+  transform: scale(1.08);
+}
+
+/* 2. Men's Fashion: Tailored Savile Row Structural Lift & Crisp Edge */
+.product-card-men {
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease;
+}
+.product-card-men:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.16);
+}
+.product-card-men:hover .product-primary-img {
+  transform: scale(1.06);
+  filter: contrast(104%);
+}
+
+/* 3. Kids' Wear: Cheerful Bouncy Spring & Pastel Radiance */
+.product-card-kids {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+}
+.product-card-kids:hover {
+  transform: translateY(-7px) rotate(-0.5deg) scale(1.02);
+  box-shadow: 0 16px 32px -6px rgba(14, 165, 233, 0.22);
+}
+.product-card-kids:hover .product-primary-img {
+  transform: scale(1.07);
+}
+
+/* 4. Shoes & Footwear: Athletic Kinetic Lift & Sneaker Angle Tilt */
+.product-card-shoes {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
+}
+.product-card-shoes:hover {
+  transform: translateY(-8px) scale(1.025);
+  box-shadow: 0 22px 45px -10px rgba(0, 0, 0, 0.18);
+}
+.product-card-shoes:hover .product-primary-img {
+  transform: scale(1.08) rotate(-1.5deg);
+}
+
+/* 5. Beauty & Skincare: Ethereal Rose Bloom & Soft Focus Glow */
+.product-card-beauty {
+  transition: transform 0.55s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.55s ease;
+}
+.product-card-beauty:hover {
+  transform: translateY(-4px) scale(1.018);
+  box-shadow: 0 18px 38px -6px rgba(236, 72, 153, 0.22), 0 0 24px -2px rgba(244, 114, 182, 0.2);
+}
+.product-card-beauty:hover .product-primary-img {
+  transform: scale(1.05);
+  filter: contrast(103%) saturate(106%);
+}
+
+/* 6. Fine Jewellery: Diamond Shimmer Glint & Gold Halo */
+.product-card-jewellery {
+  position: relative;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+}
+.product-card-jewellery:hover {
+  transform: translateY(-6px) scale(1.015);
+  box-shadow: 0 20px 42px -8px rgba(234, 179, 8, 0.28), 0 0 20px rgba(250, 204, 21, 0.18);
+}
+.product-card-jewellery:hover .product-primary-img {
+  transform: scale(1.09);
+  filter: brightness(103%) contrast(105%);
+}
+
+/* 7. Bags & Leather: Tuscan Tactile Depth & Saddle Stitch Accent */
+.product-card-bags {
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.45s ease;
+}
+.product-card-bags:hover {
+  transform: translateY(-6px) rotate(0.8deg);
+  box-shadow: 0 22px 44px -8px rgba(120, 53, 15, 0.2);
+}
+.product-card-bags:hover .product-primary-img {
+  transform: scale(1.07);
+}
+
+/* 8. Hats & Headwear: Breezy Silhouette Swagger & Floating Tilt */
+.product-card-hats {
+  transition: transform 0.4s cubic-bezier(0.34, 1.3, 0.64, 1), box-shadow 0.4s ease;
+}
+.product-card-hats:hover {
+  transform: translateY(-7px) rotate(1.2deg);
+  box-shadow: 0 18px 36px -6px rgba(71, 85, 105, 0.18);
+}
+.product-card-hats:hover .product-primary-img {
+  transform: scale(1.08);
+}
+
+/* 9. Vision Care: Precision Optical Focus & Anti-Reflective Glare */
+.product-card-vision {
+  transition: transform 0.45s ease, box-shadow 0.45s ease;
+}
+.product-card-vision:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 18px 40px -8px rgba(6, 182, 212, 0.24);
+}
+.product-card-vision:hover .product-primary-img {
+  transform: scale(1.07);
+  filter: contrast(106%) sharpness(105%);
+}
+
+/* 10. Pets Care: Affectionate Warm Bounce & Amber Glow */
+.product-card-pets {
+  transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.38s ease;
+}
+.product-card-pets:hover {
+  transform: translateY(-7px) scale(1.02);
+  box-shadow: 0 18px 38px -6px rgba(249, 115, 22, 0.22);
+}
+.product-card-pets:hover .product-primary-img {
+  transform: scale(1.08) rotate(-0.8deg);
+}
+
+/* 11. Toys & Games: Joyful Playful Wobble & Colorful Pop */
+@keyframes playfulWobble {
+  0% { transform: translateY(-7px) rotate(0deg) scale(1.025); }
+  25% { transform: translateY(-7px) rotate(-1.5deg) scale(1.025); }
+  75% { transform: translateY(-7px) rotate(1.5deg) scale(1.025); }
+  100% { transform: translateY(-7px) rotate(0deg) scale(1.025); }
+}
+.product-card-toys {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
+}
+.product-card-toys:hover {
+  animation: playfulWobble 0.6s ease-in-out forwards;
+  box-shadow: 0 18px 40px -6px rgba(168, 85, 247, 0.25);
+}
+.product-card-toys:hover .product-primary-img {
+  transform: scale(1.09);
+}
+
+/* 12. Health & Fitness: Kinetic Athletic Power Pulse */
+.product-card-health {
+  transition: transform 0.35s cubic-bezier(0.34, 1.5, 0.64, 1), box-shadow 0.35s ease;
+}
+.product-card-health:hover {
+  transform: translateY(-6px) scale(1.025);
+  box-shadow: 0 20px 42px -8px rgba(34, 197, 94, 0.25);
+}
+.product-card-health:hover .product-primary-img {
+  transform: scale(1.07);
+  filter: contrast(105%);
+}
+
+/* 13. Electronics & Audio: Futuristic 3D Perspective Tilt & Cyber Glow */
+.product-card-electronics {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.5s ease;
+}
+.product-card-electronics:hover {
+  transform: perspective(1000px) rotateX(3.5deg) rotateY(-2.5deg) translateY(-5px);
+  box-shadow: 0 20px 44px -8px rgba(59, 130, 246, 0.25), 0 0 20px rgba(56, 189, 248, 0.2);
+}
+.product-card-electronics:hover .product-primary-img {
+  transform: scale(1.06);
+}
+
+/* 14. Home & Living: Architectural Calm Depth & Warm Amber Lighting */
+.product-card-home {
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.7s ease;
+}
+.product-card-home:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 22px 48px -12px rgba(180, 83, 9, 0.18);
+}
+.product-card-home:hover .product-primary-img {
+  transform: scale(1.07);
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .product-card-women,
+  .product-card-men,
+  .product-card-kids,
+  .product-card-shoes,
+  .product-card-beauty,
+  .product-card-jewellery,
+  .product-card-bags,
+  .product-card-hats,
+  .product-card-vision,
+  .product-card-pets,
+  .product-card-toys,
+  .product-card-health,
+  .product-card-electronics,
+  .product-card-home,
+  .product-card-fashion {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 

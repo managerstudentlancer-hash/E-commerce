@@ -6,11 +6,32 @@ import { useWishlist } from '../../context/WishlistContext';
 import RatingStars from './RatingStars';
 import QuickViewModal from './QuickViewModal';
 
+const getCategoryAnimationClass = (category = '', categorySlug = '') => {
+  const cat = `${category} ${categorySlug}`.toLowerCase();
+  if (cat.includes('shoe') || cat.includes('footwear') || cat.includes('sneaker')) return 'product-card-shoes';
+  if (cat.includes('electr') || cat.includes('audio') || cat.includes('gadget') || cat.includes('phone')) return 'product-card-electronics';
+  if (cat.includes('jewel') || cat.includes('ring') || cat.includes('earring') || cat.includes('necklace') || cat.includes('bracelet')) return 'product-card-jewellery';
+  if (cat.includes('bag') || cat.includes('backpack') || cat.includes('wallet') || cat.includes('tote')) return 'product-card-bags';
+  if (cat.includes('hat') || cat.includes('cap') || cat.includes('beanie')) return 'product-card-hats';
+  if (cat.includes('vision') || cat.includes('glass') || cat.includes('eyewear') || cat.includes('opt')) return 'product-card-vision';
+  if (cat.includes('pet') || cat.includes('dog') || cat.includes('cat')) return 'product-card-pets';
+  if (cat.includes('toy') || cat.includes('game') || cat.includes('puzzle')) return 'product-card-toys';
+  if (cat.includes('health') || cat.includes('fitness') || cat.includes('yoga') || cat.includes('gym')) return 'product-card-health';
+  if (cat.includes('home') || cat.includes('living') || cat.includes('decor') || cat.includes('furniture')) return 'product-card-home';
+  if (cat.includes('beauty') || cat.includes('skin') || cat.includes('cosmetic')) return 'product-card-beauty';
+  if (cat.includes('kid') || cat.includes('baby') || cat.includes('child')) return 'product-card-kids';
+  if (cat.includes('men-') || cat.includes('men wear') || cat.includes("men's")) return 'product-card-men';
+  if (cat.includes('women') || cat.includes('dress') || cat.includes("women's")) return 'product-card-women';
+  return 'product-card-fashion';
+};
+
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [added, setAdded] = useState(false);
   const [showQuickView, setShowQuickView] = useState(false);
+
+  const categoryAnimClass = getCategoryAnimationClass(product.category, product.categorySlug);
 
   const fallbackImg = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
 
@@ -21,6 +42,7 @@ const ProductCard = ({ product }) => {
     fallbackImg;
 
   const secondaryImage =
+    product.hoverImage ||
     (product.images && product.images.length > 1 && product.images[1]) ||
     product.secondaryImage ||
     null;
@@ -55,7 +77,7 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-neutral-100 transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.07)]">
+    <div className={`group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-neutral-100 ${categoryAnimClass}`}>
       {/* Product Image Stage */}
       <Link
         to={`/product/${product.slug}`}
@@ -67,7 +89,7 @@ const ProductCard = ({ product }) => {
           alt={product.name || 'Product Image'}
           loading="lazy"
           onError={() => setImgSrc(fallbackImg)}
-          className={`absolute inset-0 w-full h-full object-cover object-center transition-all duration-[850ms] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] ${
+          className={`product-primary-img absolute inset-0 w-full h-full object-cover object-center transition-all duration-[850ms] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] ${
             hasSecondImage
               ? 'group-hover:opacity-0'
               : 'group-hover:scale-[1.08]'
@@ -170,11 +192,11 @@ const ProductCard = ({ product }) => {
         <div className="mt-3 pt-2 border-t border-neutral-100 flex items-center justify-between">
           <div className="flex items-baseline space-x-2">
             <span className="text-sm sm:text-base font-extrabold text-neutral-950">
-              £{Number(product.price).toFixed(2)}
+              ₹{Number(product.price).toFixed(2)}
             </span>
             {product.compareAtPrice > product.price && (
               <span className="text-xs text-neutral-400 line-through">
-                £{Number(product.compareAtPrice).toFixed(2)}
+                ₹{Number(product.compareAtPrice).toFixed(2)}
               </span>
             )}
           </div>

@@ -35,9 +35,18 @@ export const api = {
   auth: {
     register: (userData) => request('/auth/register', { method: 'POST', body: JSON.stringify(userData) }),
     login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
+    sendOtp: (phoneData) => request('/auth/send-otp', { method: 'POST', body: JSON.stringify(phoneData) }),
+    verifyOtp: (otpData) => request('/auth/verify-otp', { method: 'POST', body: JSON.stringify(otpData) }),
     logout: () => request('/auth/logout', { method: 'POST' }),
     getMe: () => request('/auth/me'),
     updateProfile: (profileData) => request('/auth/profile', { method: 'PUT', body: JSON.stringify(profileData) }),
+    uploadProfilePhoto: (formData) => request('/auth/profile-photo', { method: 'POST', body: formData }),
+    removeProfilePhoto: () => request('/auth/profile-photo', { method: 'DELETE' }),
+    addAddress: (addressData) => request('/auth/addresses', { method: 'POST', body: JSON.stringify(addressData) }),
+    updateAddress: (id, addressData) => request(`/auth/addresses/${id}`, { method: 'PUT', body: JSON.stringify(addressData) }),
+    deleteAddress: (id) => request(`/auth/addresses/${id}`, { method: 'DELETE' }),
+    setDefaultAddress: (id) => request(`/auth/addresses/${id}/default`, { method: 'PUT' }),
+    activateSeller: (sellerData) => request('/auth/activate-seller', { method: 'POST', body: JSON.stringify(sellerData) }),
     changePassword: (passwords) => request('/auth/password', { method: 'PUT', body: JSON.stringify(passwords) }),
   },
 
@@ -48,6 +57,7 @@ export const api = {
       return request(`/products${query ? `?${query}` : ''}`);
     },
     getBySlug: (slug) => request(`/products/${slug}`),
+    getMySellerProducts: () => request('/products/seller/my'),
     create: (product) => request('/products', { method: 'POST', body: JSON.stringify(product) }),
     update: (id, product) => request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(product) }),
     delete: (id) => request(`/products/${id}`, { method: 'DELETE' }),
@@ -57,7 +67,10 @@ export const api = {
   // Categories
   categories: {
     getAll: () => request('/categories'),
-    getBySlug: (slug) => request(`/categories/${slug}`),
+    getBySlug: (slug, params = {}) => {
+      const query = new URLSearchParams(params).toString();
+      return request(`/categories/${slug}${query ? `?${query}` : ''}`);
+    },
     create: (cat) => request('/categories', { method: 'POST', body: JSON.stringify(cat) }),
     update: (id, cat) => request(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(cat) }),
     delete: (id) => request(`/categories/${id}`, { method: 'DELETE' }),
@@ -94,7 +107,10 @@ export const api = {
   orders: {
     create: (orderData) => request('/orders', { method: 'POST', body: JSON.stringify(orderData) }),
     getMy: () => request('/orders/my'),
+    getSellerOrders: () => request('/orders/seller/my'),
     getById: (id) => request(`/orders/${id}`),
+    cancel: (id, reason) => request(`/orders/${id}/cancel`, { method: 'PUT', body: JSON.stringify({ reason }) }),
+    return: (id, reason) => request(`/orders/${id}/return`, { method: 'PUT', body: JSON.stringify({ reason }) }),
     getAll: (params = {}) => {
       const query = new URLSearchParams(params).toString();
       return request(`/orders${query ? `?${query}` : ''}`);
@@ -107,6 +123,7 @@ export const api = {
   coupons: {
     validate: (code, subtotal) =>
       request('/coupons/validate', { method: 'POST', body: JSON.stringify({ code, subtotal }) }),
+    getAvailable: () => request('/coupons/available'),
     getAll: () => request('/coupons'),
     create: (coupon) => request('/coupons', { method: 'POST', body: JSON.stringify(coupon) }),
     delete: (id) => request(`/coupons/${id}`, { method: 'DELETE' }),
@@ -147,9 +164,28 @@ export const api = {
     getSubscribers: () => request('/newsletter/subscribers'),
   },
 
-  // Admin Dashboard
+  // Admin Dashboard & User Management
   admin: {
     getStats: () => request('/admin/dashboard'),
+    getUsers: () => request('/admin/users'),
+    updateUserRole: (id, role) => request(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
+    deleteUser: (id) => request(`/admin/users/${id}`, { method: 'DELETE' }),
+  },
+
+  // Support / Customer Care
+  support: {
+    createTicket: (data) => request('/support/tickets', { method: 'POST', body: JSON.stringify(data) }),
+    getMyTickets: () => request('/support/tickets'),
+    getById: (id) => request(`/support/tickets/${id}`),
+    reply: (id, message) => request(`/support/tickets/${id}/reply`, { method: 'POST', body: JSON.stringify({ message }) }),
+    close: (id) => request(`/support/tickets/${id}/close`, { method: 'PUT' }),
+  },
+
+  // Notifications
+  notifications: {
+    getAll: () => request('/notifications'),
+    markRead: (id) => request(`/notifications/${id}/read`, { method: 'PUT' }),
+    markAllRead: () => request('/notifications/read-all', { method: 'PUT' }),
   },
 };
 

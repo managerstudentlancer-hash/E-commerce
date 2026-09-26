@@ -40,6 +40,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/collections', require('./routes/collectionRoutes'));
@@ -53,6 +54,8 @@ app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/banners', require('./routes/bannerRoutes'));
 app.use('/api/site-settings', require('./routes/settingsRoutes'));
 app.use('/api/newsletter', require('./routes/newsletterRoutes'));
+app.use('/api/support', require('./routes/supportRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 // Reseed endpoint for instant sync
 app.get('/api/seed', async (req, res) => {
   try {

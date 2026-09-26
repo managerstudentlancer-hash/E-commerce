@@ -9,25 +9,47 @@ const CategoryPage = () => {
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_LIMIT = 12;
 
   useEffect(() => {
-    const fetchCategory = async () => {
+    setPage(1);
+    fetchCategory(1, false);
+  }, [slug]);
+
+  const fetchCategory = async (pageNum = 1, isAppend = false) => {
+    if (isAppend) {
+      setLoadingMore(true);
+    } else {
       setLoading(true);
-      try {
-        const res = await api.categories.getBySlug(slug);
-        if (res.success) {
-          setCategory(res.category);
+    }
+
+    try {
+      const res = await api.categories.getBySlug(slug, { page: pageNum, limit: PAGE_LIMIT });
+      if (res.success) {
+        setCategory(res.category);
+        if (isAppend) {
+          setProducts((prev) => [...prev, ...(res.products || [])]);
+        } else {
           setProducts(res.products || []);
         }
-      } catch (err) {
-        console.error('Failed to load category:', err);
-      } finally {
-        setLoading(false);
+        setTotalCount(res.total ?? (res.products?.length || 0));
       }
-    };
+    } catch (err) {
+      console.error('Failed to load category:', err);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
 
-    fetchCategory();
-  }, [slug]);
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchCategory(nextPage, true);
+  };
 
   if (loading) {
     return (
@@ -85,7 +107,7 @@ const CategoryPage = () => {
             </p>
           )}
           <p className="text-xs text-neutral-400 mt-3 font-semibold">
-            {products.length} Items
+            {totalCount} Items
           </p>
         </div>
       </div>
@@ -102,10 +124,42 @@ const CategoryPage = () => {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {products.map((product) => (
-              <ProductCard key={product._id || product.id} product={product} />
-            ))}
+          <div>
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {products.map((product) => (
+                <ProductCard key={product._id || product.id} product={product} />
+              ))}
+            </div>
+
+            {/* Pagination / Load More Section */}
+            <div className="mt-14 pt-8 border-t border-neutral-100 flex flex-col items-center justify-center text-center space-y-3">
+              <p className="text-xs font-semibold text-neutral-600">
+                Showing <span className="font-bold text-neutral-900">{products.length}</span> of{' '}
+                <span className="font-bold text-neutral-900">{totalCount}</span> products
+              </p>
+              <div className="w-full max-w-xs bg-neutral-100 h-1.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-neutral-900 h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, Math.round((products.length / Math.max(totalCount, 1)) * 100))}%`,
+                  }}
+                />
+              </div>
+              {products.length < totalCount ? (
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="btn-pill-dark text-xs py-3 px-8 flex items-center space-x-2 mt-2 shadow-sm hover:shadow active:scale-95 transition-all"
+                >
+                  {loadingMore && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{loadingMore ? 'Loading More Products...' : 'Load More Products'}</span>
+                </button>
+              ) : (
+                <p className="text-xs text-neutral-400 mt-2 font-medium">
+                  All {totalCount} products loaded
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>

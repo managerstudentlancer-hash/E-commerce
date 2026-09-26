@@ -45,8 +45,75 @@ const validateCoupon = async (req, res, next) => {
       discount,
       type: coupon.type,
       value: coupon.value,
-      message: `Coupon '${coupon.code}' applied successfully! Saved £${discount.toFixed(2)}`,
+      message: `Coupon '${coupon.code}' applied successfully! Saved ₹${discount.toFixed(2)}`,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Get active coupons for customers & buyers
+// @route GET /api/coupons/available
+const getAvailableCoupons = async (req, res, next) => {
+  try {
+    const now = new Date();
+    let coupons = await Coupon.find({
+      active: true,
+      $or: [{ expiryDate: { $exists: false } }, { expiryDate: null }, { expiryDate: { $gt: now } }],
+    }).sort({ value: -1 });
+
+    // Fallback default coupons if none found
+    if (!coupons || coupons.length === 0) {
+      coupons = [
+        {
+          code: 'AUTUMN30',
+          type: 'percentage',
+          value: 30,
+          minimumOrder: 499,
+          maximumDiscount: 1000,
+          description: '30% instant discount on premium festive fashion & living collections.',
+          active: true,
+        },
+        {
+          code: 'WELCOME10',
+          type: 'percentage',
+          value: 10,
+          minimumOrder: 299,
+          maximumDiscount: 500,
+          description: 'Flat 10% OFF on your introductory order on VEXIVO India.',
+          active: true,
+        },
+        {
+          code: 'FREESHIP',
+          type: 'fixed',
+          value: 99,
+          minimumOrder: 499,
+          maximumDiscount: 99,
+          description: 'Free Tracked Express Courier Delivery across 28,000+ Indian PIN codes.',
+          active: true,
+        },
+        {
+          code: 'FESTIVE25',
+          type: 'fixed',
+          value: 250,
+          minimumOrder: 1499,
+          maximumDiscount: 250,
+          description: 'Flat ₹250 instant cashback on wardrobe & footwear orders over ₹1,499.',
+          active: true,
+        },
+        {
+          code: 'BEAUTY15',
+          type: 'percentage',
+          value: 15,
+          minimumOrder: 699,
+          maximumDiscount: 600,
+          description: 'Extra 15% OFF on luxury perfumes, organic skincare & beauty essentials.',
+          active: true,
+        },
+      ];
+    }
+
+    res.json({ success: true, count: coupons.length, coupons });
   } catch (error) {
     next(error);
   }
@@ -109,6 +176,7 @@ const deleteCoupon = async (req, res, next) => {
 
 module.exports = {
   validateCoupon,
+  getAvailableCoupons,
   getCoupons,
   createCoupon,
   deleteCoupon,

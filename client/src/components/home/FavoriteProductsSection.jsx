@@ -11,8 +11,8 @@ const favoriteSlides = [
     accentColor: '#C4301C',
     product: {
       id: 'fav-1',
-      name: 'French-Style Flower Lantern Sleeve Linen Dress',
-      slug: 'the-kensington-tailored-wool-pleated-trouser',
+      name: 'French Floral Lantern Sleeve Midi Dress',
+      slug: 'french-floral-lantern-sleeve-midi-dress',
       category: 'Lady Dresses',
       price: 95.00,
       compareAtPrice: 135.00,
@@ -33,8 +33,8 @@ const favoriteSlides = [
     accentColor: '#1A365D',
     product: {
       id: 'fav-2',
-      name: 'The Kensington Tailored Wool Pleated Trouser',
-      slug: 'the-kensington-tailored-wool-pleated-trouser',
+      name: 'The Kensington Super 120s Double-Pleat Trouser',
+      slug: 'the-kensington-super-120s-double-pleat-trouser',
       category: "Men's Tailoring",
       price: 145.00,
       compareAtPrice: 190.00,
@@ -189,15 +189,15 @@ const FavoriteProductsSection = () => {
                   <div>
                     <div className="flex items-baseline space-x-1.5">
                       <span className="text-base font-extrabold text-[#C4301C]">
-                        £{slide.product.price.toFixed(2)}
+                        ₹{slide.product.price.toFixed(2)}
                       </span>
                       {slide.product.compareAtPrice > slide.product.price && (
                         <span className="text-xs text-neutral-600 line-through">
-                          £{slide.product.compareAtPrice.toFixed(2)}
+                          ₹{slide.product.compareAtPrice.toFixed(2)}
                         </span>
                       )}
                     </div>
-                    <span className="text-[10px] text-neutral-600 block">Inc. VAT / UK delivery</span>
+                    <span className="text-[10px] text-neutral-600 block">Inc. GST / Pan-India delivery</span>
                   </div>
 
                   <button

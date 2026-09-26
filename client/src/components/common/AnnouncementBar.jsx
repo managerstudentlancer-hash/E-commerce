@@ -3,16 +3,16 @@ import { ChevronLeft, ChevronRight, X, Globe, PhoneCall, Package, Sparkles } fro
 import { Link } from 'react-router-dom';
 
 const defaultAnnouncements = [
-  '✨ COMPLIMENTARY UK NEXT-DAY COURIER ON ORDERS OVER £50',
-  '🔥 SPRING / SUMMER 2026 CAPSULE HAS ARRIVED | USE CODE VEX10 FOR 10% OFF',
-  '⭐ RATED 4.9/5 ACROSS 18,500+ VERIFIED BRITISH CLIENTELE REVIEWS',
+  '✨ COMPLIMENTARY PAN-INDIA NEXT-DAY COURIER ON ORDERS OVER ₹499',
+  '🔥 FESTIVE 2026 CAPSULE HAS ARRIVED | USE CODE AUTUMN30 FOR 30% OFF',
+  '⭐ RATED 4.9/5 ACROSS 18,500+ VERIFIED CLIENTELE REVIEWS IN INDIA',
   '⚡ 30-DAY COMPLIMENTARY RETURNS & BESPOKE LUXURY PACKAGING',
 ];
 
 const AnnouncementBar = ({ announcements = defaultAnnouncements }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
-  const [currency, setCurrency] = useState('GBP');
+  const [currency, setCurrency] = useState('INR');
 
   useEffect(() => {
     if (!announcements.length) return;
@@ -33,14 +33,14 @@ const AnnouncementBar = ({ announcements = defaultAnnouncements }) => {
         {/* Left: Region & Currency Selector */}
         <div className="hidden md:flex items-center space-x-3 text-neutral-400">
           <div className="flex items-center space-x-1.5 cursor-pointer hover:text-white transition-colors">
-            <span className="text-sm">🇬🇧</span>
-            <span className="font-semibold text-neutral-200">United Kingdom</span>
-            <span className="text-neutral-500 font-mono text-[10px]">({currency})</span>
+            <span className="text-sm">🇮🇳</span>
+            <span className="font-semibold text-neutral-200">India</span>
+            <span className="text-neutral-500 font-mono text-[10px]">(₹ INR)</span>
           </div>
           <span className="text-neutral-700">|</span>
           <span className="text-neutral-300 font-medium flex items-center space-x-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
-            <span>London Dispatch Live</span>
+            <span>Pan-India Dispatch Live</span>
           </span>
         </div>
 

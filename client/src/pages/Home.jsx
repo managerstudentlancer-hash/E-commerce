@@ -33,12 +33,14 @@ const Home = () => {
           .catch(() => {});
 
         // Fetch products for Special Offers & New Arrivals
-        api.products.getAll({ limit: 16 })
+        api.products.getAll({ limit: 48 })
           .then((res) => {
             if (res.success && res.products) {
               const all = res.products;
-              setSpecialOffers(all.filter((p) => p.specialOffer || p.discount > 0));
-              setNewArrivals(all.filter((p) => p.newArrival || p.bestseller));
+              const offers = all.filter((p) => p.specialOffer || p.discount > 0);
+              const arrivals = all.filter((p) => p.newArrival || p.bestseller);
+              setSpecialOffers(offers.length >= 4 ? offers.slice(0, 8) : all.slice(0, 8));
+              setNewArrivals(arrivals.length >= 4 ? arrivals.slice(0, 8) : all.slice(8, 16));
             }
           })
           .catch(() => {});

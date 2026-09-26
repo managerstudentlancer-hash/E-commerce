@@ -23,6 +23,8 @@ import Register from './pages/Register';
 
 // Account Pages
 import AccountDashboard from './pages/account/AccountDashboard';
+import BecomeSeller from './pages/account/BecomeSeller';
+import SellerDashboard from './pages/account/SellerDashboard';
 import OrderHistory from './pages/account/OrderHistory';
 import WishlistPage from './pages/account/WishlistPage';
 import AddressBook from './pages/account/AddressBook';
@@ -38,10 +40,12 @@ import Terms from './pages/static/Terms';
 import NotFound from './pages/static/NotFound';
 
 // Admin Pages
+import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminUsers from './pages/admin/AdminUsers';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminCoupons from './pages/admin/AdminCoupons';
 import AdminReviews from './pages/admin/AdminReviews';
@@ -85,8 +89,11 @@ const App = () => {
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<Login />} />
 
-              {/* Customer Account Routes */}
+              {/* Customer & Seller Account Routes */}
               <Route path="/account" element={<AccountDashboard />} />
+              <Route path="/become-a-seller" element={<BecomeSeller />} />
+              <Route path="/seller/register" element={<BecomeSeller />} />
+              <Route path="/account/seller" element={<SellerDashboard />} />
               <Route path="/account/orders" element={<OrderHistory />} />
               <Route path="/account/wishlist" element={<WishlistPage />} />
               <Route path="/account/addresses" element={<AddressBook />} />
@@ -102,11 +109,16 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Route>
 
+            {/* Dedicated Administrator Login Portal */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+
             {/* Admin Control Center Routes */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="products" element={<AdminProducts />} />
               <Route path="orders" element={<AdminOrders />} />
+              <Route path="users" element={<AdminUsers />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="collections" element={<AdminCategories />} />
               <Route path="coupons" element={<AdminCoupons />} />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  PoundSterling,
+  IndianRupee,
   ShoppingCart,
   Users,
   AlertTriangle,
@@ -55,14 +55,14 @@ const AdminDashboard = () => {
           <div>
             <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Gross Revenue</p>
             <p className="text-2xl font-extrabold text-neutral-900 mt-1">
-              £{s.totalRevenue ? s.totalRevenue.toFixed(2) : '1,842.00'}
+              ₹{s.totalRevenue ? s.totalRevenue.toFixed(2) : '1,842.00'}
             </p>
             <span className="text-[11px] text-[#0D8756] font-semibold flex items-center mt-1">
               <ArrowUpRight className="w-3.5 h-3.5" /> +14.2% this month
             </span>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-900">
-            <PoundSterling className="w-6 h-6" />
+            <IndianRupee className="w-6 h-6" />
           </div>
         </div>
 
@@ -152,7 +152,7 @@ const AdminDashboard = () => {
                           {ord.orderStatus}
                         </span>
                       </td>
-                      <td className="py-3 text-right font-bold">£{ord.total?.toFixed(2)}</td>
+                      <td className="py-3 text-right font-bold">₹{ord.total?.toFixed(2)}</td>
                     </tr>
                   ))
                 )}
@@ -201,7 +201,7 @@ const AdminDashboard = () => {
                           {prod.name}
                         </span>
                       </td>
-                      <td className="py-3">£{prod.price?.toFixed(2)}</td>
+                      <td className="py-3">₹{prod.price?.toFixed(2)}</td>
                       <td className="py-3 text-right">
                         <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-red-100 text-[#C4301C]">
                           {prod.stock} left

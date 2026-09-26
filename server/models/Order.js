@@ -7,6 +7,8 @@ const orderItemSchema = new mongoose.Schema({
   quantity: { type: Number, required: true, min: 1 },
   image: { type: String, default: '' },
   variant: { type: String, default: '' },
+  seller: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  sellerName: { type: String, default: 'VEXIVO Official' },
 });
 
 const orderSchema = new mongoose.Schema(
@@ -48,10 +50,21 @@ const orderSchema = new mongoose.Schema(
     },
     orderStatus: {
       type: String,
-      enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
-      default: 'pending',
+      enum: ['pending', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'],
+      default: 'confirmed',
     },
+    cancellationReason: { type: String, default: '' },
+    cancelledAt: { type: Date, default: null },
+    returnReason: { type: String, default: '' },
+    returnedAt: { type: Date, default: null },
     trackingNumber: { type: String, default: '' },
+    trackingHistory: [
+      {
+        status: { type: String, required: true },
+        message: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );

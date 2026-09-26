@@ -3,24 +3,24 @@ import { ChevronDown, HelpCircle } from 'lucide-react';
 
 const faqs = [
   {
-    q: 'How fast is UK delivery, and what are the shipping costs?',
-    a: 'We offer complimentary Next-Day Tracked Delivery on all UK orders over £50 via DPD Priority and Royal Mail Tracked 24. For orders under £50, standard delivery is £3.99. Orders placed before 2:00 PM GMT Monday to Friday are dispatched the same day from our London distribution center.',
+    q: 'How fast is delivery across India, and what are the shipping costs?',
+    a: 'We offer complimentary Express Tracked Delivery on all orders over ₹499 via Delhivery, BlueDart, and Ekart Logistics. For orders under ₹499, standard delivery is ₹49. Orders placed before 2:00 PM IST Monday to Saturday are dispatched the same day from our fulfillment hubs in Mumbai and Delhi.',
   },
   {
     q: 'What is VEXIVO’s return and exchange policy?',
-    a: 'We operate a 30-day hassle-free return window. Any item returned in its original, unworn condition with tags and packaging intact is eligible for a full refund or free size/color exchange. Every parcel includes a prepaid Royal Mail return label.',
+    a: 'We operate a 30-day hassle-free return window. Any item returned in its original, unworn condition with tags intact is eligible for a full refund or free size/color exchange with free doorstep reverse pickup.',
   },
   {
     q: 'How does the Lifetime Craft Warranty work for hardware & audio?',
-    a: 'All VEXIVO acoustic hardware (including Aethel headphones and Helix earbuds) and leathergoods are backed by our comprehensive warranty covering manufacturer defects, acoustic driver imbalance, and hardware failure for the lifetime of the product.',
+    a: 'All VEXIVO acoustic hardware (including headphones and earbuds) and leathergoods are backed by our comprehensive warranty covering manufacturer defects, driver imbalance, and hardware failure for the lifetime of the product.',
   },
   {
-    q: 'Can I split my payment across installments?',
-    a: 'Yes. We support interest-free installment payments at checkout via Klarna (Pay in 3 or Pay in 30 Days) and Clearpay/Afterpay, as well as all major credit cards, Apple Pay, Google Pay, and PayPal.',
+    q: 'What payment options and UPI methods do you accept?',
+    a: 'We support instant UPI (Google Pay, PhonePe, Paytm, BHIM), all major Credit/Debit Cards (Visa, Mastercard, RuPay), Net Banking across 50+ Indian banks, and Cash on Delivery (COD).',
   },
   {
-    q: 'Where are VEXIVO garments and leathergoods manufactured?',
-    a: 'Our apparel is designed in London and produced in certified artisanal facilities in Civitanova Marche (Italy), Porto (Portugal), and Ulaanbaatar (Mongolia) using traceable, ethically certified organic raw materials.',
+    q: 'Where are VEXIVO garments and lifestyle goods manufactured?',
+    a: 'Our apparel and lifestyle collections are designed with modern minimalist aesthetics and produced in certified artisanal facilities using traceable, ethically certified organic raw materials.',
   },
 ];
 

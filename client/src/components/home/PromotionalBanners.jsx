@@ -1,47 +1,67 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles, Flame, Clock } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const promoCards = [
   {
     id: 1,
-    title: 'Wide Leg Pants',
-    subtitle: 'High-Rise Knife Pleats & Fluid Drape',
+    title: "Women's Fashion",
+    subtitle: 'Silk Slip Dresses, Tailored Tops & Evening Wear',
     tag: 'TRENDING NOW',
     tagBg: 'bg-[#C4301C]',
-    image: 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=800&q=80',
-    link: '/category/women',
-    btnText: 'Shop Pants',
+    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
+    link: '/category/women-wear',
+    btnText: 'Shop Women',
   },
   {
     id: 2,
-    title: 'Casual Shoes — Coming Soon!',
-    subtitle: 'Italian Nappa Leather & Minimalist Runners',
-    tag: 'NEW DROP',
-    tagBg: 'bg-[#0D8756]',
-    image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80',
-    link: '/category/shoes',
-    btnText: 'View Footwear',
+    title: "Men's Fashion",
+    subtitle: 'Oxford Cotton Shirts, Tailored Suits & Overcoats',
+    tag: 'NEW IN',
+    tagBg: 'bg-blue-600',
+    image: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80',
+    link: '/category/men-wear',
+    btnText: 'Shop Men',
   },
   {
     id: 3,
-    title: 'Luxury Bag Collection',
-    subtitle: 'Tuscan Full-Grain Totes & Saddle Bags',
-    tag: 'BESTSELLERS',
-    tagBg: 'bg-black',
-    image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80',
-    link: '/category/bags',
-    btnText: 'Explore Bags',
+    title: 'Shoes & Footwear',
+    subtitle: 'Italian Calfskin Sneakers, Boots & Loafers',
+    tag: 'FOOTWEAR EDIT',
+    tagBg: 'bg-[#0D8756]',
+    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80',
+    link: '/category/shoes',
+    btnText: 'Shop Shoes',
   },
   {
     id: 4,
-    title: 'Baby Growing Collection',
-    subtitle: '100% Hypoallergenic Organic Bamboo Rompers',
-    tag: 'GIFT EDIT',
-    tagBg: 'bg-purple-600',
-    image: 'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=800&q=80',
-    link: '/category/kids',
-    btnText: 'Shop Petite',
+    title: 'Electronics & Audio',
+    subtitle: 'Studio ANC Headphones, Keyboards & Audio Tech',
+    tag: 'TECH LAB',
+    tagBg: 'bg-indigo-600',
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
+    link: '/category/electronics',
+    btnText: 'Shop Electronics',
+  },
+  {
+    id: 5,
+    title: 'Beauty & Skincare',
+    subtitle: 'Resurfacing Serums, Botanical Skincare & Makeup',
+    tag: 'PURE GLOW',
+    tagBg: 'bg-rose-500',
+    image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+    link: '/category/beauty',
+    btnText: 'Shop Beauty',
+  },
+  {
+    id: 6,
+    title: 'Home & Living',
+    subtitle: 'Modern Sculptural Decor, Velvet Furniture & Lighting',
+    tag: 'LIVING SPACES',
+    tagBg: 'bg-amber-600',
+    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+    link: '/category/home-living',
+    btnText: 'Shop Home',
   },
 ];
 
@@ -49,33 +69,36 @@ const PromotionalBanners = () => {
   return (
     <section className="py-10 sm:py-14 bg-white border-b border-neutral-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Shaporoo 1:1 grid_banner Header */}
+        {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
           <span className="text-xs font-bold uppercase tracking-widest text-neutral-500 block mb-1">
-            Our Best Winter Products
+            Our Curated Departments
           </span>
           <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-neutral-900">
-            Winter <strong className="font-extrabold text-black">Products</strong>
+            Shop By <strong className="font-extrabold text-[#C4301C]">Category</strong>
           </h2>
+          <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+            Explore authentic British luxury across our six core departments.
+          </p>
         </div>
 
-        {/* 4-Card Bento Grid (Matches Shaporoo grid-banner) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* 6-Card Category Bento Grid (3 Cols on Desktop, 2 on Tablet, 1 on Mobile) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
           {promoCards.map((card) => (
             <div
               key={card.id}
-              className="group relative rounded-3xl overflow-hidden min-h-[380px] sm:min-h-[420px] flex flex-col justify-between p-6 shadow-sm border border-neutral-100 transition-all duration-300 hover:shadow-[0_16px_36px_rgba(0,0,0,0.08)]"
+              className="group relative rounded-3xl overflow-hidden min-h-[340px] sm:min-h-[380px] flex flex-col justify-between p-6 shadow-sm border border-neutral-100 transition-all duration-300 hover:shadow-[0_16px_36px_rgba(0,0,0,0.12)]"
             >
-              {/* Background Image with 1:1 Shaporoo 0.85s material zoom */}
+              {/* Background Image */}
               <img
                 src={card.image}
                 alt={card.title}
                 onError={(e) => {
                   e.currentTarget.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80';
                 }}
-                className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-[850ms] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] group-hover:scale-[1.06]"
+                className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-[850ms] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10 pointer-events-none" />
 
               {/* Top Tag */}
               <div className="relative z-10">
@@ -88,7 +111,7 @@ const PromotionalBanners = () => {
 
               {/* Bottom Content */}
               <div className="relative z-10 text-white space-y-1.5">
-                <h3 className="text-xl font-extrabold tracking-tight leading-tight text-white group-hover:text-amber-200 transition-colors">
+                <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight leading-tight text-white group-hover:text-amber-200 transition-colors">
                   {card.title}
                 </h3>
                 <p className="text-xs text-neutral-200 line-clamp-2 leading-relaxed font-normal">

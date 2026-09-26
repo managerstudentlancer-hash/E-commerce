@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { User, Mail, Lock, Phone, ArrowRight, Loader2, Eye, EyeOff, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,12 +8,27 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [isSeller, setIsSeller] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { register } = useAuth();
+  const { user, register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTarget = searchParams.get('redirect');
+
+  React.useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else if (user.role === 'seller') {
+        navigate(redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account/seller');
+      } else {
+        navigate(redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account');
+      }
+    }
+  }, [user, redirectTarget, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,12 +37,25 @@ const Register = () => {
       return;
     }
 
+    if (phone && phone.trim()) {
+      const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+      const isIndian = /^(\+91|91|0)?[6-9]\d{9}$/.test(cleaned);
+      if (!isIndian) {
+        setError('Please enter a valid 10-digit Indian mobile number (e.g. 9876543210 or +91 9876543210).');
+        return;
+      }
+    }
+
     setError('');
     setLoading(true);
 
     try {
-      await register({ name, email, password, phone });
-      navigate('/account');
+      const createdUser = await register({ name, email, password, phone, isSeller });
+      if (createdUser.role === 'seller') {
+        navigate(redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account/seller');
+      } else {
+        navigate(redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account');
+      }
     } catch (err) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -164,27 +192,50 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Phone Field */}
+            {/* Indian Mobile Phone Field */}
             <div>
               <label
                 htmlFor="register-phone"
                 className="block text-xs font-bold uppercase tracking-wider text-neutral-800 mb-1.5"
               >
-                Mobile Phone (Optional)
+                Indian Mobile Number (Optional)
               </label>
               <div className="relative flex items-center">
-                <div className="absolute left-4 pointer-events-none text-neutral-400">
-                  <Phone className="w-4 h-4" />
+                <div className="absolute left-3.5 flex items-center space-x-1 pointer-events-none text-neutral-500 font-bold text-xs border-r border-neutral-300 pr-2">
+                  <span>🇮🇳 +91</span>
                 </div>
                 <input
                   id="register-phone"
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+44 7700 900142"
-                  className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-neutral-300 bg-white text-neutral-900 text-sm placeholder-neutral-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                  placeholder="98765 43210"
+                  className="w-full pl-20 pr-4 py-3.5 rounded-xl border border-neutral-300 bg-white text-neutral-900 text-sm placeholder-neutral-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all font-mono"
                 />
               </div>
+              <p className="text-[11px] text-neutral-400 mt-1">
+                Enables instant 1-click OTP login via your Indian phone.
+              </p>
+            </div>
+
+            {/* Seller Account Option */}
+            <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200/80">
+              <label className="flex items-start space-x-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isSeller}
+                  onChange={(e) => setIsSeller(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-neutral-300 text-black focus:ring-black accent-black cursor-pointer"
+                />
+                <div>
+                  <span className="text-xs font-bold text-neutral-900 block">
+                    Register as Marketplace Seller
+                  </span>
+                  <span className="text-[11px] text-neutral-500 block leading-relaxed mt-0.5">
+                    Grants access to your personal Seller Dashboard where you can list, price, and sell products on VEXIVO.
+                  </span>
+                </div>
+              </label>
             </div>
 
             {/* Password Field */}

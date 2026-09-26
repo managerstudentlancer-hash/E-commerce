@@ -6,14 +6,20 @@ import ProductCard from '../components/common/ProductCard';
 
 const categoriesList = [
   'All',
-  'Women',
-  'Men',
+  'Women Wear',
+  'Men Wear',
+  'Kids Wear',
   'Shoes',
-  'Bags',
-  'Jewellery',
-  'Electronics',
   'Beauty',
-  'Accessories',
+  'Jewellery',
+  'Bags',
+  'Hats',
+  'Vision Care',
+  'Pets Care',
+  'Toys',
+  'Health & Fitness',
+  'Electronics',
+  'Home & Living',
 ];
 
 const sortOptions = [
@@ -29,8 +35,11 @@ const Shop = () => {
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const PAGE_LIMIT = 12;
 
   // Filters State
   const selectedCategory = searchParams.get('category') || 'All';
@@ -40,15 +49,22 @@ const Shop = () => {
   const inStockOnly = searchParams.get('inStock') === 'true';
 
   useEffect(() => {
-    fetchProducts();
+    setPage(1);
+    fetchProducts(1, false);
   }, [searchParams]);
 
-  const fetchProducts = async () => {
-    setLoading(true);
+  const fetchProducts = async (pageNum = 1, isAppend = false) => {
+    if (isAppend) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
       const params = {
         sort: selectedSort,
-        limit: 24,
+        limit: PAGE_LIMIT,
+        page: pageNum,
       };
 
       if (selectedCategory && selectedCategory !== 'All') {
@@ -64,14 +80,26 @@ const Shop = () => {
         if (inStockOnly) {
           list = list.filter((p) => p.stock > 0);
         }
-        setProducts(list);
-        setTotalCount(res.total || list.length);
+
+        if (isAppend) {
+          setProducts((prev) => [...prev, ...list]);
+        } else {
+          setProducts(list);
+        }
+        setTotalCount(res.total || 0);
       }
     } catch (err) {
       console.error('Failed to load shop products:', err);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchProducts(nextPage, true);
   };
 
   const updateParam = (key, value) => {
@@ -163,7 +191,7 @@ const Shop = () => {
                 )}
                 {minPrice && (
                   <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-neutral-100 text-xs font-semibold">
-                    <span>Min £{minPrice}</span>
+                    <span>Min ₹{minPrice}</span>
                     <X
                       className="w-3 h-3 cursor-pointer hover:text-black"
                       onClick={() => updateParam('minPrice', '')}
@@ -172,7 +200,7 @@ const Shop = () => {
                 )}
                 {maxPrice && (
                   <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-neutral-100 text-xs font-semibold">
-                    <span>Max £{maxPrice}</span>
+                    <span>Max ₹{maxPrice}</span>
                     <X
                       className="w-3 h-3 cursor-pointer hover:text-black"
                       onClick={() => updateParam('maxPrice', '')}
@@ -213,7 +241,7 @@ const Shop = () => {
             {/* Price Range */}
             <div className="border-b border-neutral-100 pb-6">
               <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900 mb-4">
-                Price Range (£)
+                Price Range (₹)
               </h3>
               <div className="flex items-center space-x-3">
                 <input
@@ -253,7 +281,7 @@ const Shop = () => {
             {/* Guarantees Box */}
             <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100 space-y-2 text-xs text-neutral-600">
               <p className="font-bold text-neutral-900">VEXIVO Guarantee</p>
-              <p>• Complimentary UK Next-Day Delivery over £50.</p>
+              <p>• Pan-India Express Delivery across 28,000+ PIN codes.</p>
               <p>• 30-Day Hassle-Free Returns with prepaid label.</p>
             </div>
           </div>
@@ -279,10 +307,42 @@ const Shop = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                {products.map((product) => (
-                  <ProductCard key={product._id || product.id} product={product} />
-                ))}
+              <div>
+                <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                  {products.map((product) => (
+                    <ProductCard key={product._id || product.id} product={product} />
+                  ))}
+                </div>
+
+                {/* Pagination / Load More Section */}
+                <div className="mt-12 pt-6 border-t border-neutral-100 flex flex-col items-center justify-center text-center space-y-3">
+                  <p className="text-xs font-semibold text-neutral-600">
+                    Showing <span className="font-bold text-neutral-900">{products.length}</span> of{' '}
+                    <span className="font-bold text-neutral-900">{totalCount}</span> products
+                  </p>
+                  <div className="w-full max-w-xs bg-neutral-100 h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-neutral-900 h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${Math.min(100, Math.round((products.length / Math.max(totalCount, 1)) * 100))}%`,
+                      }}
+                    />
+                  </div>
+                  {products.length < totalCount ? (
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                      className="btn-pill-dark text-xs py-3 px-8 flex items-center space-x-2 mt-2 shadow-sm hover:shadow active:scale-95 transition-all"
+                    >
+                      {loadingMore && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      <span>{loadingMore ? 'Loading More Products...' : 'Load More Products'}</span>
+                    </button>
+                  ) : (
+                    <p className="text-xs text-neutral-400 mt-2 font-medium">
+                      All {totalCount} products loaded
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -313,7 +373,7 @@ const Shop = () => {
               {/* Mobile Price Filter */}
               <div className="py-6 border-b border-neutral-100 space-y-3">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-                  Price Range (£)
+                  Price Range (₹)
                 </h4>
                 <div className="flex items-center space-x-2">
                   <input

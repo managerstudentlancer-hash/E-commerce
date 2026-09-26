@@ -93,17 +93,17 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
               {/* Price */}
               <div className="flex items-baseline space-x-2 pt-1">
                 <span className="text-xl font-extrabold text-[#C4301C]">
-                  £{product.price?.toFixed(2)}
+                  ₹{product.price?.toFixed(2)}
                 </span>
                 {product.compareAtPrice > product.price && (
                   <span className="text-sm text-neutral-600 line-through">
-                    £{product.compareAtPrice?.toFixed(2)}
+                    ₹{product.compareAtPrice?.toFixed(2)}
                   </span>
                 )}
               </div>
 
               <p className="text-xs text-neutral-600 line-clamp-3 leading-relaxed">
-                {product.description || 'Authentic luxury lifestyle essential crafted with bespoke tailoring and premium finish. In stock and ready for UK tracked dispatch.'}
+                {product.description || 'Authentic luxury lifestyle essential crafted with bespoke tailoring and premium finish. In stock and ready for Pan-India express dispatch.'}
               </p>
             </div>
 

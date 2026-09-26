@@ -21,11 +21,15 @@ const productSchema = new mongoose.Schema(
     discount: { type: Number, default: 0 },
     images: [{ type: String }],
     thumbnail: { type: String, default: '' },
+    hoverImage: { type: String, default: '' },
     category: { type: String, required: true },
     categorySlug: { type: String, default: '' },
     subcategory: { type: String, default: '' },
     collectionSlug: { type: String, default: '' },
     brand: { type: String, default: 'VEXIVO' },
+    sellerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    sellerName: { type: String, default: 'VEXIVO Official' },
+    sellerInfo: { type: String, default: '' },
     variants: [
       {
         name: { type: String },
@@ -58,6 +62,9 @@ productSchema.pre('save', function (next) {
   }
   if (!this.thumbnail && this.images && this.images.length > 0) {
     this.thumbnail = this.images[0];
+  }
+  if (!this.hoverImage && this.images && this.images.length > 1) {
+    this.hoverImage = this.images[1];
   }
   next();
 });

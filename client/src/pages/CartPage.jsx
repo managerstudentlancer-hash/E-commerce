@@ -75,9 +75,9 @@ const CartPage = () => {
               <div className="flex justify-between text-xs font-semibold text-neutral-700 mb-1.5">
                 <span>
                   {freeShippingRemaining === 0 ? (
-                    <strong className="text-[#0D8756]">🎉 Qualified for Complimentary UK Delivery!</strong>
+                    <strong className="text-[#0D8756]">🎉 Qualified for Free Pan-India Delivery!</strong>
                   ) : (
-                    <>Add £{freeShippingRemaining.toFixed(2)} more for Free Next-Day UK Delivery</>
+                    <>Add ₹{freeShippingRemaining.toFixed(2)} more for Free Pan-India Express Delivery</>
                   )}
                 </span>
                 <span>{freeShippingProgress}%</span>
@@ -143,7 +143,7 @@ const CartPage = () => {
                       </div>
 
                       <span className="text-sm sm:text-base font-extrabold text-neutral-900">
-                        £{(item.price * item.quantity).toFixed(2)}
+                        ₹{(item.price * item.quantity).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -175,7 +175,7 @@ const CartPage = () => {
                     type="text"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. VEX10"
+                    placeholder="e.g. AUTUMN30"
                     className="flex-1 px-4 py-2.5 rounded-full border border-neutral-200 text-xs uppercase font-medium focus:outline-none focus:border-black"
                   />
                   <button
@@ -192,7 +192,7 @@ const CartPage = () => {
                 {appliedCoupon && (
                   <div className="flex items-center space-x-1.5 text-xs text-[#0D8756] font-bold">
                     <Check className="w-3.5 h-3.5" />
-                    <span>Coupon '{appliedCoupon}' applied (-£{couponDiscount.toFixed(2)})</span>
+                    <span>Coupon '{appliedCoupon}' applied (-₹{couponDiscount.toFixed(2)})</span>
                   </div>
                 )}
               </form>
@@ -201,26 +201,26 @@ const CartPage = () => {
               <div className="space-y-3 pt-2 text-xs text-neutral-600 border-t border-neutral-200">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-bold text-neutral-900">£{subtotal.toFixed(2)}</span>
+                  <span className="font-bold text-neutral-900">₹{subtotal.toFixed(2)}</span>
                 </div>
 
                 {couponDiscount > 0 && (
                   <div className="flex justify-between text-[#0D8756] font-bold">
                     <span>Discount</span>
-                    <span>-£{couponDiscount.toFixed(2)}</span>
+                    <span>-₹{couponDiscount.toFixed(2)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between">
-                  <span>Estimated UK Delivery</span>
+                  <span>Pan-India Delivery</span>
                   <span className="font-bold text-neutral-900">
-                    {shippingCost === 0 ? 'FREE' : `£${shippingCost.toFixed(2)}`}
+                    {shippingCost === 0 ? 'FREE' : `₹${shippingCost.toFixed(2)}`}
                   </span>
                 </div>
 
                 <div className="flex justify-between text-base font-extrabold text-neutral-900 pt-3 border-t border-neutral-200">
                   <span>Total</span>
-                  <span>£{grandTotal.toFixed(2)}</span>
+                  <span>₹{grandTotal.toFixed(2)}</span>
                 </div>
               </div>
 

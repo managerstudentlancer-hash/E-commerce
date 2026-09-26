@@ -1,6 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, X, Check, Loader2, Image, AlertCircle } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  X,
+  Check,
+  Loader2,
+  Upload,
+  ArrowUp,
+  ArrowDown,
+  AlertCircle,
+} from 'lucide-react';
 import api from '../../services/api';
+
+const CATEGORIES = [
+  'Women Wear',
+  'Men Wear',
+  'Kids Wear',
+  'Shoes',
+  'Beauty',
+  'Jewellery',
+  'Bags',
+  'Hats',
+  'Vision Care',
+  'Pets Care',
+  'Toys',
+  'Health & Fitness',
+];
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -12,22 +39,27 @@ const AdminProducts = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [uploadingField, setUploadingField] = useState(null); // 'thumbnail' | 'hoverImage' | 'gallery'
 
   const [formData, setFormData] = useState({
     name: '',
     price: '',
     compareAtPrice: '',
-    category: 'Women',
+    category: 'Women Wear',
     sku: '',
     stock: 50,
     description: '',
     shortDescription: '',
     thumbnail: '',
+    hoverImage: '',
+    images: [],
     bestseller: false,
     newArrival: true,
     specialOffer: false,
     status: 'active',
   });
+
+  const [newGalleryUrl, setNewGalleryUrl] = useState('');
 
   useEffect(() => {
     fetchProducts();
@@ -36,7 +68,7 @@ const AdminProducts = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await api.products.getAll({ limit: 100 });
+      const res = await api.products.getAll({ limit: 300 });
       if (res.success) {
         setProducts(res.products || []);
       }
@@ -49,18 +81,22 @@ const AdminProducts = () => {
 
   const handleOpenModal = (prod = null) => {
     setFormError('');
+    setNewGalleryUrl('');
     if (prod) {
       setEditingProduct(prod);
+      const gallery = Array.isArray(prod.images) ? [...prod.images] : [];
       setFormData({
         name: prod.name || '',
         price: prod.price || '',
         compareAtPrice: prod.compareAtPrice || '',
-        category: prod.category || 'Women',
+        category: prod.category || 'Women Wear',
         sku: prod.sku || '',
         stock: prod.stock !== undefined ? prod.stock : 50,
         description: prod.description || '',
         shortDescription: prod.shortDescription || '',
-        thumbnail: prod.thumbnail || (prod.images?.[0] || ''),
+        thumbnail: prod.thumbnail || gallery[0] || '',
+        hoverImage: prod.hoverImage || gallery[1] || '',
+        images: gallery,
         bestseller: !!prod.bestseller,
         newArrival: !!prod.newArrival,
         specialOffer: !!prod.specialOffer,
@@ -72,12 +108,14 @@ const AdminProducts = () => {
         name: '',
         price: '',
         compareAtPrice: '',
-        category: 'Women',
+        category: 'Women Wear',
         sku: '',
         stock: 50,
         description: '',
         shortDescription: '',
         thumbnail: '',
+        hoverImage: '',
+        images: [],
         bestseller: false,
         newArrival: true,
         specialOffer: false,
@@ -85,6 +123,65 @@ const AdminProducts = () => {
       });
     }
     setIsModalOpen(true);
+  };
+
+  // Image Upload helper
+  const handleFileUpload = async (e, field) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingField(field);
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const res = await api.products.uploadImage(fd);
+      if (res.success && res.url) {
+        if (field === 'thumbnail') {
+          setFormData((prev) => ({
+            ...prev,
+            thumbnail: res.url,
+            images: prev.images.includes(res.url) ? prev.images : [res.url, ...prev.images],
+          }));
+        } else if (field === 'hoverImage') {
+          setFormData((prev) => ({ ...prev, hoverImage: res.url }));
+        } else if (field === 'gallery') {
+          setFormData((prev) => ({ ...prev, images: [...prev.images, res.url] }));
+        }
+      }
+    } catch (err) {
+      alert(err.message || 'Image upload failed');
+    } finally {
+      setUploadingField(null);
+      e.target.value = '';
+    }
+  };
+
+  const handleAddGalleryUrl = () => {
+    if (!newGalleryUrl.trim()) return;
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, newGalleryUrl.trim()],
+    }));
+    setNewGalleryUrl('');
+  };
+
+  const handleRemoveGalleryImage = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleMoveImage = (index, direction) => {
+    const newIdx = direction === 'up' ? index - 1 : index + 1;
+    if (newIdx < 0 || newIdx >= formData.images.length) return;
+    const reordered = [...formData.images];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(newIdx, 0, moved);
+    setFormData((prev) => ({
+      ...prev,
+      images: reordered,
+      thumbnail: reordered[0] || prev.thumbnail,
+    }));
   };
 
   const handleSaveProduct = async (e) => {
@@ -96,12 +193,24 @@ const AdminProducts = () => {
 
     setIsSaving(true);
     try {
+      const imagesArray = Array.from(
+        new Set(
+          [
+            formData.thumbnail,
+            formData.hoverImage,
+            ...(formData.images || []),
+          ].filter(Boolean)
+        )
+      );
+
       const payload = {
         ...formData,
         price: Number(formData.price),
         compareAtPrice: Number(formData.compareAtPrice || 0),
         stock: Number(formData.stock || 0),
-        images: formData.thumbnail ? [formData.thumbnail] : [],
+        thumbnail: formData.thumbnail || imagesArray[0] || '',
+        hoverImage: formData.hoverImage || imagesArray[1] || '',
+        images: imagesArray.length > 0 ? imagesArray : (formData.thumbnail ? [formData.thumbnail] : []),
       };
 
       if (editingProduct) {
@@ -141,10 +250,10 @@ const AdminProducts = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-900">
-            Product Management
+            Product Management ({products.length})
           </h2>
           <p className="text-xs text-neutral-500 mt-0.5">
-            Manage your online merchandise, pricing tiers, and stock allocations.
+            Manage your catalog, high-res visual assets, pricing, and stock.
           </p>
         </div>
 
@@ -205,16 +314,19 @@ const AdminProducts = () => {
                     <tr key={prod._id} className="hover:bg-neutral-50 transition-colors">
                       <td className="py-3.5 px-6 flex items-center space-x-3">
                         <img
-                          src={prod.thumbnail || prod.images?.[0] || ''}
+                          src={prod.thumbnail || prod.images?.[0] || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=100&q=80'}
                           alt=""
                           className="w-10 h-12 object-cover rounded-lg bg-neutral-100 flex-shrink-0"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=100&q=80';
+                          }}
                         />
                         <div>
                           <p className="font-bold text-neutral-900 line-clamp-1">{prod.name}</p>
                           <p className="text-[10px] text-neutral-600 font-mono">{prod.sku || 'NO-SKU'}</p>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4">{prod.category}</td>
+                      <td className="py-3.5 px-4 font-medium">{prod.category}</td>
                       <td className="py-3.5 px-4 font-bold">
                         £{prod.price?.toFixed(2)}
                         {prod.compareAtPrice > prod.price && (
@@ -264,28 +376,36 @@ const AdminProducts = () => {
         )}
       </div>
 
-      {/* Add / Edit Modal */}
+      {/* Product Edit / Create Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 animate-fade-in">
-          <div onClick={() => setIsModalOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 z-10 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
-              <h3 className="text-base font-bold text-neutral-900">
-                {editingProduct ? 'Edit Product' : 'Add New Product'}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-1 text-neutral-400 hover:text-black">
-                <X className="w-5 h-5" />
+              <div>
+                <h3 className="text-lg font-bold text-neutral-900">
+                  {editingProduct ? 'Edit Product & Visual Assets' : 'Add New Product'}
+                </h3>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Full image management: main image, hover image, and gallery order.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 hover:text-black"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3.5 rounded-xl bg-red-50 text-[#C4301C] text-xs font-bold border border-red-200">
-                {formError}
+              <div className="mt-4 p-3 bg-red-50 text-[#C4301C] rounded-xl text-xs flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{formError}</span>
               </div>
             )}
 
-            <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveProduct} className="mt-6 space-y-4 text-xs">
+              {/* Product Title */}
               <div>
                 <label className="block font-bold uppercase text-neutral-700 mb-1">
                   Product Title *
@@ -295,11 +415,12 @@ const AdminProducts = () => {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. VEXIVO Aethel ANC Headphones"
+                  placeholder="e.g. VEXIVO Silk Midi Wrap Dress"
                   className="input-pill"
                 />
               </div>
 
+              {/* Price, Compare Price, Stock */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block font-bold uppercase text-neutral-700 mb-1">
@@ -342,24 +463,22 @@ const AdminProducts = () => {
                 </div>
               </div>
 
+              {/* Category & SKU */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold uppercase text-neutral-700 mb-1">
-                    Department / Category
+                    Department / Category *
                   </label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full px-4 py-3 rounded-full border border-neutral-200 bg-white font-medium focus:outline-none focus:border-black"
                   >
-                    <option value="Women">Women</option>
-                    <option value="Men">Men</option>
-                    <option value="Shoes">Shoes</option>
-                    <option value="Bags">Bags</option>
-                    <option value="Jewellery">Jewellery</option>
-                    <option value="Electronics">Electronics</option>
-                    <option value="Beauty">Beauty</option>
-                    <option value="Accessories">Accessories</option>
+                    {CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -370,25 +489,208 @@ const AdminProducts = () => {
                     type="text"
                     value={formData.sku}
                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    placeholder="VEX-AUD-001"
+                    placeholder="VEX-WOM-001"
                     className="input-pill"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold uppercase text-neutral-700 mb-1">
-                  Image URL (Unsplash or direct asset)
-                </label>
-                <input
-                  type="url"
-                  value={formData.thumbnail}
-                  onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="input-pill"
-                />
+              {/* ============================================================ */}
+              {/* IMAGE MANAGEMENT SECTION                                     */}
+              {/* ============================================================ */}
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold uppercase tracking-wider text-neutral-900 text-xs">
+                    Product Visual Assets (Main, Hover, Gallery)
+                  </h4>
+                  <span className="text-[11px] text-neutral-500">
+                    Upload new file or paste direct URL
+                  </span>
+                </div>
+
+                {/* 1. Main Product Image (Thumbnail) */}
+                <div className="space-y-1.5">
+                  <label className="block font-bold uppercase text-neutral-700 text-[11px]">
+                    Main Product Image (Thumbnail) *
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="url"
+                      value={formData.thumbnail}
+                      onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+                      placeholder="https://images.unsplash.com/... or /uploads/..."
+                      className="input-pill flex-1"
+                    />
+                    <label className="btn-pill-light py-2.5 px-4 cursor-pointer flex items-center space-x-1 whitespace-nowrap flex-shrink-0">
+                      {uploadingField === 'thumbnail' ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )}
+                      <span>Upload</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e, 'thumbnail')}
+                      />
+                    </label>
+                  </div>
+                  {formData.thumbnail && (
+                    <div className="flex items-center space-x-3 pt-1">
+                      <img
+                        src={formData.thumbnail}
+                        alt="Main preview"
+                        className="w-12 h-14 object-cover rounded-lg border border-neutral-200 bg-white"
+                      />
+                      <span className="text-[11px] text-neutral-500">Main cover preview</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Secondary / Hover Image */}
+                <div className="space-y-1.5">
+                  <label className="block font-bold uppercase text-neutral-700 text-[11px]">
+                    Secondary / Hover Image (revealed on card hover)
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="url"
+                      value={formData.hoverImage}
+                      onChange={(e) => setFormData({ ...formData, hoverImage: e.target.value })}
+                      placeholder="https://images.unsplash.com/... (optional hover alternate)"
+                      className="input-pill flex-1"
+                    />
+                    <label className="btn-pill-light py-2.5 px-4 cursor-pointer flex items-center space-x-1 whitespace-nowrap flex-shrink-0">
+                      {uploadingField === 'hoverImage' ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )}
+                      <span>Upload</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e, 'hoverImage')}
+                      />
+                    </label>
+                  </div>
+                  {formData.hoverImage && (
+                    <div className="flex items-center space-x-3 pt-1">
+                      <img
+                        src={formData.hoverImage}
+                        alt="Hover preview"
+                        className="w-12 h-14 object-cover rounded-lg border border-neutral-200 bg-white"
+                      />
+                      <span className="text-[11px] text-neutral-500">Hover alternate preview</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Gallery Images (Reorder / Delete / Add) */}
+                <div className="space-y-2 pt-2 border-t border-neutral-200">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold uppercase text-neutral-700 text-[11px]">
+                      Gallery Images ({formData.images.length})
+                    </label>
+                    <label className="text-[11px] font-bold text-neutral-700 hover:text-black cursor-pointer flex items-center space-x-1">
+                      {uploadingField === 'gallery' ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Upload className="w-3 h-3" />
+                      )}
+                      <span>Upload to gallery</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e, 'gallery')}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Add URL Row */}
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={newGalleryUrl}
+                      onChange={(e) => setNewGalleryUrl(e.target.value)}
+                      placeholder="Paste image URL to add to gallery..."
+                      className="input-pill flex-1 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddGalleryUrl}
+                      className="btn-pill-dark py-2 px-4 text-xs whitespace-nowrap"
+                    >
+                      Add URL
+                    </button>
+                  </div>
+
+                  {/* Gallery Reorder List */}
+                  {formData.images.length > 0 ? (
+                    <div className="space-y-1.5 pt-2">
+                      {formData.images.map((imgUrl, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between bg-white p-2 rounded-xl border border-neutral-200"
+                        >
+                          <div className="flex items-center space-x-3 min-w-0">
+                            <span className="text-[10px] font-bold text-neutral-400 w-4">
+                              #{idx + 1}
+                            </span>
+                            <img
+                              src={imgUrl}
+                              alt=""
+                              className="w-10 h-10 object-cover rounded-lg bg-neutral-100 flex-shrink-0"
+                              onError={(e) => {
+                                e.currentTarget.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=100&q=80';
+                              }}
+                            />
+                            <p className="text-[11px] text-neutral-700 truncate max-w-xs font-mono">
+                              {imgUrl}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center space-x-1 flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleMoveImage(idx, 'up')}
+                              disabled={idx === 0}
+                              className="p-1 rounded hover:bg-neutral-100 disabled:opacity-30"
+                              title="Move up"
+                            >
+                              <ArrowUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveImage(idx, 'down')}
+                              disabled={idx === formData.images.length - 1}
+                              className="p-1 rounded hover:bg-neutral-100 disabled:opacity-30"
+                              title="Move down"
+                            >
+                              <ArrowDown className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveGalleryImage(idx)}
+                              className="p-1 rounded text-red-500 hover:bg-red-50"
+                              title="Remove image"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-neutral-400 italic">No gallery images added yet.</p>
+                  )}
+                </div>
               </div>
 
+              {/* Description */}
               <div>
                 <label className="block font-bold uppercase text-neutral-700 mb-1">
                   Full Description *
@@ -398,7 +700,7 @@ const AdminProducts = () => {
                   required
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Elaborate on tailoring, acoustic transducers, materials..."
+                  placeholder="Elaborate on tailoring, materials, and fit..."
                   className="w-full px-4 py-3 rounded-2xl border border-neutral-200 text-xs focus:outline-none focus:border-black"
                 />
               </div>

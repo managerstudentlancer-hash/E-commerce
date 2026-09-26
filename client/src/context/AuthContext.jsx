@@ -4,15 +4,23 @@ import api from '../services/api';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('vexivo_token') || null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    try {
+      const cached = localStorage.getItem('vexivo_user');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(!user);
 
-  // Load user profile if token exists
+  // Validate user profile on server if token exists
   useEffect(() => {
     const fetchUser = async () => {
       if (!token) {
         setUser(null);
+        localStorage.removeItem('vexivo_user');
         setLoading(false);
         return;
       }
@@ -20,6 +28,7 @@ export const AuthProvider = ({ children }) => {
         const response = await api.auth.getMe();
         if (response.success && response.user) {
           setUser(response.user);
+          localStorage.setItem('vexivo_user', JSON.stringify(response.user));
         } else {
           logout();
         }
@@ -38,6 +47,7 @@ export const AuthProvider = ({ children }) => {
     const response = await api.auth.login({ email, password });
     if (response.success && response.token) {
       localStorage.setItem('vexivo_token', response.token);
+      localStorage.setItem('vexivo_user', JSON.stringify(response.user));
       setToken(response.token);
       setUser(response.user);
       return response.user;
@@ -45,10 +55,14 @@ export const AuthProvider = ({ children }) => {
     throw new Error(response.message || 'Login failed');
   };
 
-  const register = async (name, email, password, phone) => {
-    const response = await api.auth.register({ name, email, password, phone });
+  const register = async (nameOrData, email, password, phone) => {
+    const payload = typeof nameOrData === 'object' && nameOrData !== null
+      ? nameOrData
+      : { name: nameOrData, email, password, phone };
+    const response = await api.auth.register(payload);
     if (response.success && response.token) {
       localStorage.setItem('vexivo_token', response.token);
+      localStorage.setItem('vexivo_user', JSON.stringify(response.user));
       setToken(response.token);
       setUser(response.user);
       return response.user;
@@ -56,8 +70,26 @@ export const AuthProvider = ({ children }) => {
     throw new Error(response.message || 'Registration failed');
   };
 
+  const sendOtp = async (phone) => {
+    const response = await api.auth.sendOtp({ phone });
+    return response;
+  };
+
+  const loginWithOtp = async (phone, otp, name) => {
+    const response = await api.auth.verifyOtp({ phone, otp, name });
+    if (response.success && response.token) {
+      localStorage.setItem('vexivo_token', response.token);
+      localStorage.setItem('vexivo_user', JSON.stringify(response.user));
+      setToken(response.token);
+      setUser(response.user);
+      return response.user;
+    }
+    throw new Error(response.message || 'Verification failed');
+  };
+
   const logout = () => {
     localStorage.removeItem('vexivo_token');
+    localStorage.removeItem('vexivo_user');
     setToken(null);
     setUser(null);
     api.auth.logout().catch(() => {});
@@ -67,12 +99,14 @@ export const AuthProvider = ({ children }) => {
     const response = await api.auth.updateProfile(profileData);
     if (response.success && response.user) {
       setUser(response.user);
+      localStorage.setItem('vexivo_user', JSON.stringify(response.user));
       return response.user;
     }
     throw new Error(response.message || 'Profile update failed');
   };
 
   const isAdmin = user && user.role === 'admin';
+  const isSeller = user && (user.role === 'seller' || user.role === 'admin');
 
   return (
     <AuthContext.Provider
@@ -82,9 +116,12 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         register,
+        sendOtp,
+        loginWithOtp,
         logout,
         updateProfile,
         isAdmin,
+        isSeller,
         isAuthenticated: !!user,
       }}
     >

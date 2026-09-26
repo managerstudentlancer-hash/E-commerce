@@ -15,6 +15,8 @@ import {
   Menu,
   X,
   ShieldCheck,
+  Users,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -22,6 +24,7 @@ const adminNavItems = [
   { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
   { name: 'Products', path: '/admin/products', icon: Package },
   { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
+  { name: 'Users & Roles', path: '/admin/users', icon: Users },
   { name: 'Categories', path: '/admin/categories', icon: FolderTree },
   { name: 'Collections', path: '/admin/collections', icon: Layers },
   { name: 'Coupons', path: '/admin/coupons', icon: Tag },
@@ -31,27 +34,44 @@ const adminNavItems = [
 ];
 
 const AdminLayout = () => {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, loading, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Guard: require admin role
+  // During auth check, show loading spinner
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-neutral-100">
+        <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  // Guard: strictly require admin role
   if (!user || user.role !== 'admin') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-neutral-100 text-center">
-        <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl space-y-4">
-          <ShieldCheck className="w-12 h-12 text-[#C4301C] mx-auto" />
-          <h2 className="text-xl font-bold text-neutral-900">Administrator Access Required</h2>
-          <p className="text-xs text-neutral-500">
+      <div className="min-h-screen flex items-center justify-center p-6 bg-neutral-950 text-center text-white">
+        <div className="max-w-md w-full bg-neutral-900 border border-neutral-800 p-8 rounded-3xl shadow-2xl space-y-4">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-neutral-800 border border-neutral-700 flex items-center justify-center text-[#C4301C]">
+            <ShieldCheck className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-white">Administrator Access Required</h2>
+          <p className="text-xs text-neutral-400">
             You must be authenticated with an administrator account to access the VEXIVO control panel.
           </p>
-          <div className="pt-2 flex flex-col gap-2">
-            <Link to="/login" className="btn-pill-dark text-xs py-2.5">
-              Sign In with Admin Account
+          <div className="pt-2 flex flex-col gap-2.5">
+            <Link
+              to={`/admin/login?redirect=${encodeURIComponent(location.pathname)}`}
+              className="py-3 px-4 rounded-xl bg-[#C4301C] hover:bg-red-700 text-white font-bold text-xs shadow-lg transition-all"
+            >
+              Sign In to Administrator Portal
             </Link>
-            <Link to="/" className="btn-pill-light text-xs py-2.5">
-              Return to Store
+            <Link
+              to="/"
+              className="py-2.5 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-medium text-xs transition-colors"
+            >
+              Return to Storefront
             </Link>
           </div>
         </div>
@@ -61,7 +81,7 @@ const AdminLayout = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/admin/login');
   };
 
   return (

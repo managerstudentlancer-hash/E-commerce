@@ -111,13 +111,13 @@ const Footer = () => {
             </h4>
             <ul className="space-y-2.5 text-xs text-neutral-400">
               <li>
-                <Link to="/category/women" className="hover:text-white transition-colors">Women's Edit</Link>
+                <Link to="/category/women-wear" className="hover:text-white transition-colors">Women's Edit</Link>
               </li>
               <li>
-                <Link to="/category/men" className="hover:text-white transition-colors">Men's Tailoring</Link>
+                <Link to="/category/men-wear" className="hover:text-white transition-colors">Men's Tailoring</Link>
               </li>
               <li>
-                <Link to="/category/electronics" className="hover:text-white transition-colors">Acoustic Audio</Link>
+                <Link to="/category/shoes" className="hover:text-white transition-colors">Footwear & Shoes</Link>
               </li>
               <li>
                 <Link to="/category/bags" className="hover:text-white transition-colors">Tuscan Leather</Link>
@@ -192,6 +192,7 @@ const Footer = () => {
             <span>© 2026 VEXIVO International Ltd. All rights reserved.</span>
             <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link to="/admin/login" className="hover:text-neutral-300 text-neutral-600 transition-colors">Admin Portal</Link>
           </div>
 
           {/* Payment Badges (Pills) */}

@@ -21,6 +21,7 @@ import {
   X,
   Sparkles,
   CheckCircle2,
+  Store,
 } from 'lucide-react';
 import api from '../services/api';
 import { useCart } from '../context/CartContext';
@@ -336,16 +337,16 @@ const ProductDetail = () => {
             {/* Pricing */}
             <div className="flex items-baseline space-x-3 py-2 border-y border-neutral-100">
               <span className="text-3xl font-extrabold text-neutral-900">
-                £{product.price.toFixed(2)}
+                ₹{product.price.toFixed(2)}
               </span>
               {product.compareAtPrice > product.price && (
                 <span className="text-base text-neutral-600 line-through">
-                  £{product.compareAtPrice.toFixed(2)}
+                  ₹{product.compareAtPrice.toFixed(2)}
                 </span>
               )}
               {product.discount > 0 && (
                 <span className="text-xs font-bold text-[#C4301C] bg-red-50 px-2.5 py-1 rounded-full">
-                  Save £{(product.compareAtPrice - product.price).toFixed(2)} ({product.discount}%)
+                  Save ₹{(product.compareAtPrice - product.price).toFixed(2)} ({product.discount}%)
                 </span>
               )}
             </div>
@@ -464,8 +465,8 @@ const ProductDetail = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-neutral-900 truncate">VEXIVO Silk Care & Travel Pouch</p>
                   <div className="flex items-center space-x-1.5 mt-0.5">
-                    <span className="text-xs font-bold text-black">£18.00</span>
-                    <span className="text-[11px] text-neutral-600 line-through">£28.00</span>
+                    <span className="text-xs font-bold text-black">₹18.00</span>
+                    <span className="text-[11px] text-neutral-600 line-through">₹28.00</span>
                   </div>
                 </div>
                 <label className="flex items-center cursor-pointer select-none">
@@ -518,24 +519,49 @@ const ProductDetail = () => {
               </button>
             </div>
 
+            {/* Verified Marketplace Seller Card */}
+            <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200/80 text-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                    <Store className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                      Sold by
+                    </span>
+                    <span className="font-extrabold text-neutral-900 text-xs">
+                      {product.sellerName || 'VEXIVO Official Flagship'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200/60">
+                  <span className="text-amber-500">★</span>
+                  <span>4.9</span>
+                  <span className="text-[10px] text-emerald-600 font-medium ml-1">Verified Seller</span>
+                </div>
+              </div>
+            </div>
+
             {/* Guarantees Box */}
             <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100 divide-y divide-neutral-100 text-xs text-neutral-600">
               <div className="flex items-center space-x-3 py-2.5 first:pt-0">
                 <Truck className="w-4 h-4 text-black flex-shrink-0" />
                 <span>
-                  <strong>Complimentary UK Next-Day Delivery</strong> on orders over £50
+                  <strong>Complimentary Pan-India Express Delivery</strong> on orders over ₹499
                 </span>
               </div>
               <div className="flex items-center space-x-3 py-2.5">
                 <RotateCcw className="w-4 h-4 text-black flex-shrink-0" />
                 <span>
-                  <strong>30-Day Hassle-Free Returns</strong> with prepaid return label included
+                  <strong>30-Day Hassle-Free Returns</strong> with doorstep courier pickup
                 </span>
               </div>
               <div className="flex items-center space-x-3 py-2.5 last:pb-0">
                 <ShieldCheck className="w-4 h-4 text-black flex-shrink-0" />
                 <span>
-                  <strong>Lifetime Craft Guarantee</strong> on all hardware and stitching
+                  <strong>Genuine Product Guarantee</strong> verified by VEXIVO Marketplace
                 </span>
               </div>
             </div>
@@ -573,7 +599,7 @@ const ProductDetail = () => {
                 <p>{product.description}</p>
                 <h4 className="text-base font-bold text-neutral-900 mt-6">Acoustic & Craftsmanship Details</h4>
                 <p>
-                  Every VEXIVO creation undergoes extensive quality control in London. From the tensile
+                  Every VEXIVO creation undergoes extensive quality control. From the tensile
                   strength of our double-faced cashmere seams to the acoustic frequency tuning of each
                   neodymium transducer, we ensure maximum fidelity and longevity.
                 </p>
@@ -596,7 +622,7 @@ const ProductDetail = () => {
                 </div>
                 <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100 space-y-1">
                   <p className="text-neutral-500">Warranty Coverage</p>
-                  <p className="font-bold text-neutral-900">Lifetime Hardware & Acoustic Warranty</p>
+                  <p className="font-bold text-neutral-900">Lifetime Hardware & Craft Guarantee</p>
                 </div>
               </div>
             )}
@@ -604,13 +630,13 @@ const ProductDetail = () => {
             {activeTab === 'shipping' && (
               <div className="space-y-4 text-xs sm:text-sm text-neutral-700">
                 <p>
-                  <strong>United Kingdom:</strong> Complimentary Tracked Next-Day Delivery on all orders over £50. Orders under £50 are charged at £3.99 via Royal Mail Tracked 24.
+                  <strong>Pan-India Express:</strong> Complimentary Tracked Delivery on all orders over ₹499 across 28,000+ Indian PIN codes. Orders under ₹499 are charged at ₹49 via Ekart / Delhivery / Bluedart.
                 </p>
                 <p>
-                  <strong>International:</strong> Tracked Express Courier (DHL / DPD) delivery within 3–5 business days to Europe, US, and worldwide.
+                  <strong>Dispatch:</strong> Orders are dispatched from seller hubs within 24 hours. Expected delivery is 2–4 business days.
                 </p>
                 <p>
-                  <strong>Returns:</strong> Returns are accepted within 30 days of receipt. A prepaid Royal Mail label is enclosed with all domestic parcels.
+                  <strong>Returns:</strong> Hassle-free 30-day returns with free doorstep courier pickup arranged directly from your saved address.
                 </p>
               </div>
             )}
@@ -775,10 +801,10 @@ const ProductDetail = () => {
                 {product.name}
               </h4>
               <div className="flex items-center space-x-2 text-xs">
-                <span className="font-extrabold text-neutral-950">£{product.price.toFixed(2)}</span>
+                <span className="font-extrabold text-neutral-950">₹{product.price.toFixed(2)}</span>
                 {product.compareAtPrice > product.price && (
                   <span className="text-neutral-600 line-through text-[11px]">
-                    £{product.compareAtPrice.toFixed(2)}
+                    ₹{product.compareAtPrice.toFixed(2)}
                   </span>
                 )}
                 {selectedVariant && (

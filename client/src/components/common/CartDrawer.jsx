@@ -49,10 +49,10 @@ const CartDrawer = () => {
             <div className="text-xs font-medium text-neutral-700 mb-1.5 flex justify-between">
               <span>
                 {freeShippingRemaining === 0 ? (
-                  <strong className="text-[#0D8756]">🎉 You have unlocked Free UK Delivery!</strong>
+                  <strong className="text-[#0D8756]">🎉 You have unlocked Free Delivery across India!</strong>
                 ) : (
                   <>
-                    Add <strong className="text-black">£{freeShippingRemaining.toFixed(2)}</strong> more for Free UK Delivery
+                    Add <strong className="text-black">₹{freeShippingRemaining.toFixed(2)}</strong> more for Free Delivery
                   </>
                 )}
               </span>
@@ -117,7 +117,7 @@ const CartDrawer = () => {
                         </p>
                       )}
                       <p className="text-sm font-bold text-neutral-900 mt-1">
-                        £{item.price.toFixed(2)}
+                        ₹{item.price.toFixed(2)}
                       </p>
                     </div>
 
@@ -151,7 +151,7 @@ const CartDrawer = () => {
               <div className="flex justify-between text-sm">
                 <span className="text-neutral-600">Subtotal</span>
                 <span className="text-base font-bold text-neutral-900">
-                  £{subtotal.toFixed(2)}
+                  ₹{subtotal.toFixed(2)}
                 </span>
               </div>
               <p className="text-[11px] text-neutral-500">

@@ -217,7 +217,7 @@ const SearchModal = ({ isOpen, onClose }) => {
                       </p>
                       <p className="text-xs text-neutral-500">{product.category}</p>
                       <p className="text-xs font-bold text-neutral-900 mt-1">
-                        £{product.price.toFixed(2)}
+                        ₹{product.price.toFixed(2)}
                       </p>
                     </div>
                   </Link>

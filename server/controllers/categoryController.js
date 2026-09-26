@@ -26,23 +26,41 @@ const getCategories = async (req, res, next) => {
 // @route GET /api/categories/:slug
 const getCategoryBySlug = async (req, res, next) => {
   try {
-    const slug = (req.params.slug || '').toLowerCase().trim();
+    const rawSlug = (req.params.slug || '').toLowerCase().trim();
+
+    // Map common slug aliases so legacy or short URLs match catalog categories seamlessly
+    const slugAliases = {
+      women: 'women-wear',
+      'womens-fashion': 'women-wear',
+      men: 'men-wear',
+      'mens-fashion': 'men-wear',
+      kids: 'kids-wear',
+      home: 'home-living',
+      audio: 'electronics',
+      tech: 'electronics',
+      activewear: 'health-fitness',
+      eyewear: 'vision-care',
+    };
+
+    const slug = slugAliases[rawSlug] || rawSlug;
     let category = await Category.findOne({ slug });
 
     // Category title map for friendly display
     const categoryTitleMap = {
-      women: "Women's Fashion",
-      men: "Men's Tailoring",
-      kids: "Kids' Wear",
-      shoes: 'Footwear & Shoes',
+      'women-wear': "Women's Fashion",
+      'men-wear': "Men's Fashion",
+      'kids-wear': "Kids' Wear",
+      shoes: 'Shoes & Footwear',
       beauty: 'Beauty & Skincare',
       jewellery: 'Fine Jewellery',
-      bags: 'Bags & Leather Goods',
+      bags: 'Bags & Luggage',
       hats: 'Hats & Headwear',
-      watches: 'Watches & Horology',
-      electronics: 'Audio & Acoustics',
+      'vision-care': 'Vision Care & Eyewear',
+      'pets-care': 'Pets Care & Wellness',
+      toys: 'Toys & Board Games',
+      'health-fitness': 'Health & Fitness',
+      electronics: 'Electronics & Audio',
       'home-living': 'Home & Living',
-      activewear: 'Activewear & Studio',
     };
 
     if (!category) {
@@ -50,38 +68,38 @@ const getCategoryBySlug = async (req, res, next) => {
       category = {
         name: friendlyName,
         slug: slug,
-        description: `Curated luxury ${friendlyName} collection engineered with uncompromising material quality and British craftsmanship.`,
+        description: `Premium ${friendlyName} collection with uncompromising quality and British craftsmanship.`,
         image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80',
-        itemCount: 12,
+        itemCount: 0,
       };
     }
 
-    const safeSlug = slug.replace(/[^a-zA-Z0-9]/g, ' ');
-    const searchTerms = [slug, safeSlug, category.name];
-    const regexList = searchTerms.map(t => new RegExp(t, 'i'));
+    // Support pagination if query params are provided
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 0;
+    const skip = (page - 1) * limit;
 
-    // Find products matching this category slug, category name, subcategory, tags, or name
-    let products = await Product.find({
-      $or: [
-        { categorySlug: slug },
-        { categorySlug: { $in: regexList } },
-        { category: { $in: regexList } },
-        { subcategory: { $in: regexList } },
-        { tags: { $in: regexList } },
-        { name: { $in: regexList } },
-      ],
+    const query = {
+      categorySlug: slug,
       status: 'active',
-    });
+    };
 
-    // If category has no directly tagged items, provide popular bestsellers so user is never greeted with a blank page
-    if (products.length === 0) {
-      products = await Product.find({ status: 'active' }).limit(8);
+    const total = await Product.countDocuments(query);
+    let productQuery = Product.find(query).sort({ createdAt: -1 });
+
+    if (limit > 0) {
+      productQuery = productQuery.skip(skip).limit(limit);
     }
+
+    const products = await productQuery;
 
     res.json({
       success: true,
       category,
+      total,
       productCount: products.length,
+      hasMore: limit > 0 ? total > skip + products.length : false,
+      currentPage: page,
       products,
     });
   } catch (error) {

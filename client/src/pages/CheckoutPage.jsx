@@ -22,9 +22,9 @@ const CheckoutPage = () => {
     address: user?.addresses?.[0]?.street || '',
     city: user?.addresses?.[0]?.city || '',
     postalCode: user?.addresses?.[0]?.postalCode || '',
-    country: 'United Kingdom',
+    country: user?.addresses?.[0]?.country || 'India',
     deliveryMethod: 'standard', // 'standard' or 'express'
-    paymentMethod: 'Credit Card', // 'Credit Card', 'PayPal', 'Apple Pay', 'Klarna'
+    paymentMethod: 'UPI / QR', // 'UPI / QR', 'Credit/Debit Card', 'Net Banking', 'Cash on Delivery'
     cardNumber: '4242 •••• •••• 4242',
     cardExp: '12/28',
     cardCvc: '•••',
@@ -135,7 +135,7 @@ const CheckoutPage = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-neutral-500">Total Charged</span>
-              <span className="font-bold text-neutral-900">£{completedOrder.total?.toFixed(2)}</span>
+              <span className="font-bold text-neutral-900">₹{completedOrder.total?.toFixed(2)}</span>
             </div>
           </div>
 
@@ -238,9 +238,66 @@ const CheckoutPage = () => {
 
             {/* 2. Shipping Address */}
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-neutral-200 shadow-subtle space-y-4">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-900">
-                2. Shipping Address
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-900">
+                  2. Shipping Address
+                </h2>
+                {user?.addresses && user.addresses.length > 0 && (
+                  <span className="text-[11px] font-bold text-blue-600">
+                    {user.addresses.length} saved address(es)
+                  </span>
+                )}
+              </div>
+
+              {/* Saved Address 1-Click Picker */}
+              {user?.addresses && user.addresses.length > 0 && (
+                <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200/80 mb-2">
+                  <p className="text-[11px] font-bold text-neutral-600 uppercase tracking-wider mb-2">
+                    Select a Saved Address:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {user.addresses.map((addr) => {
+                      const isSelected = formData.address === addr.street;
+                      return (
+                        <button
+                          key={addr._id}
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              firstName: addr.fullName ? addr.fullName.split(' ')[0] : prev.firstName,
+                              lastName: addr.fullName ? addr.fullName.split(' ').slice(1).join(' ') || prev.lastName : prev.lastName,
+                              phone: addr.phone || prev.phone,
+                              address: addr.street,
+                              city: addr.city,
+                              postalCode: addr.postalCode,
+                              country: addr.country || 'United Kingdom',
+                            }));
+                          }}
+                          className={`p-3 rounded-xl border text-left text-xs transition-all ${
+                            isSelected
+                              ? 'border-blue-600 bg-blue-50/60 shadow-sm ring-1 ring-blue-600'
+                              : 'border-neutral-200 bg-white hover:border-neutral-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-neutral-900 truncate">
+                              {addr.fullName || user.name}
+                            </span>
+                            <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-neutral-100 uppercase text-neutral-600">
+                              {addr.addressType || 'Home'}
+                            </span>
+                          </div>
+                          <p className="text-neutral-500 line-clamp-1 mt-1 text-[11px]">
+                            {addr.street}, {addr.city} - {addr.postalCode}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
@@ -324,13 +381,13 @@ const CheckoutPage = () => {
                     />
                     <div>
                       <p className="text-xs font-bold text-neutral-900">
-                        Tracked UK Standard Delivery (2–3 Working Days)
+                        Pan-India Standard Delivery (2–4 Working Days)
                       </p>
-                      <p className="text-[11px] text-neutral-500">Royal Mail Tracked 48</p>
+                      <p className="text-[11px] text-neutral-500">Ekart Logistics & Delhivery Surface</p>
                     </div>
                   </div>
                   <span className="text-xs font-bold text-neutral-900">
-                    {subtotal >= 50 ? 'FREE' : '£3.99'}
+                    {subtotal >= 50 ? 'FREE' : '₹3.99'}
                   </span>
                 </label>
 
@@ -346,12 +403,12 @@ const CheckoutPage = () => {
                     />
                     <div>
                       <p className="text-xs font-bold text-neutral-900">
-                        Priority Guaranteed Next-Day (Orders before 2 PM)
+                        Priority Guaranteed Express (1–2 Working Days)
                       </p>
-                      <p className="text-[11px] text-neutral-500">DPD Express Air Courier</p>
+                      <p className="text-[11px] text-neutral-500">BlueDart / Delhivery Air Express</p>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-neutral-900">£6.99</span>
+                  <span className="text-xs font-bold text-neutral-900">₹6.99</span>
                 </label>
               </div>
             </div>
@@ -363,7 +420,7 @@ const CheckoutPage = () => {
               </h2>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {['Credit Card', 'Apple Pay', 'PayPal', 'Klarna'].map((method) => (
+                {['UPI / QR', 'Credit/Debit Card', 'Net Banking', 'Cash on Delivery'].map((method) => (
                   <button
                     key={method}
                     type="button"
@@ -379,7 +436,7 @@ const CheckoutPage = () => {
                 ))}
               </div>
 
-              {formData.paymentMethod === 'Credit Card' && (
+              {formData.paymentMethod === 'Credit/Debit Card' && (
                 <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-3 pt-4">
                   <div>
                     <label className="block text-[11px] font-bold uppercase text-neutral-600 mb-1">
@@ -421,6 +478,27 @@ const CheckoutPage = () => {
                   </div>
                 </div>
               )}
+
+              {formData.paymentMethod === 'UPI / QR' && (
+                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-2 text-xs">
+                  <p className="font-bold text-neutral-900">Instant UPI Payment via Google Pay / PhonePe / Paytm / BHIM</p>
+                  <p className="text-neutral-500 text-[11px]">You can verify and approve the payment request directly on your mobile UPI application after confirming.</p>
+                </div>
+              )}
+
+              {formData.paymentMethod === 'Cash on Delivery' && (
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 text-xs text-emerald-800 space-y-1">
+                  <p className="font-bold">Pay on Delivery Available</p>
+                  <p className="text-[11px]">Pay conveniently in cash or via QR code when the delivery executive arrives at your address.</p>
+                </div>
+              )}
+
+              {formData.paymentMethod === 'Net Banking' && (
+                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-600 space-y-1">
+                  <p className="font-bold text-neutral-900">All Major Indian Banks Supported</p>
+                  <p className="text-[11px]">HDFC, SBI, ICICI, Axis, Kotak Mahindra, Punjab National Bank and more.</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -448,7 +526,7 @@ const CheckoutPage = () => {
                       <p className="text-xs text-neutral-600">Qty: {item.quantity}</p>
                     </div>
                     <span className="text-xs font-extrabold text-neutral-900">
-                      £{(item.price * item.quantity).toFixed(2)}
+                      ₹{(item.price * item.quantity).toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -458,23 +536,23 @@ const CheckoutPage = () => {
               <div className="space-y-2 pt-4 border-t border-neutral-100 text-xs text-neutral-600">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-bold text-neutral-900">£{subtotal.toFixed(2)}</span>
+                  <span className="font-bold text-neutral-900">₹{subtotal.toFixed(2)}</span>
                 </div>
                 {initialDiscount > 0 && (
                   <div className="flex justify-between text-[#0D8756] font-bold">
                     <span>Discount Code ({initialCoupon})</span>
-                    <span>-£{initialDiscount.toFixed(2)}</span>
+                    <span>-₹{initialDiscount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span>Delivery ({formData.deliveryMethod})</span>
                   <span className="font-bold text-neutral-900">
-                    {shippingCost === 0 ? 'FREE' : `£${shippingCost.toFixed(2)}`}
+                    {shippingCost === 0 ? 'FREE' : `₹${shippingCost.toFixed(2)}`}
                   </span>
                 </div>
                 <div className="flex justify-between text-base font-extrabold text-neutral-900 pt-3 border-t border-neutral-200">
                   <span>Total Amount</span>
-                  <span>£{grandTotal.toFixed(2)}</span>
+                  <span>₹{grandTotal.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -491,7 +569,7 @@ const CheckoutPage = () => {
                   </>
                 ) : (
                   <>
-                    <span>Confirm & Pay £{grandTotal.toFixed(2)}</span>
+                    <span>Confirm & Pay ₹{grandTotal.toFixed(2)}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}

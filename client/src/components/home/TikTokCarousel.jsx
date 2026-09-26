@@ -180,11 +180,11 @@ const ContinuousVideoCard = ({ video, isMuted, toggleMute }) => {
         </Link>
         <div className="flex items-baseline space-x-2 mt-0.5">
           <span className="text-xs font-extrabold text-[#C4301C]">
-            £{video.product.price.toFixed(2)}
+            ₹{video.product.price.toFixed(2)}
           </span>
           {video.product.compareAtPrice > video.product.price && (
             <span className="text-[11px] text-neutral-400 line-through">
-              £{video.product.compareAtPrice.toFixed(2)}
+              ₹{video.product.compareAtPrice.toFixed(2)}
             </span>
           )}
         </div>

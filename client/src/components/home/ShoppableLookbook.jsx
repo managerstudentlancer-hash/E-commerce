@@ -173,18 +173,18 @@ const ShoppableLookbook = () => {
                     </h3>
                     <div className="flex items-baseline space-x-2 mt-2">
                       <span className="text-xl font-extrabold text-neutral-900">
-                        £{activePin.price.toFixed(2)}
+                        ₹{activePin.price.toFixed(2)}
                       </span>
                       {activePin.compareAtPrice > activePin.price && (
                         <span className="text-xs text-neutral-600 line-through">
-                          £{activePin.compareAtPrice.toFixed(2)}
+                          ₹{activePin.compareAtPrice.toFixed(2)}
                         </span>
                       )}
                     </div>
                   </div>
 
                   <span className="text-[11px] text-[#0D8756] font-semibold">
-                    ✓ In Stock (Complimentary UK Tracked Delivery)
+                    ✓ In Stock (Complimentary Pan-India Express Delivery)
                   </span>
                 </div>
               </div>
@@ -239,7 +239,7 @@ const ShoppableLookbook = () => {
                     />
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold uppercase text-neutral-600">Item 0{idx + 1}</p>
-                      <p className="text-xs font-bold text-neutral-900 truncate">£{item.price.toFixed(2)}</p>
+                      <p className="text-xs font-bold text-neutral-900 truncate">₹{item.price.toFixed(2)}</p>
                     </div>
                   </button>
                 );

@@ -138,13 +138,26 @@ const getProductBySlug = async (req, res, next) => {
   }
 };
 
-// @desc Create new product (Admin)
+// @desc Create new product (Admin or Seller)
 // @route POST /api/products
 const createProduct = async (req, res, next) => {
   try {
     const productData = { ...req.body };
+
+    // Attach seller information if user is authenticated
+    if (req.user) {
+      productData.sellerId = req.user._id;
+      productData.sellerName = req.body.sellerName || req.user.name || 'Independent Seller';
+    }
+
     if (!productData.slug && productData.name) {
-      productData.slug = slugify(productData.name);
+      const baseSlug = slugify(productData.name);
+      let uniqueSlug = baseSlug;
+      let counter = 1;
+      while (await Product.findOne({ slug: uniqueSlug })) {
+        uniqueSlug = `${baseSlug}-${counter++}`;
+      }
+      productData.slug = uniqueSlug;
     }
     if (!productData.categorySlug && productData.category) {
       productData.categorySlug = slugify(productData.category);
@@ -157,7 +170,7 @@ const createProduct = async (req, res, next) => {
   }
 };
 
-// @desc Update product (Admin)
+// @desc Update product (Admin can update all; Seller can update only own)
 // @route PUT /api/products/:id
 const updateProduct = async (req, res, next) => {
   try {
@@ -166,8 +179,28 @@ const updateProduct = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    if (req.body.name && !req.body.slug) {
-      req.body.slug = slugify(req.body.name);
+    // Role-based authorization: Admin can update any product, seller can only update own
+    if (req.user.role !== 'admin') {
+      if (!product.sellerId || product.sellerId.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: You can only edit your own products.',
+        });
+      }
+    }
+
+    if (req.body.name && req.body.name !== product.name && !req.body.slug) {
+      const baseSlug = slugify(req.body.name);
+      let uniqueSlug = baseSlug;
+      let counter = 1;
+      while (await Product.findOne({ slug: uniqueSlug, _id: { $ne: product._id } })) {
+        uniqueSlug = `${baseSlug}-${counter++}`;
+      }
+      req.body.slug = uniqueSlug;
+    }
+
+    if (req.body.category && !req.body.categorySlug) {
+      req.body.categorySlug = slugify(req.body.category);
     }
 
     Object.assign(product, req.body);
@@ -179,7 +212,7 @@ const updateProduct = async (req, res, next) => {
   }
 };
 
-// @desc Delete product (Admin)
+// @desc Delete product (Admin can delete all; Seller can delete only own)
 // @route DELETE /api/products/:id
 const deleteProduct = async (req, res, next) => {
   try {
@@ -188,8 +221,33 @@ const deleteProduct = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
+    // Role-based authorization: Admin can delete any product, seller can only delete own
+    if (req.user.role !== 'admin') {
+      if (!product.sellerId || product.sellerId.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: You can only delete your own products.',
+        });
+      }
+    }
+
     await Product.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Product deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Get products listed by the currently authenticated seller
+// @route GET /api/products/seller/my
+const getMySellerProducts = async (req, res, next) => {
+  try {
+    const products = await Product.find({ sellerId: req.user._id }).sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      count: products.length,
+      products,
+    });
   } catch (error) {
     next(error);
   }
@@ -211,5 +269,6 @@ module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
+  getMySellerProducts,
   uploadProductImage,
 };
