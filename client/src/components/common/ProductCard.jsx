@@ -103,7 +103,7 @@ const ProductCard = ({ product }) => {
             alt={`${product.name} alternate`}
             loading="lazy"
             onError={() => setHasSecondError(true)}
-            className="absolute inset-0 w-full h-full object-cover object-center opacity-0 scale-[1.08] group-hover:opacity-100 group-hover:scale-100 transition-all duration-[850ms] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)]"
+            className="product-secondary-img absolute inset-0 w-full h-full object-cover object-center opacity-0 scale-[1.08] group-hover:opacity-100 group-hover:scale-100 transition-all duration-[850ms] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)]"
           />
         )}
 

@@ -40,14 +40,37 @@ const Home = () => {
           .catch(() => {});
 
         // Fetch products for Special Offers & New Arrivals
-        api.products.getAll({ limit: 48 })
+        api.products.getAll({ limit: 120 })
           .then((res) => {
             if (res.success && res.products) {
               const all = res.products;
+
+              // Helper to interleave products across distinct categories
+              const diversify = (items, count = 8, offsetRound = 0) => {
+                const groups = {};
+                items.forEach((p) => {
+                  const c = p.category || 'Other';
+                  if (!groups[c]) groups[c] = [];
+                  groups[c].push(p);
+                });
+                const cats = Object.keys(groups);
+                const picked = [];
+                for (let round = offsetRound; round < offsetRound + 8; round++) {
+                  for (const c of cats) {
+                    if (groups[c][round]) {
+                      picked.push(groups[c][round]);
+                      if (picked.length >= count) return picked;
+                    }
+                  }
+                }
+                return picked.length > 0 ? picked : items.slice(0, count);
+              };
+
               const offers = all.filter((p) => p.specialOffer || p.discount > 0);
               const arrivals = all.filter((p) => p.newArrival || p.bestseller);
-              setSpecialOffers(offers.length >= 4 ? offers.slice(0, 8) : all.slice(0, 8));
-              setNewArrivals(arrivals.length >= 4 ? arrivals.slice(0, 8) : all.slice(8, 16));
+
+              setNewArrivals(diversify(arrivals.length >= 4 ? arrivals : all, 8, 0));
+              setSpecialOffers(diversify(offers.length >= 4 ? offers : all, 8, 1));
             }
           })
           .catch(() => {});

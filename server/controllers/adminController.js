@@ -40,17 +40,13 @@ const getDashboardStats = async (req, res, next) => {
       .sort({ createdAt: -1 })
       .limit(6);
 
-<<<<<<< HEAD
     // Recent customers
     const recentCustomers = await User.find({ role: { $in: ['customer', 'seller'] } })
       .sort({ createdAt: -1 })
       .limit(5)
       .select('name email role createdAt');
 
-    // Sales by status
-=======
     // Status counts
->>>>>>> dev
     const statusCounts = {
       pending: await Order.countDocuments({ orderStatus: 'pending' }),
       confirmed: await Order.countDocuments({ orderStatus: 'confirmed' }),

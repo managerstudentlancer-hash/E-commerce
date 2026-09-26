@@ -19,8 +19,6 @@ const {
   changePassword,
   forgotPassword,
   resetPassword,
-  sendOtp,
-  verifyOtp,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');

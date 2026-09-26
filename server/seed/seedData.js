@@ -12,7 +12,7 @@ const categoriesData = [
     "name": "Women Wear",
     "slug": "women-wear",
     "description": "Effortless silhouettes, fine tailoring, dresses, and everyday luxury essentials.",
-    "image": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80",
     "icon": "Sparkles",
     "sortOrder": 1,
     "featured": true,
@@ -22,9 +22,19 @@ const categoriesData = [
     "name": "Men Wear",
     "slug": "men-wear",
     "description": "Modern structured menswear, organic cotton essentials, bespoke wool tailoring, and overcoats.",
-    "image": "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80",
     "icon": "User",
     "sortOrder": 2,
+    "featured": true,
+    "itemCount": 22
+  },
+  {
+    "name": "Kids Wear",
+    "slug": "kids-wear",
+    "description": "Certified organic bamboo cotton essentials, comfortable playwear, and everyday children sets.",
+    "image": "https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?auto=format&fit=crop&w=800&q=80",
+    "icon": "Baby",
+    "sortOrder": 3,
     "featured": true,
     "itemCount": 22
   },
@@ -34,16 +44,6 @@ const categoriesData = [
     "description": "Artisanal Italian calfskin leather loafers, minimalist runners, sandals, and ankle boots.",
     "image": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80",
     "icon": "Footprints",
-    "sortOrder": 3,
-    "featured": true,
-    "itemCount": 22
-  },
-  {
-    "name": "Electronics",
-    "slug": "electronics",
-    "description": "Acoustic engineering, studio headphones, precision audio, and contemporary desktop tech.",
-    "image": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
-    "icon": "Radio",
     "sortOrder": 4,
     "featured": true,
     "itemCount": 22
@@ -59,43 +59,23 @@ const categoriesData = [
     "itemCount": 22
   },
   {
-    "name": "Home & Living",
-    "slug": "home-living",
-    "description": "Modern sculptural ceramics, walnut furniture, organic textiles, and ambient home decor.",
-    "image": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80",
-    "icon": "Home",
-    "sortOrder": 6,
-    "featured": true,
-    "itemCount": 22
-  },
-  {
     "name": "Jewellery",
     "slug": "jewellery",
     "description": "Recycled 18k solid gold vermeil, sterling silver statement rings, chains, and earrings.",
     "image": "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80",
     "icon": "Gem",
-    "sortOrder": 7,
-    "featured": false,
+    "sortOrder": 6,
+    "featured": true,
     "itemCount": 22
   },
   {
     "name": "Bags",
     "slug": "bags",
     "description": "Full-grain Tuscan vegetable-tanned leather totes, structured crossbody bags, and weekenders.",
-    "image": "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80",
     "icon": "ShoppingBag",
-    "sortOrder": 8,
-    "featured": false,
-    "itemCount": 22
-  },
-  {
-    "name": "Kids Wear",
-    "slug": "kids-wear",
-    "description": "Certified organic bamboo cotton essentials, comfortable playwear, and everyday children sets.",
-    "image": "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=800&q=80",
-    "icon": "Baby",
-    "sortOrder": 9,
-    "featured": false,
+    "sortOrder": 7,
+    "featured": true,
     "itemCount": 22
   },
   {
@@ -104,8 +84,8 @@ const categoriesData = [
     "description": "Pure Australian merino wool beanies, straw Panama hats, caps, and classic British headwear.",
     "image": "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=800&q=80",
     "icon": "Crown",
-    "sortOrder": 10,
-    "featured": false,
+    "sortOrder": 8,
+    "featured": true,
     "itemCount": 22
   },
   {
@@ -114,18 +94,18 @@ const categoriesData = [
     "description": "Precision Japanese titanium eyewear, polarized UV400 sunglasses, and blue light spectacles.",
     "image": "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=800&q=80",
     "icon": "Eye",
-    "sortOrder": 11,
-    "featured": false,
+    "sortOrder": 9,
+    "featured": true,
     "itemCount": 22
   },
   {
     "name": "Pets Care",
     "slug": "pets-care",
     "description": "Eco-friendly bamboo pet bedding, vegetable-tanned collars, organic grooming, and wellness.",
-    "image": "https://images.unsplash.com/photo-1583337130417-1776413b8c3e?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80",
     "icon": "Activity",
-    "sortOrder": 12,
-    "featured": false,
+    "sortOrder": 10,
+    "featured": true,
     "itemCount": 22
   },
   {
@@ -134,8 +114,8 @@ const categoriesData = [
     "description": "Sustainably crafted wooden toys, family tabletop board games, educational puzzles, and plush.",
     "image": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=800&q=80",
     "icon": "Sparkles",
-    "sortOrder": 13,
-    "featured": false,
+    "sortOrder": 11,
+    "featured": true,
     "itemCount": 22
   },
   {
@@ -144,8 +124,28 @@ const categoriesData = [
     "description": "Studio yoga mats, premium resistance equipment, recovery massage tools, and athletic wellness.",
     "image": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=80",
     "icon": "Activity",
+    "sortOrder": 12,
+    "featured": true,
+    "itemCount": 22
+  },
+  {
+    "name": "Electronics",
+    "slug": "electronics",
+    "description": "Acoustic engineering, studio headphones, precision audio, and contemporary desktop tech.",
+    "image": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
+    "icon": "Radio",
+    "sortOrder": 13,
+    "featured": true,
+    "itemCount": 22
+  },
+  {
+    "name": "Home & Living",
+    "slug": "home-living",
+    "description": "Modern sculptural ceramics, walnut furniture, organic textiles, and ambient home decor.",
+    "image": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80",
+    "icon": "Home",
     "sortOrder": 14,
-    "featured": false,
+    "featured": true,
     "itemCount": 22
   }
 ];

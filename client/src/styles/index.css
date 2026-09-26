@@ -253,31 +253,35 @@
   animation-play-state: paused;
 }
 
-/* Category-Specific Product Card Animations (14 Unique Visual Interactions) */
+/* Category-Specific Product Card Animations (14 Visibly Unique Visual Interactions) */
 
 /* 1. Women's Fashion: Editorial Silk Float & Gentle Elevation */
 .product-card-women, .product-card-fashion {
   transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.45s ease;
 }
 .product-card-women:hover, .product-card-fashion:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 18px 38px -8px rgba(196, 48, 28, 0.12), 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: translateY(-8px) scale(1.015);
+  box-shadow: 0 22px 44px -8px rgba(225, 29, 72, 0.25), 0 4px 16px rgba(0, 0, 0, 0.06);
 }
-.product-card-women:hover .product-primary-img, .product-card-fashion:hover .product-primary-img {
-  transform: scale(1.08);
+.product-card-women:hover .product-primary-img,
+.product-card-women:hover .product-secondary-img,
+.product-card-fashion:hover .product-primary-img,
+.product-card-fashion:hover .product-secondary-img {
+  transform: scale(1.1) rotate(0.4deg);
 }
 
-/* 2. Men's Fashion: Tailored Savile Row Structural Lift & Crisp Edge */
+/* 2. Men's Fashion: Tailored Savile Row Structural Lift & Crisp Contrast */
 .product-card-men {
   transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease;
 }
 .product-card-men:hover {
-  transform: translateY(-6px) scale(1.01);
-  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.16);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 22px 46px -10px rgba(30, 58, 138, 0.3);
 }
-.product-card-men:hover .product-primary-img {
-  transform: scale(1.06);
-  filter: contrast(104%);
+.product-card-men:hover .product-primary-img,
+.product-card-men:hover .product-secondary-img {
+  transform: scale(1.08);
+  filter: contrast(108%);
 }
 
 /* 3. Kids' Wear: Cheerful Bouncy Spring & Pastel Radiance */
@@ -285,11 +289,12 @@
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
 }
 .product-card-kids:hover {
-  transform: translateY(-7px) rotate(-0.5deg) scale(1.02);
-  box-shadow: 0 16px 32px -6px rgba(14, 165, 233, 0.22);
+  transform: translateY(-9px) rotate(-1.5deg) scale(1.03);
+  box-shadow: 0 20px 42px -6px rgba(14, 165, 233, 0.32);
 }
-.product-card-kids:hover .product-primary-img {
-  transform: scale(1.07);
+.product-card-kids:hover .product-primary-img,
+.product-card-kids:hover .product-secondary-img {
+  transform: scale(1.09);
 }
 
 /* 4. Shoes & Footwear: Athletic Kinetic Lift & Sneaker Angle Tilt */
@@ -297,11 +302,12 @@
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
 }
 .product-card-shoes:hover {
-  transform: translateY(-8px) scale(1.025);
-  box-shadow: 0 22px 45px -10px rgba(0, 0, 0, 0.18);
+  transform: translateY(-10px) rotate(-2.5deg) scale(1.035);
+  box-shadow: 0 24px 48px -8px rgba(249, 115, 22, 0.35);
 }
-.product-card-shoes:hover .product-primary-img {
-  transform: scale(1.08) rotate(-1.5deg);
+.product-card-shoes:hover .product-primary-img,
+.product-card-shoes:hover .product-secondary-img {
+  transform: scale(1.12) rotate(-2deg);
 }
 
 /* 5. Beauty & Skincare: Ethereal Rose Bloom & Soft Focus Glow */
@@ -309,50 +315,54 @@
   transition: transform 0.55s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.55s ease;
 }
 .product-card-beauty:hover {
-  transform: translateY(-4px) scale(1.018);
-  box-shadow: 0 18px 38px -6px rgba(236, 72, 153, 0.22), 0 0 24px -2px rgba(244, 114, 182, 0.2);
+  transform: translateY(-6px) scale(1.025);
+  box-shadow: 0 20px 42px -6px rgba(236, 72, 153, 0.32), 0 0 26px rgba(244, 114, 182, 0.28);
 }
-.product-card-beauty:hover .product-primary-img {
-  transform: scale(1.05);
-  filter: contrast(103%) saturate(106%);
+.product-card-beauty:hover .product-primary-img,
+.product-card-beauty:hover .product-secondary-img {
+  transform: scale(1.08);
+  filter: saturate(112%) brightness(102%);
 }
 
-/* 6. Fine Jewellery: Diamond Shimmer Glint & Gold Halo */
+/* 6. Fine Jewellery: Diamond Shimmer Glint & Radiant Gold Halo */
 .product-card-jewellery {
   position: relative;
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
 }
 .product-card-jewellery:hover {
-  transform: translateY(-6px) scale(1.015);
-  box-shadow: 0 20px 42px -8px rgba(234, 179, 8, 0.28), 0 0 20px rgba(250, 204, 21, 0.18);
+  transform: translateY(-8px) scale(1.025);
+  box-shadow: 0 22px 46px -8px rgba(234, 179, 8, 0.38), 0 0 26px rgba(250, 204, 21, 0.28);
 }
-.product-card-jewellery:hover .product-primary-img {
-  transform: scale(1.09);
-  filter: brightness(103%) contrast(105%);
+.product-card-jewellery:hover .product-primary-img,
+.product-card-jewellery:hover .product-secondary-img {
+  transform: scale(1.1);
+  filter: brightness(105%) contrast(108%);
 }
 
-/* 7. Bags & Leather: Tuscan Tactile Depth & Saddle Stitch Accent */
+/* 7. Bags & Leather: Tuscan Tactile Depth & Saddle Leather Tilt */
 .product-card-bags {
   transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.45s ease;
 }
 .product-card-bags:hover {
-  transform: translateY(-6px) rotate(0.8deg);
-  box-shadow: 0 22px 44px -8px rgba(120, 53, 15, 0.2);
+  transform: translateY(-8px) rotate(1.4deg) scale(1.02);
+  box-shadow: 0 22px 45px -8px rgba(180, 83, 9, 0.3);
 }
-.product-card-bags:hover .product-primary-img {
-  transform: scale(1.07);
+.product-card-bags:hover .product-primary-img,
+.product-card-bags:hover .product-secondary-img {
+  transform: scale(1.09);
 }
 
-/* 8. Hats & Headwear: Breezy Silhouette Swagger & Floating Tilt */
+/* 8. Hats & Headwear: Streetwear Swagger & Floating Tilt */
 .product-card-hats {
   transition: transform 0.4s cubic-bezier(0.34, 1.3, 0.64, 1), box-shadow 0.4s ease;
 }
 .product-card-hats:hover {
-  transform: translateY(-7px) rotate(1.2deg);
-  box-shadow: 0 18px 36px -6px rgba(71, 85, 105, 0.18);
+  transform: translateY(-9px) rotate(2deg) scale(1.025);
+  box-shadow: 0 20px 42px -6px rgba(71, 85, 105, 0.3);
 }
-.product-card-hats:hover .product-primary-img {
-  transform: scale(1.08);
+.product-card-hats:hover .product-primary-img,
+.product-card-hats:hover .product-secondary-img {
+  transform: scale(1.1);
 }
 
 /* 9. Vision Care: Precision Optical Focus & Anti-Reflective Glare */
@@ -360,12 +370,13 @@
   transition: transform 0.45s ease, box-shadow 0.45s ease;
 }
 .product-card-vision:hover {
-  transform: translateY(-5px) scale(1.02);
-  box-shadow: 0 18px 40px -8px rgba(6, 182, 212, 0.24);
+  transform: translateY(-7px) scale(1.03);
+  box-shadow: 0 22px 46px -8px rgba(6, 182, 212, 0.35), 0 0 22px rgba(6, 182, 212, 0.22);
 }
-.product-card-vision:hover .product-primary-img {
-  transform: scale(1.07);
-  filter: contrast(106%) sharpness(105%);
+.product-card-vision:hover .product-primary-img,
+.product-card-vision:hover .product-secondary-img {
+  transform: scale(1.09);
+  filter: contrast(108%);
 }
 
 /* 10. Pets Care: Affectionate Warm Bounce & Amber Glow */
@@ -373,29 +384,31 @@
   transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.38s ease;
 }
 .product-card-pets:hover {
-  transform: translateY(-7px) scale(1.02);
-  box-shadow: 0 18px 38px -6px rgba(249, 115, 22, 0.22);
+  transform: translateY(-8px) rotate(-1.2deg) scale(1.03);
+  box-shadow: 0 20px 42px -6px rgba(249, 115, 22, 0.32);
 }
-.product-card-pets:hover .product-primary-img {
-  transform: scale(1.08) rotate(-0.8deg);
+.product-card-pets:hover .product-primary-img,
+.product-card-pets:hover .product-secondary-img {
+  transform: scale(1.1);
 }
 
 /* 11. Toys & Games: Joyful Playful Wobble & Colorful Pop */
 @keyframes playfulWobble {
-  0% { transform: translateY(-7px) rotate(0deg) scale(1.025); }
-  25% { transform: translateY(-7px) rotate(-1.5deg) scale(1.025); }
-  75% { transform: translateY(-7px) rotate(1.5deg) scale(1.025); }
-  100% { transform: translateY(-7px) rotate(0deg) scale(1.025); }
+  0% { transform: translateY(-8px) rotate(0deg) scale(1.03); }
+  25% { transform: translateY(-8px) rotate(-2deg) scale(1.03); }
+  75% { transform: translateY(-8px) rotate(2deg) scale(1.03); }
+  100% { transform: translateY(-8px) rotate(0deg) scale(1.03); }
 }
 .product-card-toys {
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
 }
 .product-card-toys:hover {
-  animation: playfulWobble 0.6s ease-in-out forwards;
-  box-shadow: 0 18px 40px -6px rgba(168, 85, 247, 0.25);
+  animation: playfulWobble 0.65s ease-in-out forwards;
+  box-shadow: 0 20px 44px -6px rgba(168, 85, 247, 0.35);
 }
-.product-card-toys:hover .product-primary-img {
-  transform: scale(1.09);
+.product-card-toys:hover .product-primary-img,
+.product-card-toys:hover .product-secondary-img {
+  transform: scale(1.11);
 }
 
 /* 12. Health & Fitness: Kinetic Athletic Power Pulse */
@@ -403,12 +416,13 @@
   transition: transform 0.35s cubic-bezier(0.34, 1.5, 0.64, 1), box-shadow 0.35s ease;
 }
 .product-card-health:hover {
-  transform: translateY(-6px) scale(1.025);
-  box-shadow: 0 20px 42px -8px rgba(34, 197, 94, 0.25);
+  transform: translateY(-9px) scale(1.03);
+  box-shadow: 0 24px 46px -8px rgba(34, 197, 94, 0.35);
 }
-.product-card-health:hover .product-primary-img {
-  transform: scale(1.07);
-  filter: contrast(105%);
+.product-card-health:hover .product-primary-img,
+.product-card-health:hover .product-secondary-img {
+  transform: scale(1.09);
+  filter: contrast(106%);
 }
 
 /* 13. Electronics & Audio: Futuristic 3D Perspective Tilt & Cyber Glow */
@@ -418,11 +432,12 @@
   transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.5s ease;
 }
 .product-card-electronics:hover {
-  transform: perspective(1000px) rotateX(3.5deg) rotateY(-2.5deg) translateY(-5px);
-  box-shadow: 0 20px 44px -8px rgba(59, 130, 246, 0.25), 0 0 20px rgba(56, 189, 248, 0.2);
+  transform: perspective(1000px) rotateX(4.5deg) rotateY(-3.5deg) translateY(-8px) scale(1.02);
+  box-shadow: 0 22px 46px -8px rgba(59, 130, 246, 0.35), 0 0 25px rgba(56, 189, 248, 0.25);
 }
-.product-card-electronics:hover .product-primary-img {
-  transform: scale(1.06);
+.product-card-electronics:hover .product-primary-img,
+.product-card-electronics:hover .product-secondary-img {
+  transform: scale(1.08);
 }
 
 /* 14. Home & Living: Architectural Calm Depth & Warm Amber Lighting */
@@ -430,11 +445,12 @@
   transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.7s ease;
 }
 .product-card-home:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 22px 48px -12px rgba(180, 83, 9, 0.18);
+  transform: translateY(-6px) scale(1.025);
+  box-shadow: 0 24px 50px -12px rgba(16, 185, 129, 0.28);
 }
-.product-card-home:hover .product-primary-img {
-  transform: scale(1.07);
+.product-card-home:hover .product-primary-img,
+.product-card-home:hover .product-secondary-img {
+  transform: scale(1.08);
 }
 
 /* Respect reduced motion preference */
