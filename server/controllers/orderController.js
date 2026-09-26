@@ -76,8 +76,8 @@ const createOrder = async (req, res, next) => {
       shippingAddress,
       billingAddress: billingAddress || shippingAddress,
       paymentMethod,
-      paymentStatus: 'paid', // Mark as paid for demo checkout
-      orderStatus: 'processing',
+      paymentStatus: 'paid', // Mark as paid for standard checkout flow
+      orderStatus: 'confirmed',
       trackingHistory: initialTracking,
     });
 
@@ -139,18 +139,18 @@ const getOrderById = async (req, res, next) => {
   try {
     let order;
     if (req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-      order = await Order.findById(req.params.id);
+      order = await Order.findById(req.params.id).populate('user', 'name email phone');
     }
     if (!order) {
-      order = await Order.findOne({ orderNumber: req.params.id });
+      order = await Order.findOne({ orderNumber: req.params.id }).populate('user', 'name email phone');
     }
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Check authorization if user order
-    if (req.user && req.user.role !== 'admin' && order.user && order.user.toString() !== req.user._id.toString()) {
+    // Check authorization if non-admin user
+    if (req.user && req.user.role !== 'admin' && order.user && order.user._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Not authorized to view this order' });
     }
 
@@ -160,13 +160,28 @@ const getOrderById = async (req, res, next) => {
   }
 };
 
-// @desc Get all orders (Admin)
+// @desc Get all orders with search & status filters (Admin)
 // @route GET /api/orders
 const getAllOrders = async (req, res, next) => {
   try {
-    const { status, limit = 50, page = 1 } = req.query;
+    const { status, search, limit = 50, page = 1 } = req.query;
     const query = {};
-    if (status) query.orderStatus = status;
+
+    if (status && status !== 'all') {
+      query.orderStatus = status.toLowerCase();
+    }
+
+    if (search) {
+      const sRegex = new RegExp(search, 'i');
+      query.$or = [
+        { orderNumber: sRegex },
+        { guestEmail: sRegex },
+        { 'shippingAddress.firstName': sRegex },
+        { 'shippingAddress.lastName': sRegex },
+        { 'shippingAddress.phone': sRegex },
+        { trackingNumber: sRegex },
+      ];
+    }
 
     const limitNum = parseInt(limit, 10);
     const pageNum = parseInt(page, 10);
@@ -174,10 +189,23 @@ const getAllOrders = async (req, res, next) => {
 
     const total = await Order.countDocuments(query);
     const orders = await Order.find(query)
-      .populate('user', 'name email')
+      .populate('user', 'name email phone')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum);
+
+    // Summary counts for quick status tabs
+    const statusCounts = {
+      all: await Order.countDocuments(),
+      pending: await Order.countDocuments({ orderStatus: 'pending' }),
+      confirmed: await Order.countDocuments({ orderStatus: 'confirmed' }),
+      processing: await Order.countDocuments({ orderStatus: 'processing' }),
+      shipped: await Order.countDocuments({ orderStatus: 'shipped' }),
+      out_for_delivery: await Order.countDocuments({ orderStatus: 'out_for_delivery' }),
+      delivered: await Order.countDocuments({ orderStatus: 'delivered' }),
+      cancelled: await Order.countDocuments({ orderStatus: 'cancelled' }),
+      returned: await Order.countDocuments({ orderStatus: 'returned' }),
+    };
 
     res.json({
       success: true,
@@ -185,6 +213,7 @@ const getAllOrders = async (req, res, next) => {
       total,
       totalPages: Math.ceil(total / limitNum),
       currentPage: pageNum,
+      statusCounts,
       orders,
     });
   } catch (error) {
@@ -192,16 +221,8 @@ const getAllOrders = async (req, res, next) => {
   }
 };
 
-// @desc Update order status & tracking (Admin & Authorized status transitions)
+// @desc Update order status, tracking, and handle stock replenishment (Admin)
 // @route PUT /api/orders/:id/status
-const VALID_TRANSITIONS = {
-  pending: ['processing', 'cancelled'],
-  processing: ['shipped', 'cancelled'],
-  shipped: ['delivered', 'cancelled'],
-  delivered: [],
-  cancelled: [],
-};
-
 const updateOrderStatus = async (req, res, next) => {
   try {
     const { orderStatus, paymentStatus, trackingNumber } = req.body;
@@ -211,18 +232,31 @@ const updateOrderStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    if (orderStatus && orderStatus !== order.orderStatus) {
-      const allowed = VALID_TRANSITIONS[order.orderStatus] || [];
-      if (!allowed.includes(orderStatus)) {
-        return res.status(400).json({
-          success: false,
-          message: `Invalid status transition: Order cannot move from '${order.orderStatus}' to '${orderStatus}'. Allowed: ${allowed.join(', ') || 'none (terminal state)'}`,
-        });
+    const previousStatus = order.orderStatus;
+
+    if (orderStatus) {
+      const normalizedStatus = orderStatus.toLowerCase();
+      order.orderStatus = normalizedStatus;
+
+      // Automatically replenish inventory stock when order is cancelled or returned
+      if (
+        (normalizedStatus === 'cancelled' || normalizedStatus === 'returned') &&
+        previousStatus !== 'cancelled' &&
+        previousStatus !== 'returned'
+      ) {
+        if (order.items && Array.isArray(order.items)) {
+          for (const item of order.items) {
+            if (item.product) {
+              await Product.findByIdAndUpdate(item.product, {
+                $inc: { stock: Number(item.quantity || 1) },
+              }).catch(() => {});
+            }
+          }
+        }
       }
-      order.orderStatus = orderStatus;
     }
 
-    if (paymentStatus) order.paymentStatus = paymentStatus;
+    if (paymentStatus) order.paymentStatus = paymentStatus.toLowerCase();
     if (trackingNumber !== undefined) order.trackingNumber = trackingNumber;
 
     const updatedOrder = await order.save();

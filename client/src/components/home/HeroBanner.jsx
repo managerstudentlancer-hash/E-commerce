@@ -53,8 +53,9 @@ const sideCards = [
   },
 ];
 
-const HeroBanner = ({ banners }) => {
+const HeroBanner = ({ banners, sideCards: customSideCards }) => {
   const slides = banners && banners.length > 0 ? banners : heroSlides;
+  const activeSideCards = customSideCards && customSideCards.length > 0 ? customSideCards : sideCards;
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -173,9 +174,9 @@ const HeroBanner = ({ banners }) => {
 
           {/* Right Column: 4-5 Cols on Desktop — 2 Stacked Multicolumn Cards */}
           <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-4 lg:gap-5">
-            {sideCards.map((card) => (
+            {activeSideCards.map((card) => (
               <div
-                key={card.id}
+                key={card._id || card.id}
                 className="group relative flex-1 min-h-[200px] sm:min-h-[240px] rounded-3xl overflow-hidden bg-neutral-900 shadow-sm flex flex-col justify-end p-6"
               >
                 {/* Image with smooth 0.85s material scale */}

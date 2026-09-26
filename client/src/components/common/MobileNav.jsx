@@ -237,11 +237,11 @@ const MobileNav = ({ isOpen, onClose }) => {
           <div className="p-5 bg-neutral-50 border-t border-neutral-100 text-xs text-neutral-500 space-y-2">
             <div className="flex items-center space-x-2">
               <Phone className="w-3.5 h-3.5" />
-              <span>+44 20 7946 0991</span>
+              <span>+91 80000 12345</span>
             </div>
             <div className="flex items-center space-x-2">
               <Mail className="w-3.5 h-3.5" />
-              <span>arpit123@gmail.com</span>
+              <span>support@vexivo.com</span>
             </div>
           </div>
         </div>

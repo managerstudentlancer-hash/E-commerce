@@ -59,7 +59,7 @@ const FeaturedCollectionTabs = () => {
             Curated Wardrobe &amp; Living
           </h2>
           <p className="text-neutral-500 text-xs sm:text-sm mt-1">
-            Discover iconic tailoring, luxury leather, and acoustic innovations tailored to British standards.
+            Discover iconic tailoring, luxury leather, and lifestyle essentials crafted to the finest standards.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 mt-6">
             {tabConfigs.map((tab) => {

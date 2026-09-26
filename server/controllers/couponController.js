@@ -158,6 +158,51 @@ const createCoupon = async (req, res, next) => {
   }
 };
 
+// @desc Update coupon (Admin)
+// @route PUT /api/coupons/:id
+const updateCoupon = async (req, res, next) => {
+  try {
+    const { code, type, value, minimumOrder, maximumDiscount, expiryDate, usageLimit, active } = req.body;
+    const coupon = await Coupon.findById(req.params.id);
+
+    if (!coupon) {
+      return res.status(404).json({ success: false, message: 'Coupon not found' });
+    }
+
+    if (code) coupon.code = code.toUpperCase();
+    if (type) coupon.type = type;
+    if (value !== undefined) coupon.value = Number(value);
+    if (minimumOrder !== undefined) coupon.minimumOrder = Number(minimumOrder);
+    if (maximumDiscount !== undefined) coupon.maximumDiscount = Number(maximumDiscount);
+    if (expiryDate !== undefined) coupon.expiryDate = expiryDate ? new Date(expiryDate) : undefined;
+    if (usageLimit !== undefined) coupon.usageLimit = Number(usageLimit);
+    if (active !== undefined) coupon.active = Boolean(active);
+
+    const updatedCoupon = await coupon.save();
+    res.json({ success: true, coupon: updatedCoupon });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Toggle coupon active status (Admin)
+// @route PATCH /api/coupons/:id/toggle
+const toggleCoupon = async (req, res, next) => {
+  try {
+    const coupon = await Coupon.findById(req.params.id);
+    if (!coupon) {
+      return res.status(404).json({ success: false, message: 'Coupon not found' });
+    }
+
+    coupon.active = !coupon.active;
+    await coupon.save();
+
+    res.json({ success: true, coupon });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc Delete coupon (Admin)
 // @route DELETE /api/coupons/:id
 const deleteCoupon = async (req, res, next) => {
@@ -179,5 +224,7 @@ module.exports = {
   getAvailableCoupons,
   getCoupons,
   createCoupon,
+  updateCoupon,
+  toggleCoupon,
   deleteCoupon,
 };

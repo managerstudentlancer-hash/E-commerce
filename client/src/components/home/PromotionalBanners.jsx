@@ -2,11 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
-const promoCards = [
+const defaultPromoCards = [
   {
     id: 1,
-    title: "Women's Fashion",
-    subtitle: 'Silk Slip Dresses, Tailored Tops & Evening Wear',
+    title: "Women's Collection",
+    subtitle: 'Silk Blouses, Trench Coats & Tailored Trousers',
     tag: 'TRENDING NOW',
     tagBg: 'bg-[#C4301C]',
     image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
@@ -35,13 +35,13 @@ const promoCards = [
   },
   {
     id: 4,
-    title: 'Electronics & Audio',
-    subtitle: 'Studio ANC Headphones, Keyboards & Audio Tech',
-    tag: 'TECH LAB',
-    tagBg: 'bg-indigo-600',
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
-    link: '/category/electronics',
-    btnText: 'Shop Electronics',
+    title: 'Luxury Bags & Leather',
+    subtitle: 'Tuscan Full-Grain Totes & Saddle Bags',
+    tag: 'BESTSELLERS',
+    tagBg: 'bg-black',
+    image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80',
+    link: '/category/bags',
+    btnText: 'Explore Bags',
   },
   {
     id: 5,
@@ -55,17 +55,19 @@ const promoCards = [
   },
   {
     id: 6,
-    title: 'Home & Living',
-    subtitle: 'Modern Sculptural Decor, Velvet Furniture & Lighting',
-    tag: 'LIVING SPACES',
+    title: 'Fine Jewellery & Watches',
+    subtitle: '18K Vermeil Gold, Freshwater Pearls & Timepieces',
+    tag: 'PRECIOUS EDIT',
     tagBg: 'bg-amber-600',
-    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
-    link: '/category/home-living',
-    btnText: 'Shop Home',
+    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80',
+    link: '/category/jewellery',
+    btnText: 'Shop Jewellery',
   },
 ];
 
-const PromotionalBanners = () => {
+const PromotionalBanners = ({ banners: customBanners }) => {
+  const cards = customBanners && customBanners.length > 0 ? customBanners : defaultPromoCards;
+
   return (
     <section className="py-10 sm:py-14 bg-white border-b border-neutral-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -78,15 +80,15 @@ const PromotionalBanners = () => {
             Shop By <strong className="font-extrabold text-[#C4301C]">Category</strong>
           </h2>
           <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-            Explore authentic British luxury across our six core departments.
+            Explore authentic luxury across our premier marketplace departments.
           </p>
         </div>
 
-        {/* 6-Card Category Bento Grid (3 Cols on Desktop, 2 on Tablet, 1 on Mobile) */}
+        {/* Bento Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-          {promoCards.map((card) => (
+          {cards.map((card, idx) => (
             <div
-              key={card.id}
+              key={card._id || card.id || idx}
               className="group relative rounded-3xl overflow-hidden min-h-[340px] sm:min-h-[380px] flex flex-col justify-between p-6 shadow-sm border border-neutral-100 transition-all duration-300 hover:shadow-[0_16px_36px_rgba(0,0,0,0.12)]"
             >
               {/* Background Image */}
@@ -94,7 +96,8 @@ const PromotionalBanners = () => {
                 src={card.image}
                 alt={card.title}
                 onError={(e) => {
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80';
+                  e.currentTarget.src =
+                    'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80';
                 }}
                 className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-[850ms] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
               />
@@ -103,9 +106,11 @@ const PromotionalBanners = () => {
               {/* Top Tag */}
               <div className="relative z-10">
                 <span
-                  className={`inline-block px-3 py-1 rounded-full text-white text-[10px] font-extrabold uppercase tracking-widest shadow-md ${card.tagBg}`}
+                  className={`inline-block px-3 py-1 rounded-full text-white text-[10px] font-extrabold uppercase tracking-widest shadow-md ${
+                    card.tagBg || 'bg-[#C4301C]'
+                  }`}
                 >
-                  {card.tag}
+                  {card.tag || card.highlight || 'TRENDING'}
                 </span>
               </div>
 
@@ -115,14 +120,14 @@ const PromotionalBanners = () => {
                   {card.title}
                 </h3>
                 <p className="text-xs text-neutral-200 line-clamp-2 leading-relaxed font-normal">
-                  {card.subtitle}
+                  {card.subtitle || card.description}
                 </p>
                 <div className="pt-2">
                   <Link
-                    to={card.link}
+                    to={card.buttonLink || card.link || '/shop'}
                     className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-white/95 text-black hover:bg-white text-xs font-bold uppercase tracking-wider shadow-md hover:scale-105 active:scale-95 transition-all"
                   >
-                    <span>{card.btnText}</span>
+                    <span>{card.buttonText || card.btnText || 'Shop Now'}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>

@@ -25,6 +25,7 @@ const userSchema = new mongoose.Schema(
     dateOfBirth: { type: String, default: '' },
     role: { type: String, enum: ['customer', 'seller', 'admin'], default: 'customer' },
     isSeller: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
     sellerProfile: {
       storeName: { type: String, default: '' },
       legalBusinessName: { type: String, default: '' },

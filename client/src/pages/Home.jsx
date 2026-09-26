@@ -17,7 +17,9 @@ import SocialProofToast from '../components/home/SocialProofToast';
 import WelcomeDiscountModal from '../components/common/WelcomeDiscountModal';
 
 const Home = () => {
-  const [banners, setBanners] = useState([]);
+  const [heroBanners, setHeroBanners] = useState([]);
+  const [sideBanners, setSideBanners] = useState([]);
+  const [promoBanners, setPromoBanners] = useState([]);
   const [specialOffers, setSpecialOffers] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,10 +27,15 @@ const Home = () => {
   useEffect(() => {
     const loadHomeData = async () => {
       try {
-        // Fetch hero banners
-        api.banners.getActive('hero')
+        // Fetch all active banners
+        api.banners.getActive()
           .then((res) => {
-            if (res.success && res.banners?.length > 0) setBanners(res.banners);
+            if (res.success && res.banners?.length > 0) {
+              const allBanners = res.banners;
+              setHeroBanners(allBanners.filter((b) => !b.position || b.position === 'hero'));
+              setSideBanners(allBanners.filter((b) => b.position === 'side'));
+              setPromoBanners(allBanners.filter((b) => b.position === 'grid' || b.position === 'promo'));
+            }
           })
           .catch(() => {});
 
@@ -63,7 +70,7 @@ const Home = () => {
       <CountdownTimerBanner />
 
       {/* 3. Hero Slider with Multicolumn (Shaporoo slider_with_multicolumn) */}
-      <HeroBanner banners={banners} />
+      <HeroBanner banners={heroBanners} sideCards={sideBanners} />
 
       {/* 4. TikTok / Social Video Inspiration Carousel (Shaporoo ticktock_carousal) */}
       <TikTokCarousel />
@@ -72,7 +79,7 @@ const Home = () => {
       <NewArrivalsSection products={newArrivals} />
 
       {/* 6. Bento Promotional Grid (Shaporoo grid_banner "Our Best Winter Products") */}
-      <PromotionalBanners />
+      <PromotionalBanners banners={promoBanners} />
 
       {/* 7. Tabbed Featured Collections (Shaporoo collection_tabs) */}
       <FeaturedCollectionTabs />

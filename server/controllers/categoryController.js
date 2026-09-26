@@ -11,11 +11,22 @@ const slugify = (text) => {
     .replace(/--+/g, '-');
 };
 
-// @desc Get all active categories
+// @desc Get all active categories (Public)
 // @route GET /api/categories
 const getCategories = async (req, res, next) => {
   try {
     const categories = await Category.find({ status: 'active' }).sort({ sortOrder: 1, name: 1 });
+    res.json({ success: true, count: categories.length, categories });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Get all categories including inactive (Admin)
+// @route GET /api/categories/all
+const getAllCategoriesAdmin = async (req, res, next) => {
+  try {
+    const categories = await Category.find().sort({ sortOrder: 1, name: 1 });
     res.json({ success: true, count: categories.length, categories });
   } catch (error) {
     next(error);
@@ -45,7 +56,6 @@ const getCategoryBySlug = async (req, res, next) => {
     const slug = slugAliases[rawSlug] || rawSlug;
     let category = await Category.findOne({ slug });
 
-    // Category title map for friendly display
     const categoryTitleMap = {
       'women-wear': "Women's Fashion",
       'men-wear': "Men's Fashion",
@@ -64,7 +74,12 @@ const getCategoryBySlug = async (req, res, next) => {
     };
 
     if (!category) {
-      const friendlyName = categoryTitleMap[slug] || slug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+      const friendlyName =
+        categoryTitleMap[slug] ||
+        slug
+          .split('-')
+          .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+          .join(' ');
       category = {
         name: friendlyName,
         slug: slug,
@@ -80,18 +95,28 @@ const getCategoryBySlug = async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     const query = {
-      categorySlug: slug,
+      $or: [
+        { categorySlug: slug },
+        { category: new RegExp(`^${category.name}$`, 'i') },
+        { category: new RegExp(`^${slug}$`, 'i') },
+        { category: new RegExp(slug, 'i') },
+      ],
       status: 'active',
     };
 
-    const total = await Product.countDocuments(query);
+    let total = await Product.countDocuments(query);
     let productQuery = Product.find(query).sort({ createdAt: -1 });
 
     if (limit > 0) {
       productQuery = productQuery.skip(skip).limit(limit);
     }
 
-    const products = await productQuery;
+    let products = await productQuery;
+
+    if (products.length === 0) {
+      products = await Product.find({ status: 'active' }).limit(8);
+      total = products.length;
+    }
 
     res.json({
       success: true,
@@ -111,7 +136,7 @@ const getCategoryBySlug = async (req, res, next) => {
 // @route POST /api/categories
 const createCategory = async (req, res, next) => {
   try {
-    const { name, description, image, icon, sortOrder } = req.body;
+    const { name, description, image, icon, sortOrder, status, parentCategory } = req.body;
     const slug = slugify(name);
 
     const exists = await Category.findOne({ slug });
@@ -125,6 +150,8 @@ const createCategory = async (req, res, next) => {
       description,
       image,
       icon,
+      parentCategory: parentCategory || '',
+      status: status || 'active',
       sortOrder: sortOrder || 0,
     });
 
@@ -174,6 +201,7 @@ const deleteCategory = async (req, res, next) => {
 
 module.exports = {
   getCategories,
+  getAllCategoriesAdmin,
   getCategoryBySlug,
   createCategory,
   updateCategory,

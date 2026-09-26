@@ -55,6 +55,18 @@ export const AuthProvider = ({ children }) => {
     throw new Error(response.message || 'Login failed');
   };
 
+  const adminLogin = async (email, password) => {
+    const response = await api.auth.adminLogin({ email, password });
+    if (response.success && response.token) {
+      localStorage.setItem('vexivo_token', response.token);
+      localStorage.setItem('vexivo_user', JSON.stringify(response.user));
+      setToken(response.token);
+      setUser(response.user);
+      return response.user;
+    }
+    throw new Error(response.message || 'Admin authentication failed');
+  };
+
   const register = async (nameOrData, email, password, phone) => {
     const payload = typeof nameOrData === 'object' && nameOrData !== null
       ? nameOrData
@@ -75,7 +87,7 @@ export const AuthProvider = ({ children }) => {
     return response;
   };
 
-  const loginWithOtp = async (phone, otp, name) => {
+  const verifyOtp = async (phone, otp, name) => {
     const response = await api.auth.verifyOtp({ phone, otp, name });
     if (response.success && response.token) {
       localStorage.setItem('vexivo_token', response.token);
@@ -86,6 +98,8 @@ export const AuthProvider = ({ children }) => {
     }
     throw new Error(response.message || 'Verification failed');
   };
+
+  const loginWithOtp = verifyOtp;
 
   const logout = () => {
     localStorage.removeItem('vexivo_token');
@@ -115,8 +129,10 @@ export const AuthProvider = ({ children }) => {
         token,
         loading,
         login,
+        adminLogin,
         register,
         sendOtp,
+        verifyOtp,
         loginWithOtp,
         logout,
         updateProfile,

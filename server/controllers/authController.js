@@ -2,8 +2,19 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL: JWT_SECRET environment variable is required in production.');
+    }
+    return 'vexivo_development_secret_key_do_not_use_in_prod';
+  }
+  return secret;
+};
+
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'vexivo_super_secret_jwt_key_9837428947239847293847239', {
+  return jwt.sign({ id }, getJwtSecret(), {
     expiresIn: process.env.JWT_EXPIRE || '30d',
   });
 };
@@ -132,6 +143,55 @@ const login = async (req, res, next) => {
       success: true,
       token,
       user: formatUserResponse(user),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Admin-only login with strict role validation
+// @route POST /api/auth/admin-login
+const adminLogin = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide admin email and password' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid administrator credentials' });
+    }
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Invalid administrator credentials' });
+    }
+
+    // Strict Security Guard: User MUST have role === 'admin'
+    if (user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Denied: Only accounts with Administrator privileges can log in through the Admin Portal.',
+      });
+    }
+
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        addresses: user.addresses,
+      },
     });
   } catch (error) {
     next(error);
@@ -535,53 +595,71 @@ const sendOtp = async (req, res, next) => {
   }
 };
 
-// @desc Verify OTP and authenticate Customer or Seller
+// @desc Verify OTP or Firebase Phone Auth Token and authenticate Customer or Seller
 // @route POST /api/auth/verify-otp
 const verifyOtp = async (req, res, next) => {
   try {
-    const { phone, otp, name } = req.body;
-    const phoneCheck = validateAndFormatIndianPhone(phone);
-    if (!phoneCheck.valid) {
-      return res.status(400).json({ success: false, message: phoneCheck.error });
-    }
+    const { phone, otp, name, firebaseIdToken } = req.body;
+    let verifiedPhone = null;
 
-    if (!otp || typeof otp !== 'string' || otp.trim().length !== 6) {
-      return res.status(400).json({ success: false, message: 'Please enter a valid 6-digit verification code.' });
-    }
+    if (firebaseIdToken) {
+      try {
+        const { verifyFirebaseToken } = require('../config/firebase');
+        const firebaseUser = await verifyFirebaseToken(firebaseIdToken);
+        if (!firebaseUser || !firebaseUser.phoneNumber) {
+          return res.status(400).json({ success: false, message: 'Firebase phone verification failed.' });
+        }
+        verifiedPhone = firebaseUser.phoneNumber;
+      } catch (err) {
+        return res.status(400).json({ success: false, message: 'Firebase verification token invalid.' });
+      }
+    } else {
+      const phoneCheck = validateAndFormatIndianPhone(phone);
+      if (!phoneCheck.valid) {
+        return res.status(400).json({ success: false, message: phoneCheck.error });
+      }
 
-    const { formatted, raw10 } = phoneCheck;
-    const stored = otpStore.get(formatted);
+      if (!otp || typeof otp !== 'string' || otp.trim().length !== 6) {
+        return res.status(400).json({ success: false, message: 'Please enter a valid 6-digit verification code.' });
+      }
 
-    if (!stored || stored.expiresAt < Date.now()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Verification code has expired or was not requested. Please request a new code.',
-      });
-    }
+      const { formatted } = phoneCheck;
+      const stored = otpStore.get(formatted);
 
-    if (stored.attempts >= 5) {
+      if (!stored || stored.expiresAt < Date.now()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Verification code has expired or was not requested. Please request a new code.',
+        });
+      }
+
+      if (stored.attempts >= 5) {
+        otpStore.delete(formatted);
+        return res.status(429).json({
+          success: false,
+          message: 'Too many incorrect attempts. Please request a new verification code.',
+        });
+      }
+
+      const enteredHash = crypto.createHash('sha256').update(otp.trim()).digest('hex');
+      if (enteredHash !== stored.otpHash) {
+        stored.attempts += 1;
+        return res.status(400).json({
+          success: false,
+          message: 'Incorrect verification code. Please check and try again.',
+        });
+      }
+
+      // OTP Verified! Clear stored code
       otpStore.delete(formatted);
-      return res.status(429).json({
-        success: false,
-        message: 'Too many incorrect attempts. Please request a new verification code.',
-      });
+      verifiedPhone = formatted;
     }
 
-    const enteredHash = crypto.createHash('sha256').update(otp.trim()).digest('hex');
-    if (enteredHash !== stored.otpHash) {
-      stored.attempts += 1;
-      return res.status(400).json({
-        success: false,
-        message: 'Incorrect verification code. Please check and try again.',
-      });
-    }
-
-    // OTP Verified! Clear stored code
-    otpStore.delete(formatted);
+    const raw10 = verifiedPhone.replace(/[^0-9]/g, '').slice(-10);
 
     // Look for existing user
     let user = await User.findOne({
-      $or: [{ phone: formatted }, { phone: raw10 }, { phone: `0${raw10}` }],
+      $or: [{ phone: verifiedPhone }, { phone: raw10 }, { phone: `+91${raw10}` }],
     });
 
     if (user) {
@@ -591,6 +669,10 @@ const verifyOtp = async (req, res, next) => {
           success: false,
           message: 'Mobile authentication is prohibited for administrator accounts.',
         });
+      }
+      if (name && name.trim() && user.name.startsWith('Member ')) {
+        user.name = name.trim();
+        await user.save();
       }
     } else {
       // User does not exist yet: create new customer account with verified mobile
@@ -603,8 +685,9 @@ const verifyOtp = async (req, res, next) => {
         name: fallbackName,
         email: generatedEmail,
         passwordHash: randomPassword,
-        phone: formatted,
+        phone: verifiedPhone,
         role: 'customer',
+        isActive: true,
       });
     }
 
@@ -624,6 +707,9 @@ const verifyOtp = async (req, res, next) => {
 module.exports = {
   register,
   login,
+  adminLogin,
+  sendOtp,
+  verifyOtp,
   logout,
   getMe,
   updateProfile,
@@ -642,3 +728,4 @@ module.exports = {
   validateAndFormatIndianPhone,
   formatUserResponse,
 };
+

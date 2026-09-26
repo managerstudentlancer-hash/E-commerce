@@ -29,45 +29,61 @@ const getProducts = async (req, res, next) => {
       page = 1,
       limit = 12,
       status = 'active',
+      stockStatus,
     } = req.query;
 
-    const query = {};
+    const andConditions = [];
 
-    if (status) {
-      query.status = status;
+    if (status && status !== 'all') {
+      andConditions.push({ status });
+    }
+
+    if (stockStatus === 'out') {
+      andConditions.push({ stock: { $lte: 0 } });
+    } else if (stockStatus === 'low') {
+      andConditions.push({ stock: { $gt: 0, $lte: 10 } });
+    } else if (stockStatus === 'in') {
+      andConditions.push({ stock: { $gt: 10 } });
     }
 
     if (category) {
-      query.$or = [
-        { categorySlug: category.toLowerCase() },
-        { category: new RegExp(category, 'i') },
-      ];
+      andConditions.push({
+        $or: [
+          { categorySlug: category.toLowerCase() },
+          { category: new RegExp(category, 'i') },
+        ],
+      });
     }
 
     if (collection) {
-      query.collectionSlug = collection.toLowerCase();
+      andConditions.push({ collectionSlug: collection.toLowerCase() });
     }
 
-    if (featured === 'true') query.featured = true;
-    if (bestseller === 'true') query.bestseller = true;
-    if (newArrival === 'true') query.newArrival = true;
-    if (specialOffer === 'true') query.specialOffer = true;
+    if (featured === 'true') andConditions.push({ featured: true });
+    if (bestseller === 'true') andConditions.push({ bestseller: true });
+    if (newArrival === 'true') andConditions.push({ newArrival: true });
+    if (specialOffer === 'true') andConditions.push({ specialOffer: true });
 
     if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
+      const priceQuery = {};
+      if (minPrice) priceQuery.$gte = Number(minPrice);
+      if (maxPrice) priceQuery.$lte = Number(maxPrice);
+      andConditions.push({ price: priceQuery });
     }
 
     if (search) {
       const searchRegex = new RegExp(search, 'i');
-      query.$or = [
-        { name: searchRegex },
-        { description: searchRegex },
-        { tags: searchRegex },
-        { brand: searchRegex },
-      ];
+      andConditions.push({
+        $or: [
+          { name: searchRegex },
+          { description: searchRegex },
+          { tags: searchRegex },
+          { brand: searchRegex },
+        ],
+      });
     }
+
+    const query = andConditions.length > 0 ? { $and: andConditions } : {};
 
     // Sorting
     let sortOptions = { createdAt: -1 }; // default newest

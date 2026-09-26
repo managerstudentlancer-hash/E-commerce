@@ -33,10 +33,23 @@ const request = async (endpoint, options = {}) => {
 export const api = {
   // Auth
   auth: {
+    sendOtp: (phoneData) =>
+      request('/auth/send-otp', {
+        method: 'POST',
+        body: JSON.stringify(typeof phoneData === 'string' ? { phone: phoneData } : phoneData),
+      }),
+    verifyOtp: (otpData) =>
+      request('/auth/verify-otp', {
+        method: 'POST',
+        body: JSON.stringify(otpData),
+      }),
+    adminLogin: (credentials) =>
+      request('/auth/admin-login', {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      }),
     register: (userData) => request('/auth/register', { method: 'POST', body: JSON.stringify(userData) }),
     login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
-    sendOtp: (phoneData) => request('/auth/send-otp', { method: 'POST', body: JSON.stringify(phoneData) }),
-    verifyOtp: (otpData) => request('/auth/verify-otp', { method: 'POST', body: JSON.stringify(otpData) }),
     logout: () => request('/auth/logout', { method: 'POST' }),
     getMe: () => request('/auth/me'),
     updateProfile: (profileData) => request('/auth/profile', { method: 'PUT', body: JSON.stringify(profileData) }),
@@ -67,6 +80,7 @@ export const api = {
   // Categories
   categories: {
     getAll: () => request('/categories'),
+    getAllAdmin: () => request('/categories/all'),
     getBySlug: (slug, params = {}) => {
       const query = new URLSearchParams(params).toString();
       return request(`/categories/${slug}${query ? `?${query}` : ''}`);
@@ -119,6 +133,27 @@ export const api = {
       request(`/orders/${id}/status`, { method: 'PUT', body: JSON.stringify(statusData) }),
   },
 
+  // Customers (Admin)
+  customers: {
+    getAll: (params = {}) => {
+      const query = new URLSearchParams(params).toString();
+      return request(`/admin/customers${query ? `?${query}` : ''}`);
+    },
+    getById: (id) => request(`/admin/customers/${id}`),
+    updateStatus: (id, isActive) =>
+      request(`/admin/customers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
+  },
+
+  // Inventory (Admin)
+  inventory: {
+    getAll: (params = {}) => {
+      const query = new URLSearchParams(params).toString();
+      return request(`/admin/inventory${query ? `?${query}` : ''}`);
+    },
+    updateStock: (id, stock) =>
+      request(`/admin/inventory/${id}/stock`, { method: 'PATCH', body: JSON.stringify({ stock }) }),
+  },
+
   // Coupons
   coupons: {
     validate: (code, subtotal) =>
@@ -126,6 +161,8 @@ export const api = {
     getAvailable: () => request('/coupons/available'),
     getAll: () => request('/coupons'),
     create: (coupon) => request('/coupons', { method: 'POST', body: JSON.stringify(coupon) }),
+    update: (id, coupon) => request(`/coupons/${id}`, { method: 'PUT', body: JSON.stringify(coupon) }),
+    toggle: (id) => request(`/coupons/${id}/toggle`, { method: 'PATCH' }),
     delete: (id) => request(`/coupons/${id}`, { method: 'DELETE' }),
   },
 

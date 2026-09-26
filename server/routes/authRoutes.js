@@ -3,6 +3,9 @@ const router = express.Router();
 const {
   register,
   login,
+  adminLogin,
+  sendOtp,
+  verifyOtp,
   logout,
   getMe,
   updateProfile,
@@ -24,10 +27,12 @@ const upload = require('../middleware/upload');
 
 router.post('/register', register);
 router.post('/login', login);
+router.post('/admin-login', adminLogin);
 router.post('/send-otp', sendOtp);
 router.post('/verify-otp', verifyOtp);
 router.post('/logout', logout);
 router.get('/me', protect, getMe);
+
 router.put('/profile', protect, updateProfile);
 router.post('/profile-photo', protect, upload.single('photo'), uploadProfilePhoto);
 router.delete('/profile-photo', protect, removeProfilePhoto);
