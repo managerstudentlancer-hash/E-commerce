@@ -108,10 +108,10 @@ const AdminCoupons = () => {
                       <span className="bg-neutral-100 px-3 py-1 rounded-full">{coup.code}</span>
                     </td>
                     <td className="py-3 px-4 font-bold text-[#0D8756]">
-                      {coup.type === 'percentage' ? `${coup.value}% OFF` : `£${coup.value} OFF`}
+                      {coup.type === 'percentage' ? `${coup.value}% OFF` : `₹${coup.value} OFF`}
                     </td>
                     <td className="py-3 px-4 capitalize">{coup.type}</td>
-                    <td className="py-3 px-4">£{coup.minimumOrder || 0}</td>
+                    <td className="py-3 px-4">₹{coup.minimumOrder || 0}</td>
                     <td className="py-3 px-4">
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
@@ -170,7 +170,7 @@ const AdminCoupons = () => {
                     className="w-full px-4 py-2.5 rounded-full border border-neutral-200 bg-white font-semibold"
                   >
                     <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Amount (£)</option>
+                    <option value="fixed">Fixed Amount (₹)</option>
                   </select>
                 </div>
                 <div>
@@ -186,7 +186,7 @@ const AdminCoupons = () => {
               </div>
 
               <div>
-                <label className="block font-bold uppercase text-neutral-700 mb-1">Minimum Order (£)</label>
+                <label className="block font-bold uppercase text-neutral-700 mb-1">Minimum Order (₹)</label>
                 <input
                   type="number"
                   value={formData.minimumOrder}

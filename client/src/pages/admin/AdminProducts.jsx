@@ -328,10 +328,10 @@ const AdminProducts = () => {
                       </td>
                       <td className="py-3.5 px-4 font-medium">{prod.category}</td>
                       <td className="py-3.5 px-4 font-bold">
-                        £{prod.price?.toFixed(2)}
+                        ₹{prod.price?.toFixed(2)}
                         {prod.compareAtPrice > prod.price && (
                           <span className="text-[10px] text-neutral-600 line-through ml-1.5">
-                            £{prod.compareAtPrice.toFixed(2)}
+                            ₹{prod.compareAtPrice.toFixed(2)}
                           </span>
                         )}
                       </td>
@@ -424,7 +424,7 @@ const AdminProducts = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block font-bold uppercase text-neutral-700 mb-1">
-                    Price (£) *
+                    Price (₹) *
                   </label>
                   <input
                     type="number"
@@ -438,7 +438,7 @@ const AdminProducts = () => {
                 </div>
                 <div>
                   <label className="block font-bold uppercase text-neutral-700 mb-1">
-                    Compare Price (£)
+                    Compare Price (₹)
                   </label>
                   <input
                     type="number"

@@ -18,17 +18,17 @@ const ShippingPolicy = () => {
         <div className="p-6 rounded-3xl bg-neutral-50 border border-neutral-100 space-y-4">
           <h3 className="text-sm font-bold text-neutral-900 flex items-center space-x-2">
             <Truck className="w-4 h-4 text-black" />
-            <span>United Kingdom Shipping Rates</span>
+            <span>Pan-India Shipping Rates</span>
           </h3>
           <ul className="space-y-2">
             <li>
-              <strong>Orders Over £50:</strong> Complimentary Tracked Next-Day Delivery (DPD Priority / Royal Mail Tracked 24).
+              <strong>Orders Over ₹499:</strong> Complimentary Express Delivery (Delhivery / Ekart / BlueDart).
             </li>
             <li>
-              <strong>Orders Under £50:</strong> £3.99 Standard Tracked Delivery (2–3 business days).
+              <strong>Orders Under ₹499:</strong> ₹49 Standard Tracked Delivery (2–4 business days).
             </li>
             <li>
-              <strong>Guaranteed Saturday / Sunday:</strong> £6.99 flat-rate courier dispatch.
+              <strong>Guaranteed Priority Express:</strong> ₹99 flat-rate air courier dispatch.
             </li>
           </ul>
         </div>
@@ -36,8 +36,8 @@ const ShippingPolicy = () => {
         <div className="space-y-4">
           <h3 className="text-base font-bold text-neutral-900">Order Cut-Off & Dispatch Schedules</h3>
           <p>
-            Orders completed Monday through Friday before 2:00 PM GMT are packed and handed over to our couriers
-            the same day from our London fulfillment hub. You will receive an automated dispatch notification with
+            Orders completed Monday through Saturday before 2:00 PM IST are packed and handed over to our couriers
+            the same day from our Mumbai and Delhi fulfillment hubs. You will receive an automated dispatch notification with
             your live tracking number as soon as your parcel is scanned.
           </p>
           <h3 className="text-base font-bold text-neutral-900">International Courier Delivery</h3>

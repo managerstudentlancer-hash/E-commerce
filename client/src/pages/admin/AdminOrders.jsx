@@ -155,7 +155,7 @@ const AdminOrders = () => {
                         </span>
                       </td>
                       <td className="py-4 px-4 font-extrabold text-neutral-900">
-                        £{ord.total?.toFixed(2)}
+                        ₹{ord.total?.toFixed(2)}
                       </td>
                       <td className="py-4 px-6 text-right">
                         <button
@@ -214,7 +214,7 @@ const AdminOrders = () => {
                       <p className="text-neutral-500">Qty: {item.quantity}</p>
                     </div>
                   </div>
-                  <span className="font-bold">£{(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="font-bold">₹{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>

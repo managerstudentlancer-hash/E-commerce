@@ -103,14 +103,14 @@ const AdminSettings = () => {
             type="text"
             value={settings.announcementText}
             onChange={(e) => setSettings({ ...settings, announcementText: e.target.value })}
-            placeholder="✨ FREE UK NEXT-DAY DELIVERY OVER £50 | USE CODE VEX10"
+            placeholder="✨ FREE PAN-INDIA EXPRESS DELIVERY OVER ₹499 | USE CODE AUTUMN30"
             className="input-pill"
           />
         </div>
 
         <div>
           <label className="block font-bold uppercase text-neutral-700 mb-1">
-            Free Shipping Threshold (£)
+            Free Shipping Threshold (₹)
           </label>
           <input
             type="number"
@@ -119,7 +119,7 @@ const AdminSettings = () => {
             className="input-pill"
           />
           <p className="text-[11px] text-neutral-500 mt-1">
-            Orders exceeding this amount automatically unlock complimentary tracked UK delivery.
+            Orders exceeding this amount automatically unlock complimentary tracked Pan-India delivery.
           </p>
         </div>
 
