@@ -25,7 +25,7 @@ const getCategoryAnimationClass = (category = '', categorySlug = '') => {
   return 'product-card-fashion';
 };
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, index = 0 }) => {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [added, setAdded] = useState(false);

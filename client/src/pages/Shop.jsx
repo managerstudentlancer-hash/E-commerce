@@ -309,8 +309,8 @@ const Shop = () => {
             ) : (
               <div>
                 <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                  {products.map((product) => (
-                    <ProductCard key={product._id || product.id} product={product} />
+                  {products.map((product, idx) => (
+                    <ProductCard key={product._id || product.id} product={product} index={idx} />
                   ))}
                 </div>
 

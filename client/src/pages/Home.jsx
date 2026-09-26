@@ -40,22 +40,24 @@ const Home = () => {
           .catch(() => {});
 
         // Fetch products for Special Offers & New Arrivals
-        api.products.getAll({ limit: 120 })
+        api.products.getAll({ limit: 350 })
           .then((res) => {
             if (res.success && res.products) {
               const all = res.products;
 
               // Helper to interleave products across distinct categories
-              const diversify = (items, count = 8, offsetRound = 0) => {
+              const diversify = (items, count = 8, reverseOrder = false) => {
                 const groups = {};
                 items.forEach((p) => {
                   const c = p.category || 'Other';
                   if (!groups[c]) groups[c] = [];
                   groups[c].push(p);
                 });
-                const cats = Object.keys(groups);
+                let cats = Object.keys(groups);
+                if (reverseOrder) cats = [...cats].reverse();
+
                 const picked = [];
-                for (let round = offsetRound; round < offsetRound + 8; round++) {
+                for (let round = 0; round < 6; round++) {
                   for (const c of cats) {
                     if (groups[c][round]) {
                       picked.push(groups[c][round]);
@@ -69,8 +71,8 @@ const Home = () => {
               const offers = all.filter((p) => p.specialOffer || p.discount > 0);
               const arrivals = all.filter((p) => p.newArrival || p.bestseller);
 
-              setNewArrivals(diversify(arrivals.length >= 4 ? arrivals : all, 8, 0));
-              setSpecialOffers(diversify(offers.length >= 4 ? offers : all, 8, 1));
+              setNewArrivals(diversify(arrivals.length >= 4 ? arrivals : all, 8, false));
+              setSpecialOffers(diversify(offers.length >= 4 ? offers : all, 8, true));
             }
           })
           .catch(() => {});

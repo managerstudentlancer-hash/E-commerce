@@ -77,7 +77,7 @@ const createOrder = async (req, res, next) => {
       billingAddress: billingAddress || shippingAddress,
       paymentMethod,
       paymentStatus: 'paid', // Mark as paid for standard checkout flow
-      orderStatus: 'confirmed',
+      orderStatus: req.body.orderStatus || 'processing',
       trackingHistory: initialTracking,
     });
 
@@ -236,6 +236,15 @@ const updateOrderStatus = async (req, res, next) => {
 
     if (orderStatus) {
       const normalizedStatus = orderStatus.toLowerCase();
+
+      // Guard: Cannot transition directly from processing/confirmed/pending to delivered
+      if (normalizedStatus === 'delivered' && ['pending', 'confirmed', 'processing'].includes(previousStatus)) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot transition directly from ${previousStatus} to delivered. Order must be shipped first.`
+        });
+      }
+
       order.orderStatus = normalizedStatus;
 
       // Automatically replenish inventory stock when order is cancelled or returned
