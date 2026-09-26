@@ -1,0 +1,555 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-sale: #C4301C;
+    --color-badge-new: #0D8756;
+    --color-badge-hot: #7188ED;
+    --font-heading: 'Instrument Sans', sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* Utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Shaporoo Reference Pill Buttons */
+.btn-pill-dark {
+  @apply inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-black text-white font-semibold text-sm tracking-wide transition-all duration-300 hover:bg-neutral-800 hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-pill-light {
+  @apply inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-white text-black font-semibold text-sm tracking-wide border border-neutral-200 transition-all duration-300 hover:bg-neutral-50 hover:border-black active:scale-[0.98];
+}
+
+.btn-pill-yellow {
+  @apply inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-[#F4F691] text-black font-bold text-sm tracking-wide transition-all duration-300 hover:bg-[#ebed79] hover:shadow-md active:scale-[0.98];
+}
+
+.btn-pill-outline {
+  @apply inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-transparent text-black font-semibold text-sm tracking-wide border border-black transition-all duration-300 hover:bg-black hover:text-white active:scale-[0.98];
+}
+
+/* Input Fields */
+.input-pill {
+  @apply w-full px-5 py-3 rounded-full border border-neutral-200 bg-neutral-50 text-sm focus:outline-none focus:border-black focus:bg-white transition-all duration-200;
+}
+
+/* Badge Styles */
+.badge-sale {
+  @apply bg-[#C4301C] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full tracking-wider uppercase;
+}
+
+.badge-new {
+  @apply bg-[#0D8756] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full tracking-wider uppercase;
+}
+
+.badge-hot {
+  @apply bg-[#7188ED] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full tracking-wider uppercase;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 3s infinite ease-in-out;
+}
+
+@keyframes floatBob {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-float {
+  animation: floatBob 3s ease-in-out infinite;
+}
+
+/* Promotional Banner Animations (Phase 8) */
+@keyframes textLightSweep {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-text-shimmer {
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #fef08a 25%,
+    #ffffff 50%,
+    #fef08a 75%,
+    #ffffff 100%
+  );
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: textLightSweep 4s linear infinite;
+}
+
+@keyframes firePulse {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.15) rotate(-3deg);
+  }
+  75% {
+    transform: scale(1.08) rotate(3deg);
+  }
+}
+
+.animate-fire-pulse {
+  display: inline-block;
+  animation: firePulse 2s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes discountBadgePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(253, 224, 71, 0.4);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 16px 2px rgba(253, 224, 71, 0.3);
+  }
+}
+
+.animate-discount-pulse {
+  animation: discountBadgePulse 2.5s ease-in-out infinite;
+}
+
+@keyframes shimmerEffect {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transform: translateX(-100%);
+  animation: shimmerEffect 2.5s infinite;
+}
+
+.hover-lift {
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.08);
+}
+
+/* FoxTheme Hyper Motion Engine (Shaporoo Reference) */
+:root {
+  --ease-fox-entrance: cubic-bezier(0, 0, 0.3, 1);
+  --ease-fox-hover: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fox-image: 0.85s;
+  --duration-fox-action: 0.54s;
+}
+
+@keyframes dotscale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.85); }
+}
+
+.animate-dotscale {
+  animation: dotscale 2s var(--ease-fox-entrance) infinite;
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.animate-pulse-ring {
+  animation: pulseRing 2.2s cubic-bezier(0.2, 0, 0, 1) infinite;
+}
+
+@keyframes fadeInUpFox {
+  0% { opacity: 0.01; transform: translateY(2.5rem); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fox-fade-up {
+  animation: fadeInUpFox 0.5s var(--ease-fox-entrance) forwards;
+}
+
+@keyframes zoomOutSm {
+  0% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.animate-zoom-out-sm {
+  animation: zoomOutSm 1.2s var(--ease-fox-entrance) forwards;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 24s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Category-Specific Product Card Animations (14 Visibly Unique Visual Interactions) */
+
+/* 1. Women's Fashion: Editorial Silk Float & Gentle Elevation */
+.product-card-women, .product-card-fashion {
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.45s ease;
+}
+.product-card-women:hover, .product-card-fashion:hover {
+  transform: translateY(-8px) scale(1.015);
+  box-shadow: 0 22px 44px -8px rgba(225, 29, 72, 0.25), 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+.product-card-women:hover .product-primary-img,
+.product-card-women:hover .product-secondary-img,
+.product-card-fashion:hover .product-primary-img,
+.product-card-fashion:hover .product-secondary-img {
+  transform: scale(1.1) rotate(0.4deg);
+}
+
+/* 2. Men's Fashion: Tailored Savile Row Structural Lift & Crisp Contrast */
+.product-card-men {
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease;
+}
+.product-card-men:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 22px 46px -10px rgba(30, 58, 138, 0.3);
+}
+.product-card-men:hover .product-primary-img,
+.product-card-men:hover .product-secondary-img {
+  transform: scale(1.08);
+  filter: contrast(108%);
+}
+
+/* 3. Kids' Wear: Cheerful Bouncy Spring & Pastel Radiance */
+.product-card-kids {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+}
+.product-card-kids:hover {
+  transform: translateY(-9px) rotate(-1.5deg) scale(1.03);
+  box-shadow: 0 20px 42px -6px rgba(14, 165, 233, 0.32);
+}
+.product-card-kids:hover .product-primary-img,
+.product-card-kids:hover .product-secondary-img {
+  transform: scale(1.09);
+}
+
+/* 4. Shoes & Footwear: Athletic Kinetic Lift & Sneaker Angle Tilt */
+.product-card-shoes {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
+}
+.product-card-shoes:hover {
+  transform: translateY(-10px) rotate(-2.5deg) scale(1.035);
+  box-shadow: 0 24px 48px -8px rgba(249, 115, 22, 0.35);
+}
+.product-card-shoes:hover .product-primary-img,
+.product-card-shoes:hover .product-secondary-img {
+  transform: scale(1.12) rotate(-2deg);
+}
+
+/* 5. Beauty & Skincare: Ethereal Rose Bloom & Soft Focus Glow */
+.product-card-beauty {
+  transition: transform 0.55s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.55s ease;
+}
+.product-card-beauty:hover {
+  transform: translateY(-6px) scale(1.025);
+  box-shadow: 0 20px 42px -6px rgba(236, 72, 153, 0.32), 0 0 26px rgba(244, 114, 182, 0.28);
+}
+.product-card-beauty:hover .product-primary-img,
+.product-card-beauty:hover .product-secondary-img {
+  transform: scale(1.08);
+  filter: saturate(112%) brightness(102%);
+}
+
+/* 6. Fine Jewellery: Diamond Shimmer Glint & Radiant Gold Halo */
+.product-card-jewellery {
+  position: relative;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+}
+.product-card-jewellery:hover {
+  transform: translateY(-8px) scale(1.025);
+  box-shadow: 0 22px 46px -8px rgba(234, 179, 8, 0.38), 0 0 26px rgba(250, 204, 21, 0.28);
+}
+.product-card-jewellery:hover .product-primary-img,
+.product-card-jewellery:hover .product-secondary-img {
+  transform: scale(1.1);
+  filter: brightness(105%) contrast(108%);
+}
+
+/* 7. Bags & Leather: Tuscan Tactile Depth & Saddle Leather Tilt */
+.product-card-bags {
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.45s ease;
+}
+.product-card-bags:hover {
+  transform: translateY(-8px) rotate(1.4deg) scale(1.02);
+  box-shadow: 0 22px 45px -8px rgba(180, 83, 9, 0.3);
+}
+.product-card-bags:hover .product-primary-img,
+.product-card-bags:hover .product-secondary-img {
+  transform: scale(1.09);
+}
+
+/* 8. Hats & Headwear: Streetwear Swagger & Floating Tilt */
+.product-card-hats {
+  transition: transform 0.4s cubic-bezier(0.34, 1.3, 0.64, 1), box-shadow 0.4s ease;
+}
+.product-card-hats:hover {
+  transform: translateY(-9px) rotate(2deg) scale(1.025);
+  box-shadow: 0 20px 42px -6px rgba(71, 85, 105, 0.3);
+}
+.product-card-hats:hover .product-primary-img,
+.product-card-hats:hover .product-secondary-img {
+  transform: scale(1.1);
+}
+
+/* 9. Vision Care: Precision Optical Focus & Anti-Reflective Glare */
+.product-card-vision {
+  transition: transform 0.45s ease, box-shadow 0.45s ease;
+}
+.product-card-vision:hover {
+  transform: translateY(-7px) scale(1.03);
+  box-shadow: 0 22px 46px -8px rgba(6, 182, 212, 0.35), 0 0 22px rgba(6, 182, 212, 0.22);
+}
+.product-card-vision:hover .product-primary-img,
+.product-card-vision:hover .product-secondary-img {
+  transform: scale(1.09);
+  filter: contrast(108%);
+}
+
+/* 10. Pets Care: Affectionate Warm Bounce & Amber Glow */
+.product-card-pets {
+  transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.38s ease;
+}
+.product-card-pets:hover {
+  transform: translateY(-8px) rotate(-1.2deg) scale(1.03);
+  box-shadow: 0 20px 42px -6px rgba(249, 115, 22, 0.32);
+}
+.product-card-pets:hover .product-primary-img,
+.product-card-pets:hover .product-secondary-img {
+  transform: scale(1.1);
+}
+
+/* 11. Toys & Games: Joyful Playful Wobble & Colorful Pop */
+@keyframes playfulWobble {
+  0% { transform: translateY(-8px) rotate(0deg) scale(1.03); }
+  25% { transform: translateY(-8px) rotate(-2deg) scale(1.03); }
+  75% { transform: translateY(-8px) rotate(2deg) scale(1.03); }
+  100% { transform: translateY(-8px) rotate(0deg) scale(1.03); }
+}
+.product-card-toys {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
+}
+.product-card-toys:hover {
+  animation: playfulWobble 0.65s ease-in-out forwards;
+  box-shadow: 0 20px 44px -6px rgba(168, 85, 247, 0.35);
+}
+.product-card-toys:hover .product-primary-img,
+.product-card-toys:hover .product-secondary-img {
+  transform: scale(1.11);
+}
+
+/* 12. Health & Fitness: Kinetic Athletic Power Pulse */
+.product-card-health {
+  transition: transform 0.35s cubic-bezier(0.34, 1.5, 0.64, 1), box-shadow 0.35s ease;
+}
+.product-card-health:hover {
+  transform: translateY(-9px) scale(1.03);
+  box-shadow: 0 24px 46px -8px rgba(34, 197, 94, 0.35);
+}
+.product-card-health:hover .product-primary-img,
+.product-card-health:hover .product-secondary-img {
+  transform: scale(1.09);
+  filter: contrast(106%);
+}
+
+/* 13. Electronics & Audio: Futuristic 3D Perspective Tilt & Cyber Glow */
+.product-card-electronics {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.5s ease;
+}
+.product-card-electronics:hover {
+  transform: perspective(1000px) rotateX(4.5deg) rotateY(-3.5deg) translateY(-8px) scale(1.02);
+  box-shadow: 0 22px 46px -8px rgba(59, 130, 246, 0.35), 0 0 25px rgba(56, 189, 248, 0.25);
+}
+.product-card-electronics:hover .product-primary-img,
+.product-card-electronics:hover .product-secondary-img {
+  transform: scale(1.08);
+}
+
+/* 14. Home & Living: Architectural Calm Depth & Warm Amber Lighting */
+.product-card-home {
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.7s ease;
+}
+.product-card-home:hover {
+  transform: translateY(-6px) scale(1.025);
+  box-shadow: 0 24px 50px -12px rgba(16, 185, 129, 0.28);
+}
+.product-card-home:hover .product-primary-img,
+.product-card-home:hover .product-secondary-img {
+  transform: scale(1.08);
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .product-card-women,
+  .product-card-men,
+  .product-card-kids,
+  .product-card-shoes,
+  .product-card-beauty,
+  .product-card-jewellery,
+  .product-card-bags,
+  .product-card-hats,
+  .product-card-vision,
+  .product-card-pets,
+  .product-card-toys,
+  .product-card-health,
+  .product-card-electronics,
+  .product-card-home,
+  .product-card-fashion {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Premium Admin Suite Styles */
+.admin-card {
+  background: rgba(18, 24, 38, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.03);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.45), 0 0 20px rgba(56, 189, 248, 0.06);
+}
+
+.admin-glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-input {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #F8FAFC;
+  transition: all 0.2s ease;
+}
+
+.admin-input:focus {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: #38BDF8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  outline: none;
+}
+
+.admin-input::placeholder {
+  color: #64748B;
+}
+
+.glow-emerald {
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.2);
+}
+
+.glow-purple {
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.2);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.2);
+}
+
+.glow-amber {
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.2);
+}
+
+.glow-rose {
+  box-shadow: 0 0 25px rgba(244, 63, 94, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+
+

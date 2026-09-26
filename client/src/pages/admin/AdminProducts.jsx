@@ -1,0 +1,853 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  X,
+  Check,
+  Loader2,
+  Image as ImageIcon,
+  AlertCircle,
+  Tag,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  Filter,
+  Sparkles,
+  Eye,
+  Layers,
+  Star,
+} from 'lucide-react';
+import api from '../../services/api';
+
+const AdminProducts = () => {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [stockFilter, setStockFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+
+  // Delete Confirm Modal
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    name: '',
+    price: '',
+    compareAtPrice: '',
+    category: 'Women',
+    subcategory: '',
+    sku: '',
+    stock: 50,
+    description: '',
+    shortDescription: '',
+    thumbnail: '',
+    imagesText: '',
+    sizesText: 'S, M, L, XL',
+    colorsText: 'Black, White',
+    bestseller: false,
+    newArrival: true,
+    specialOffer: false,
+    status: 'active',
+  });
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [categoryFilter, stockFilter, statusFilter, currentPage, searchTerm]);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3500);
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await api.categories.getAll();
+      if (res.success) {
+        setCategories(res.categories || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page: currentPage,
+        limit: 12,
+        status: statusFilter,
+      };
+      if (categoryFilter !== 'all') params.category = categoryFilter;
+      if (stockFilter !== 'all') params.stockStatus = stockFilter;
+      if (searchTerm) params.search = searchTerm;
+
+      const res = await api.products.getAll(params);
+      if (res.success) {
+        setProducts(res.products || []);
+        setTotalPages(res.totalPages || 1);
+        setTotalCount(res.total || 0);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenModal = (prod = null) => {
+    setFormError('');
+    if (prod) {
+      setEditingProduct(prod);
+
+      // Extract sizes and colors
+      let sizes = 'S, M, L, XL';
+      let colors = 'Black, White';
+      if (prod.options && Array.isArray(prod.options) && prod.options.length > 0) {
+        const szList = [...new Set(prod.options.map((o) => o.size).filter(Boolean))];
+        const clList = [...new Set(prod.options.map((o) => o.color).filter(Boolean))];
+        if (szList.length > 0) sizes = szList.join(', ');
+        if (clList.length > 0) colors = clList.join(', ');
+      }
+
+      setFormData({
+        name: prod.name || '',
+        price: prod.price || '',
+        compareAtPrice: prod.compareAtPrice || '',
+        category: prod.category || 'Women',
+        subcategory: prod.subcategory || '',
+        sku: prod.sku || '',
+        stock: prod.stock !== undefined ? prod.stock : 50,
+        description: prod.description || '',
+        shortDescription: prod.shortDescription || '',
+        thumbnail: prod.thumbnail || prod.images?.[0] || '',
+        imagesText: (prod.images || []).join('\n'),
+        sizesText: sizes,
+        colorsText: colors,
+        bestseller: !!prod.bestseller,
+        newArrival: !!prod.newArrival,
+        specialOffer: !!prod.specialOffer,
+        status: prod.status || 'active',
+      });
+    } else {
+      setEditingProduct(null);
+      setFormData({
+        name: '',
+        price: '',
+        compareAtPrice: '',
+        category: categories[0]?.name || 'Women',
+        subcategory: '',
+        sku: '',
+        stock: 50,
+        description: '',
+        shortDescription: '',
+        thumbnail: '',
+        imagesText: '',
+        sizesText: 'S, M, L, XL',
+        colorsText: 'Black, White',
+        bestseller: false,
+        newArrival: true,
+        specialOffer: false,
+        status: 'active',
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSaveProduct = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.price || !formData.description) {
+      setFormError('Please enter product title, price, and description');
+      return;
+    }
+
+    setIsSaving(true);
+    setFormError('');
+
+    try {
+      // Parse images list
+      const rawImages = formData.imagesText
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const images = formData.thumbnail
+        ? [formData.thumbnail, ...rawImages.filter((img) => img !== formData.thumbnail)]
+        : rawImages;
+
+      // Parse sizes and colors into options array
+      const parsedSizes = formData.sizesText
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const parsedColors = formData.colorsText
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean);
+
+      const options = [];
+      for (const col of parsedColors.length > 0 ? parsedColors : ['Default']) {
+        for (const sz of parsedSizes.length > 0 ? parsedSizes : ['Standard']) {
+          options.push({
+            color: col,
+            size: sz,
+            sku: formData.sku ? `${formData.sku}-${sz}-${col}` : '',
+            price: Number(formData.price),
+            stock: Math.round(Number(formData.stock || 50) / (parsedSizes.length * parsedColors.length || 1)),
+          });
+        }
+      }
+
+      const payload = {
+        name: formData.name,
+        price: Number(formData.price),
+        compareAtPrice: Number(formData.compareAtPrice || 0),
+        category: formData.category,
+        subcategory: formData.subcategory,
+        sku: formData.sku,
+        stock: Number(formData.stock || 0),
+        description: formData.description,
+        shortDescription: formData.shortDescription,
+        thumbnail: formData.thumbnail || images[0] || '',
+        images: images.length > 0 ? images : [formData.thumbnail].filter(Boolean),
+        options,
+        bestseller: formData.bestseller,
+        newArrival: formData.newArrival,
+        specialOffer: formData.specialOffer,
+        status: formData.status,
+      };
+
+      if (editingProduct) {
+        await api.products.update(editingProduct._id, payload);
+        showToast(`Product "${formData.name}" updated successfully!`);
+      } else {
+        await api.products.create(payload);
+        showToast(`Product "${formData.name}" added to catalog!`);
+      }
+
+      setIsModalOpen(false);
+      fetchProducts();
+    } catch (err) {
+      setFormError(err.message || 'Failed to save product');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!deleteConfirmId) return;
+    setIsDeleting(true);
+    try {
+      await api.products.delete(deleteConfirmId);
+      setDeleteConfirmId(null);
+      showToast('Product removed successfully from catalog');
+      fetchProducts();
+    } catch (err) {
+      showToast(err.message || 'Deletion failed');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 text-slate-100">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 bg-slate-900 text-white text-xs font-bold px-5 py-3.5 rounded-2xl shadow-2xl border border-emerald-500/40 glow-emerald animate-slide-up">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            Product Catalog Management
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Create, update, and publish inventory directly to the live customer storefront in real-time.
+          </p>
+        </div>
+
+        <button
+          onClick={() => handleOpenModal()}
+          className="px-5 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-slate-950 font-black text-xs flex items-center space-x-2 self-start sm:self-auto shadow-lg shadow-cyan-500/20 active:scale-95 transition-all"
+        >
+          <Plus className="w-4 h-4 text-slate-950" />
+          <span>Add New Product</span>
+        </button>
+      </div>
+
+      {/* Search & Multi-Filter Control Bar */}
+      <div className="admin-card p-4 rounded-3xl space-y-3">
+        <div className="flex items-center space-x-3 bg-slate-900/60 px-4 py-3 rounded-2xl border border-white/10">
+          <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Search by product title, SKU code, or department..."
+            className="w-full bg-transparent text-xs outline-none text-white placeholder-slate-500 font-medium"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="text-[11px] text-slate-400 hover:text-white font-bold"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* Filter Dropdowns & Status Tabs */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <div className="flex flex-wrap items-center gap-2.5 text-xs">
+            {/* Category Filter */}
+            <select
+              value={categoryFilter}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-slate-900/80 border border-white/10 font-bold text-slate-200 outline-none focus:border-cyan-400"
+            >
+              <option value="all">All Categories</option>
+              {categories.map((c) => (
+                <option key={c._id || c.slug} value={c.slug || c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Stock Filter */}
+            <select
+              value={stockFilter}
+              onChange={(e) => {
+                setStockFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-slate-900/80 border border-white/10 font-bold text-slate-200 outline-none focus:border-cyan-400"
+            >
+              <option value="all">All Stock Status</option>
+              <option value="in">Healthy Stock (&gt;10 units)</option>
+              <option value="low">Low Stock (1-10 units)</option>
+              <option value="out">Out of Stock (0 units)</option>
+            </select>
+          </div>
+
+          {/* Active / Inactive Tabs */}
+          <div className="flex items-center space-x-1.5 p-1 bg-white/5 rounded-2xl border border-white/5">
+            {[
+              { id: 'all', label: 'All Status' },
+              { id: 'active', label: 'Active' },
+              { id: 'draft', label: 'Draft / Hidden' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setStatusFilter(tab.id);
+                  setCurrentPage(1);
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  statusFilter === tab.id
+                    ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/20'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Products Table */}
+      <div className="admin-card rounded-3xl overflow-hidden shadow-2xl">
+        {loading ? (
+          <div className="p-20 flex flex-col items-center justify-center space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+            <p className="text-xs text-slate-400 font-bold">Querying catalog inventory...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-white/[0.03] border-b border-white/10 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th className="py-4 px-6">Product Details</th>
+                  <th className="py-4 px-4">Department</th>
+                  <th className="py-4 px-4">Price (₹)</th>
+                  <th className="py-4 px-4">Stock Health</th>
+                  <th className="py-4 px-4">Storefront Status</th>
+                  <th className="py-4 px-6 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5 font-medium text-slate-300">
+                {products.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="py-16 text-center text-slate-400 text-xs">
+                      No products match your selected search or filter criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  products.map((prod) => {
+                    const isLow = prod.stock <= 10 && prod.stock > 0;
+                    const isOut = prod.stock <= 0;
+                    return (
+                      <tr key={prod._id} className="hover:bg-white/[0.02] transition-colors group">
+                        <td className="py-4 px-6">
+                          <div className="flex items-center space-x-3.5">
+                            <img
+                              src={prod.thumbnail || prod.images?.[0] || ''}
+                              alt=""
+                              className="w-12 h-12 object-cover rounded-2xl bg-slate-900 border border-white/10 flex-shrink-0 group-hover:scale-105 transition-transform"
+                            />
+                            <div>
+                              <p className="font-bold text-white line-clamp-1 group-hover:text-cyan-300 transition-colors">
+                                {prod.name}
+                              </p>
+                              <div className="flex items-center space-x-2 mt-0.5">
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  {prod.sku || 'SKU-PENDING'}
+                                </span>
+                                {prod.bestseller && (
+                                  <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                    Bestseller
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="py-4 px-4 text-slate-300">
+                          <span className="px-2.5 py-1 rounded-xl bg-white/5 border border-white/10 font-bold">
+                            {prod.category}
+                          </span>
+                        </td>
+
+                        <td className="py-4 px-4 font-black text-white font-mono text-sm">
+                          ₹{prod.price?.toLocaleString('en-IN')}
+                          {prod.compareAtPrice > prod.price && (
+                            <span className="text-[10px] text-slate-500 line-through ml-2 font-normal">
+                              ₹{prod.compareAtPrice?.toLocaleString('en-IN')}
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-4 px-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-[11px] font-black uppercase font-mono ${
+                              isOut
+                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                : isLow
+                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            }`}
+                          >
+                            {isOut ? 'Out of Stock' : `${prod.stock} in stock`}
+                          </span>
+                        </td>
+
+                        <td className="py-4 px-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                              prod.status === 'active'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : 'bg-white/5 text-slate-400 border border-white/10'
+                            }`}
+                          >
+                            {prod.status}
+                          </span>
+                        </td>
+
+                        <td className="py-4 px-6 text-right space-x-2">
+                          <button
+                            onClick={() => handleOpenModal(prod)}
+                            className="p-2 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-colors"
+                            title="Edit product"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(prod._id)}
+                            className="p-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-colors"
+                            title="Delete product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        <div className="p-4 sm:p-5 border-t border-white/10 flex items-center justify-between text-xs text-slate-400 font-bold bg-white/[0.02]">
+          <span>
+            Displaying {products.length} of {totalCount} luxury catalog items
+          </span>
+          <div className="flex items-center space-x-2.5">
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="p-2 rounded-xl bg-white/5 border border-white/10 disabled:opacity-30 hover:bg-white/10 text-white"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="font-mono text-white px-2">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="p-2 rounded-xl bg-white/5 border border-white/10 disabled:opacity-30 hover:bg-white/10 text-white"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Add / Edit Product Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+          <div
+            onClick={() => setIsModalOpen(false)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
+          />
+
+          <div className="relative w-full max-w-2xl bg-[#0F172A] rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 z-10 max-h-[90vh] overflow-y-auto border border-white/10 custom-scrollbar">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-base font-extrabold text-white">
+                  {editingProduct ? 'Edit Catalog Product' : 'Add New Product to Catalog'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-xl bg-white/5"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {formError && (
+              <div className="p-4 rounded-2xl bg-rose-500/10 text-rose-400 text-xs font-bold border border-rose-500/30 flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{formError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                  Product Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g. VEXIVO Cashmere Trench Coat"
+                  className="w-full px-4 py-3 rounded-2xl admin-input"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                    Price (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    placeholder="240.00"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                    Compare Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.compareAtPrice}
+                    onChange={(e) => setFormData({ ...formData, compareAtPrice: e.target.value })}
+                    placeholder="320.00"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                    Stock Units
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.stock}
+                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                    placeholder="50"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                    Department / Category *
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-bold"
+                  >
+                    {categories.length > 0 ? (
+                      categories.map((c) => (
+                        <option key={c._id || c.name} value={c.name} className="bg-slate-900 text-white">
+                          {c.name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Women" className="bg-slate-900 text-white">Women</option>
+                        <option value="Men" className="bg-slate-900 text-white">Men</option>
+                        <option value="Shoes" className="bg-slate-900 text-white">Shoes</option>
+                        <option value="Bags" className="bg-slate-900 text-white">Bags</option>
+                        <option value="Jewellery" className="bg-slate-900 text-white">Jewellery</option>
+                        <option value="Electronics" className="bg-slate-900 text-white">Electronics</option>
+                        <option value="Beauty" className="bg-slate-900 text-white">Beauty</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                    Subcategory
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.subcategory}
+                    onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                    placeholder="e.g. Outerwear"
+                    className="w-full px-4 py-3 rounded-2xl admin-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                    SKU Code
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    placeholder="VEX-COAT-001"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Sizes and Colors */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                    Available Sizes (comma separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.sizesText}
+                    onChange={(e) => setFormData({ ...formData, sizesText: e.target.value })}
+                    placeholder="S, M, L, XL, XXL"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                    Available Colors (comma separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.colorsText}
+                    onChange={(e) => setFormData({ ...formData, colorsText: e.target.value })}
+                    placeholder="Midnight Black, Camel Beige, Olive"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Images */}
+              <div>
+                <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                  Primary Thumbnail Image URL *
+                </label>
+                <input
+                  type="url"
+                  required
+                  value={formData.thumbnail}
+                  onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+                  placeholder="https://images.unsplash.com/photo-..."
+                  className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                  Additional Carousel Images (one URL per line)
+                </label>
+                <textarea
+                  rows={2}
+                  value={formData.imagesText}
+                  onChange={(e) => setFormData({ ...formData, imagesText: e.target.value })}
+                  placeholder="https://images.unsplash.com/photo-2...&#10;https://images.unsplash.com/photo-3..."
+                  className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block font-bold uppercase text-slate-300 mb-1.5">
+                  Product Description *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Describe material, Italian tailoring, fit, craftsmanship..."
+                  className="w-full px-4 py-3 rounded-2xl admin-input leading-relaxed"
+                />
+              </div>
+
+              {/* Status & Marketing Flags */}
+              <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-white/10">
+                <div className="flex items-center space-x-3">
+                  <label className="font-bold uppercase text-slate-300">Status:</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-white/10 text-white font-bold"
+                  >
+                    <option value="active">Active (Visible)</option>
+                    <option value="draft">Draft / Inactive</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center space-x-2 font-bold text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.bestseller}
+                      onChange={(e) => setFormData({ ...formData, bestseller: e.target.checked })}
+                      className="rounded border-white/20 text-cyan-500 w-4 h-4 bg-slate-900"
+                    />
+                    <span>Bestseller</span>
+                  </label>
+
+                  <label className="flex items-center space-x-2 font-bold text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.newArrival}
+                      onChange={(e) => setFormData({ ...formData, newArrival: e.target.checked })}
+                      className="rounded border-white/20 text-cyan-500 w-4 h-4 bg-slate-900"
+                    />
+                    <span>New Arrival</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="pt-4 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-6 py-3 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-8 py-3 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black flex items-center space-x-2 shadow-lg shadow-cyan-500/20"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                  ) : (
+                    <Check className="w-4 h-4 text-slate-950" />
+                  )}
+                  <span>{isSaving ? 'Saving...' : 'Save Product'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div
+            onClick={() => setDeleteConfirmId(null)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
+          />
+          <div className="relative w-full max-w-sm bg-[#0F172A] p-6 rounded-3xl shadow-2xl space-y-4 z-10 border border-white/10">
+            <h3 className="text-base font-extrabold text-white">Delete Catalog Item</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Are you sure you want to permanently remove this product from the live catalog?
+            </p>
+            <div className="pt-2 flex justify-end space-x-2.5">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="px-4 py-2 rounded-full bg-white/5 text-slate-300 font-bold text-xs hover:bg-white/10"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteProduct}
+                disabled={isDeleting}
+                className="px-5 py-2 rounded-full bg-rose-500 hover:bg-rose-600 text-white font-black text-xs flex items-center space-x-1 shadow-lg shadow-rose-500/20"
+              >
+                {isDeleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdminProducts;
