@@ -93,51 +93,66 @@ const INDIAN_BANKS = [
 ];
 
 const BecomeSeller = () => {
-  const { user, isAuthenticated, loading: authLoading, updateProfile } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, login, updateProfile } = useAuth();
   const navigate = useNavigate();
 
   // Wizard Step: 1 = Business, 2 = Pickup, 3 = Bank, 4 = Categories & Launch
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Form State
-  const [formData, setFormData] = useState({
-    // Step 1: Business
-    storeName: '',
-    legalBusinessName: '',
-    businessType: 'Sole Proprietorship / Individual',
-    gstin: '',
-    isGstExempt: false,
-    panNumber: '',
-    storePhone: '',
-    storeEmail: '',
-    storeDescription: '',
+  // Form State with sessionStorage persistence so inputs are never lost
+  const [formData, setFormData] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('vexivo_seller_draft');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      // Step 1: Business
+      storeName: '',
+      legalBusinessName: '',
+      businessType: 'Sole Proprietorship / Individual',
+      gstin: '',
+      isGstExempt: false,
+      panNumber: '',
+      storePhone: '',
+      storeEmail: '',
+      storeDescription: '',
 
-    // Step 2: Pickup Hub
-    pickupStreet: '',
-    pickupCity: '',
-    pickupState: 'Maharashtra',
-    pickupPostalCode: '',
-    pickupContactPerson: '',
-    pickupContactPhone: '',
+      // Step 2: Pickup Hub
+      pickupStreet: '',
+      pickupCity: '',
+      pickupState: 'Maharashtra',
+      pickupPostalCode: '',
+      pickupContactPerson: '',
+      pickupContactPhone: '',
 
-    // Step 3: Bank Details
-    accountHolderName: '',
-    bankName: 'HDFC Bank',
-    accountNumber: '',
-    confirmAccountNumber: '',
-    ifscCode: '',
-    accountType: 'Current',
+      // Step 3: Bank Details
+      accountHolderName: '',
+      bankName: 'HDFC Bank',
+      accountNumber: '',
+      confirmAccountNumber: '',
+      ifscCode: '',
+      accountType: 'Current',
 
-    // Step 4: Categories & Agreement
-    selectedCategories: ['Women Wear', 'Men Wear'],
-    catalogSize: '10 - 50 products',
-    agreeTerms: true,
+      // Step 4: Categories & Agreement
+      selectedCategories: ['Women Wear', 'Men Wear'],
+      catalogSize: '10 - 50 products',
+      agreeTerms: true,
+    };
   });
 
   const [stepErrors, setStepErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [activatedSellerData, setActivatedSellerData] = useState(null);
+  const [submitError, setSubmitError] = useState('');
+  const [quickLoginLoading, setQuickLoginLoading] = useState(false);
+
+  // Save form data to sessionStorage on change
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('vexivo_seller_draft', JSON.stringify(formData));
+    } catch {}
+  }, [formData]);
 
   // Pre-fill user data
   useEffect(() => {
@@ -253,13 +268,27 @@ const BecomeSeller = () => {
     });
   };
 
+  const handleQuickLogin = async (email, password) => {
+    setQuickLoginLoading(true);
+    setSubmitError('');
+    try {
+      await login(email, password);
+    } catch (err) {
+      setSubmitError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setQuickLoginLoading(false);
+    }
+  };
+
   // Submit complete seller registration
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError('');
+
     if (!validateStep(4)) return;
 
     if (!isAuthenticated) {
-      navigate('/login?redirect=/become-a-seller');
+      setSubmitError('Authentication required. Please sign in below to finalize and activate your seller store.');
       return;
     }
 
@@ -296,10 +325,18 @@ const BecomeSeller = () => {
       if (res.success) {
         setIsSuccess(true);
         setActivatedSellerData(res.user?.sellerProfile || payload);
+        try {
+          sessionStorage.removeItem('vexivo_seller_draft');
+        } catch {}
         await updateProfile({});
       }
     } catch (err) {
-      alert(err.message || 'Failed to complete seller onboarding. Please check your details.');
+      const msg = err.message || 'Failed to complete seller onboarding.';
+      if (err.status === 401 || msg.includes('token') || msg.includes('authorized')) {
+        setSubmitError('Your session has expired or authentication token was missing. Please sign in below to finish activating your store without losing your filled data.');
+      } else {
+        setSubmitError(msg);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -560,6 +597,64 @@ const BecomeSeller = () => {
 
             {/* Form Container */}
             <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-6">
+              {/* Authentication Status Notice */}
+              {!isAuthenticated && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-bold text-neutral-900 text-sm">Sign In Required to Activate Store</p>
+                      <p className="text-neutral-600 leading-relaxed">
+                        To register as an approved seller, you must be signed in to your VEXIVO account. Your filled details are safely auto-saved.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-amber-200/60">
+                    <Link
+                      to="/login?redirect=/become-a-seller"
+                      className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-black text-white font-bold text-xs transition-colors flex items-center space-x-1.5"
+                    >
+                      <span>Sign In to Your Account</span>
+                    </Link>
+                    <Link
+                      to="/register?redirect=/become-a-seller"
+                      className="px-4 py-2 rounded-xl bg-white border border-neutral-300 hover:border-black text-neutral-900 font-bold text-xs transition-colors"
+                    >
+                      Create Free Account
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* Submit Error Banner with Login Link */}
+              {submitError && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-3 animate-shake">
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-rose-950 text-sm">Action Needed</p>
+                      <p className="mt-0.5 leading-relaxed text-rose-800">{submitError}</p>
+                    </div>
+                  </div>
+                  {!isAuthenticated && (
+                    <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-rose-200/60">
+                      <Link
+                        to="/login?redirect=/become-a-seller"
+                        className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm transition-all"
+                      >
+                        <span>Sign In to Continue</span>
+                      </Link>
+                      <Link
+                        to="/register?redirect=/become-a-seller"
+                        className="px-4 py-2 rounded-xl bg-white border border-rose-300 text-rose-950 font-bold text-xs hover:bg-rose-100/50 transition-colors"
+                      >
+                        Create Account
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* ================= STEP 1: BUSINESS DETAILS ================= */}
               {currentStep === 1 && (
                 <div className="space-y-6 animate-fade-in">

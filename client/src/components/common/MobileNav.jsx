@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { X, ChevronRight, User, Heart, ShoppingBag, ShieldCheck, Package, Mail, Phone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
+import { useSettings } from '../../context/SettingsContext';
 
 const navigationLinks = [
   { name: 'New In (Spring/Summer 26)', href: '/collection/new-arrivals', badge: 'LIVE', isHighlight: true },
@@ -27,6 +28,7 @@ const navigationLinks = [
 const MobileNav = ({ isOpen, onClose }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const { wishlistCount } = useWishlist();
+  const { settings } = useSettings();
 
   if (!isOpen) return null;
 
@@ -41,9 +43,17 @@ const MobileNav = ({ isOpen, onClose }) => {
           {/* Header */}
           <div className="p-5 border-b border-neutral-100 flex items-center justify-between">
             <Link to="/" onClick={onClose} className="flex items-center space-x-2">
-              <span className="text-xl font-extrabold tracking-tighter text-neutral-900">
-                VEXIVO
-              </span>
+              {settings?.logo ? (
+                <img
+                  src={settings.logo}
+                  alt={settings?.siteName || 'VEXIVO'}
+                  className="h-7 w-auto max-w-[140px] object-contain"
+                />
+              ) : (
+                <span className="text-xl font-extrabold tracking-tighter text-neutral-900">
+                  {settings?.siteName || 'VEXIVO'}
+                </span>
+              )}
             </Link>
             <button
               onClick={onClose}

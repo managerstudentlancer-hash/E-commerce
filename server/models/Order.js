@@ -30,7 +30,7 @@ const orderSchema = new mongoose.Schema(
       city: { type: String, required: true },
       state: { type: String, default: '' },
       postalCode: { type: String, required: true },
-      country: { type: String, default: 'United Kingdom' },
+      country: { type: String, default: 'India' },
       phone: { type: String, default: '' },
     },
     billingAddress: {
@@ -40,7 +40,7 @@ const orderSchema = new mongoose.Schema(
       city: { type: String, default: '' },
       state: { type: String, default: '' },
       postalCode: { type: String, default: '' },
-      country: { type: String, default: 'United Kingdom' },
+      country: { type: String, default: 'India' },
     },
     paymentMethod: { type: String, default: 'Credit Card' },
     paymentStatus: {
@@ -59,6 +59,7 @@ const orderSchema = new mongoose.Schema(
         'delivered',
         'cancelled',
         'returned',
+        'exchange_requested',
       ],
       default: 'confirmed',
     },

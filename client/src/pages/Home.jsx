@@ -1,83 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import CategoryBubbles from '../components/home/CategoryBubbles';
-import CountdownTimerBanner from '../components/home/CountdownTimerBanner';
-import HeroBanner from '../components/home/HeroBanner';
-import TikTokCarousel from '../components/home/TikTokCarousel';
-import NewArrivalsSection from '../components/home/NewArrivalsSection';
-import PromotionalBanners from '../components/home/PromotionalBanners';
+
+// Reference UI Components (Exact Visuals from Screenshots)
+import ReferenceHero from '../components/home/ReferenceHero';
+import CircularCategories from '../components/home/CircularCategories';
+import DualPromoBanners from '../components/home/DualPromoBanners';
+import TrendingProductsSection from '../components/home/TrendingProductsSection';
+
+// Preserved Original VEXIVO Content & Interactive Sections
 import FeaturedCollectionTabs from '../components/home/FeaturedCollectionTabs';
-import { CustomProductSpotlight, CustomDualBanners } from '../components/home/CustomContentPromos';
-import FavoriteProductsSection from '../components/home/FavoriteProductsSection';
+import TikTokCarousel from '../components/home/TikTokCarousel';
 import ShoppableLookbook from '../components/home/ShoppableLookbook';
 import SpecialOffersSection from '../components/home/SpecialOffersSection';
+import FavoriteProductsSection from '../components/home/FavoriteProductsSection';
 import SeoRichTextSection from '../components/home/SeoRichTextSection';
-import MulticolumnTrustIcons from '../components/home/MulticolumnTrustIcons';
 import SocialProofToast from '../components/home/SocialProofToast';
 import WelcomeDiscountModal from '../components/common/WelcomeDiscountModal';
 
 const Home = () => {
   const [heroBanners, setHeroBanners] = useState([]);
-  const [sideBanners, setSideBanners] = useState([]);
-  const [promoBanners, setPromoBanners] = useState([]);
+  const [trendingProducts, setTrendingProducts] = useState([]);
   const [specialOffers, setSpecialOffers] = useState([]);
-  const [newArrivals, setNewArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadHomeData = async () => {
       try {
-        // Fetch all active banners
+        // 1. Fetch active banners (including any admin-uploaded slides)
         api.banners.getActive()
           .then((res) => {
             if (res.success && res.banners?.length > 0) {
-              const allBanners = res.banners;
-              setHeroBanners(allBanners.filter((b) => !b.position || b.position === 'hero'));
-              setSideBanners(allBanners.filter((b) => b.position === 'side'));
-              setPromoBanners(allBanners.filter((b) => b.position === 'grid' || b.position === 'promo'));
+              setHeroBanners(res.banners.filter((b) => !b.position || b.position === 'hero'));
             }
           })
           .catch(() => {});
 
-        // Fetch products for Special Offers & New Arrivals
+        // 2. Fetch all products for Trending & Special Offers
         api.products.getAll({ limit: 350 })
           .then((res) => {
             if (res.success && res.products) {
               const all = res.products;
 
-              // Helper to interleave products across distinct categories
-              const diversify = (items, count = 8, reverseOrder = false) => {
-                const groups = {};
-                items.forEach((p) => {
-                  const c = p.category || 'Other';
-                  if (!groups[c]) groups[c] = [];
-                  groups[c].push(p);
-                });
-                let cats = Object.keys(groups);
-                if (reverseOrder) cats = [...cats].reverse();
+              // Trending products
+              const trending = all.filter(
+                (p) => p.bestseller || p.featured || p.rating >= 4.7 || p.discount > 0
+              );
+              setTrendingProducts(trending.length >= 5 ? trending.slice(0, 10) : all.slice(0, 10));
 
-                const picked = [];
-                for (let round = 0; round < 6; round++) {
-                  for (const c of cats) {
-                    if (groups[c][round]) {
-                      picked.push(groups[c][round]);
-                      if (picked.length >= count) return picked;
-                    }
-                  }
-                }
-                return picked.length > 0 ? picked : items.slice(0, count);
-              };
-
+              // Special offers
               const offers = all.filter((p) => p.specialOffer || p.discount > 0);
-              const arrivals = all.filter((p) => p.newArrival || p.bestseller);
-
-              setNewArrivals(diversify(arrivals.length >= 4 ? arrivals : all, 8, false));
-              setSpecialOffers(diversify(offers.length >= 4 ? offers : all, 8, true));
+              setSpecialOffers(offers.length >= 4 ? offers : all.slice(0, 8));
             }
           })
           .catch(() => {});
       } catch (err) {
-        console.error('Home load error:', err);
+        console.error('Home data load error:', err);
       } finally {
         setLoading(false);
       }
@@ -87,53 +64,49 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="w-full">
-      {/* 1. Category Quick Navigation Bubbles (Shaporoo collection_list_slider) */}
-      <CategoryBubbles />
+    <div className="w-full bg-white font-sans antialiased overflow-x-hidden">
+      {/* ============================================================ */}
+      {/* 1. REFERENCE SCREENSHOT SECTIONS (EXACT VISUAL MATCH)       */}
+      {/* ============================================================ */}
 
-      {/* 2. Urgent Flash Event Countdown Ribbon (Shaporoo countdown_timer) */}
-      <CountdownTimerBanner />
+      {/* Hero Section with Lifestyle Visual, Floating Trust Card & Banner Support */}
+      <ReferenceHero banners={heroBanners} />
 
-      {/* 3. Hero Slider with Multicolumn (Shaporoo slider_with_multicolumn) */}
-      <HeroBanner banners={heroBanners} sideCards={sideBanners} />
+      {/* Circular Categories (Men, Women, Shoes, Bags, Watches, Accessories, etc.) */}
+      <CircularCategories />
 
-      {/* 4. TikTok / Social Video Inspiration Carousel (Shaporoo ticktock_carousal) */}
-      <TikTokCarousel />
+      {/* Two Promotional Banners Side-by-Side (Summer Sale & New Trends) */}
+      <DualPromoBanners />
 
-      {/* 5. New Arrivals Carousel (Shaporoo featured_collection "New Arrivals") */}
-      <NewArrivalsSection products={newArrivals} />
+      {/* Trending Products (5-Column Grid with Warm Podium Cards) */}
+      <TrendingProductsSection products={trendingProducts} />
 
-      {/* 6. Bento Promotional Grid (Shaporoo grid_banner "Our Best Winter Products") */}
-      <PromotionalBanners banners={promoBanners} />
+      {/* ============================================================ */}
+      {/* 2. PRESERVED ORIGINAL VEXIVO CONTENT & INTERACTIVE SECTIONS  */}
+      {/* ============================================================ */}
 
-      {/* 7. Tabbed Featured Collections (Shaporoo collection_tabs) */}
+      {/* Tabbed Featured Collections (Women, Men, Footwear, Bags, Luxury) */}
       <FeaturedCollectionTabs />
 
-      {/* 8. Feature Product Spotlight Block (Shaporoo custom_content_HPgFTK) */}
-      <CustomProductSpotlight />
-
-      {/* 9. OUR FAVORITE PRODUCTS & REVIEWS (Shaporoo favorite_products "Our Favorite Products") */}
-      <FavoriteProductsSection />
-
-      {/* 10. Interactive Shoppable Lookbook (Shaporoo lookbook_slider "Get Inspired by Spaces") */}
+      {/* Interactive Shoppable Lookbook ("Get Inspired by Spaces") */}
       <ShoppableLookbook />
 
-      {/* 11. Two-Column Category Promo Banners (Shaporoo custom_content_JxRy7x) */}
-      <CustomDualBanners />
+      {/* TikTok / Social Video Inspiration Carousel */}
+      <TikTokCarousel />
 
-      {/* 12. Special Offers & Reductions (Shaporoo featured_collection "Special Offers") */}
+      {/* Special Offers & Reductions */}
       <SpecialOffersSection products={specialOffers} />
 
-      {/* 13. SEO & Brand Rich Text Accordion (Shaporoo seo_rich_text "Buy Trending Products Online UK") */}
+      {/* Customer Favorites & Verified Reviews Section */}
+      <FavoriteProductsSection />
+
+      {/* SEO & Brand Rich Text Accordion */}
       <SeoRichTextSection />
 
-      {/* 14. Multicolumn Trust Icons (Shaporoo multicolumn_icon - Free Delivery, 24/7 Support, Returns, Secure) */}
-      <MulticolumnTrustIcons />
-
-      {/* 15. Live Purchase Social Proof Toast (Bottom-Left) */}
+      {/* Live Social Proof Purchase Notification Toast */}
       <SocialProofToast />
 
-      {/* 16. Welcome Offer Discount Popup Modal (Shaporoo popup-welcome-discount) */}
+      {/* Welcome Offer Discount Popup Modal */}
       <WelcomeDiscountModal />
     </div>
   );

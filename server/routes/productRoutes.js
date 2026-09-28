@@ -11,6 +11,10 @@ const {
 } = require('../controllers/productController');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const reviewRouter = require('./reviewRoutes');
+
+// Re-route into review router
+router.use('/:productId/reviews', reviewRouter);
 
 // Public product listing and authenticated product creation
 router.route('/')

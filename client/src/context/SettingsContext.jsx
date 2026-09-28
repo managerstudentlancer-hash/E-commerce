@@ -3,6 +3,7 @@ import api from '../services/api';
 
 const defaultSettings = {
   siteName: 'VEXIVO',
+  logo: '',
   announcementText: '✨ FREE UK NEXT-DAY DELIVERY OVER £50 | USE CODE VEX10 FOR 10% OFF',
   announcements: [
     '✨ FREE UK NEXT-DAY DELIVERY OVER £50',
@@ -38,6 +39,7 @@ export const SettingsProvider = ({ children }) => {
         const s = res.settings;
         setSettings({
           siteName: s.siteName || defaultSettings.siteName,
+          logo: s.logo || defaultSettings.logo,
           announcementText: s.announcementText || defaultSettings.announcementText,
           announcements:
             s.announcements && s.announcements.length > 0

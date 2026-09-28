@@ -90,7 +90,7 @@ const Contact = () => {
                     required
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="arpit123@gmail.com"
+                    placeholder="name@example.com"
                     className="input-pill"
                   />
                 </div>

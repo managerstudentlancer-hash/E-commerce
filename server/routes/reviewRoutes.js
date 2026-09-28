@@ -8,11 +8,12 @@ const {
   updateReviewStatus,
   deleteReview,
 } = require('../controllers/reviewController');
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, adminOnly, optionalAuth } = require('../middleware/auth');
 
+// Allow both logged-in users and guest reviews (auto-published instantly, no approval needed)
 router.route('/')
   .get(getProductReviews)
-  .post(protect, createReview);
+  .post(optionalAuth, createReview);
 
 router.post('/:id/like', protect, toggleReviewLike);
 router.get('/all', protect, adminOnly, getAllReviews);

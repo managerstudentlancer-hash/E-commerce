@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { CheckCircle2, ShieldCheck, Lock, CreditCard, ArrowRight, Loader2 } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, Lock, CreditCard, ArrowRight, Loader2, MapPin } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { INDIAN_STATES } from '../utils/indiaConstants';
 
 const CheckoutPage = () => {
   const { items, subtotal, clearCart } = useCart();
@@ -16,13 +17,15 @@ const CheckoutPage = () => {
 
   const [formData, setFormData] = useState({
     firstName: user?.name?.split(' ')[0] || '',
-    lastName: user?.name?.split(' ')[1] || '',
+    lastName: user?.name?.split(' ').slice(1).join(' ') || '',
     email: user?.email || '',
-    phone: user?.phone || '',
+    phone: user?.phone || user?.addresses?.[0]?.phone || '',
     address: user?.addresses?.[0]?.street || '',
+    landmark: user?.addresses?.[0]?.landmark || '',
     city: user?.addresses?.[0]?.city || '',
+    state: user?.addresses?.[0]?.state || 'Rajasthan',
     postalCode: user?.addresses?.[0]?.postalCode || '',
-    country: user?.addresses?.[0]?.country || 'India',
+    country: 'India',
     deliveryMethod: 'standard', // 'standard' or 'express'
     paymentMethod: 'UPI / QR', // 'UPI / QR', 'Credit/Debit Card', 'Net Banking', 'Cash on Delivery'
     cardNumber: '4242 •••• •••• 4242',
@@ -34,18 +37,34 @@ const CheckoutPage = () => {
   const [completedOrder, setCompletedOrder] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const shippingCost = formData.deliveryMethod === 'express' ? 6.99 : (subtotal >= 50 ? 0 : 3.99);
+  const shippingCost = formData.deliveryMethod === 'express' ? 99 : (subtotal >= 499 ? 0 : 49);
   const grandTotal = Math.max(0, subtotal - initialDiscount + shippingCost);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'postalCode') {
+      const numeric = value.replace(/\D/g, '').slice(0, 6);
+      setFormData((prev) => ({ ...prev, postalCode: numeric }));
+      return;
+    }
+    if (name === 'phone') {
+      const numeric = value.replace(/[^\d+ ]/g, '').slice(0, 15);
+      setFormData((prev) => ({ ...prev, phone: numeric }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
-    if (!formData.firstName || !formData.address || !formData.city || !formData.postalCode || !formData.email) {
-      setErrorMsg('Please complete all required customer and shipping fields.');
+    const effectiveEmail = user?.email || formData.email;
+    if (!formData.firstName || !formData.address || !formData.city || !formData.postalCode || !formData.state || !effectiveEmail) {
+      setErrorMsg('Kripya sabhi required customer details aur address fields fill karein.');
+      return;
+    }
+
+    if (formData.postalCode.length !== 6) {
+      setErrorMsg('Kripya valid 6-digit Indian PIN code enter karein (e.g. 302017).');
       return;
     }
 
@@ -66,9 +85,11 @@ const CheckoutPage = () => {
           firstName: formData.firstName,
           lastName: formData.lastName,
           address: formData.address,
+          landmark: formData.landmark || '',
           city: formData.city,
+          state: formData.state || 'Rajasthan',
           postalCode: formData.postalCode,
-          country: formData.country,
+          country: 'India',
           phone: formData.phone,
         },
         billingAddress: {
@@ -76,8 +97,9 @@ const CheckoutPage = () => {
           lastName: formData.lastName,
           address: formData.address,
           city: formData.city,
+          state: formData.state || 'Rajasthan',
           postalCode: formData.postalCode,
-          country: formData.country,
+          country: 'India',
         },
         paymentMethod: formData.paymentMethod,
         subtotal,
@@ -85,7 +107,7 @@ const CheckoutPage = () => {
         shipping: shippingCost,
         total: grandTotal,
         coupon: initialCoupon,
-        guestEmail: formData.email,
+        guestEmail: effectiveEmail,
       };
 
       const res = await api.orders.create(orderPayload);
@@ -180,20 +202,47 @@ const CheckoutPage = () => {
                 1. Contact Details
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Email Address — Locked if logged in */}
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="arpit123@gmail.com"
-                    className="input-pill"
-                  />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold uppercase text-neutral-700 flex items-center space-x-1.5">
+                      <Lock className="w-3.5 h-3.5 text-neutral-500" />
+                      <span>Email Address *</span>
+                    </label>
+                    {user?.email && (
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80 flex items-center space-x-1">
+                        <Lock className="w-2.5 h-2.5" />
+                        <span>Registered Login Email (Non-Editable)</span>
+                      </span>
+                    )}
+                  </div>
+                  {user?.email ? (
+                    <div>
+                      <input
+                        type="email"
+                        name="email"
+                        readOnly
+                        disabled
+                        value={user.email}
+                        className="w-full px-5 py-3 rounded-full bg-neutral-100 border border-neutral-300 text-neutral-600 cursor-not-allowed text-xs font-mono font-bold select-none shadow-2xs"
+                      />
+                      <p className="text-[11px] text-neutral-400 mt-1">
+                        🔒 Aap is logged-in account ({user.email}) se checkout kar rahe hain, isliye yeh email change nahi ho sakta.
+                      </p>
+                    </div>
+                  ) : (
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="customer@gmail.com"
+                      className="input-pill"
+                    />
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
                     First Name *
@@ -204,6 +253,7 @@ const CheckoutPage = () => {
                     required
                     value={formData.firstName}
                     onChange={handleInputChange}
+                    placeholder="First Name"
                     className="input-pill"
                   />
                 </div>
@@ -217,33 +267,41 @@ const CheckoutPage = () => {
                     required
                     value={formData.lastName}
                     onChange={handleInputChange}
+                    placeholder="Sharma"
                     className="input-pill"
                   />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
-                    Mobile Phone (For delivery SMS alerts)
+                    10-Digit Mobile Phone (For WhatsApp & Delivery SMS updates) *
                   </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    placeholder="+44 7700 900000"
-                    className="input-pill"
-                  />
+                  <div className="flex items-center">
+                    <span className="px-3.5 py-3 rounded-l-full bg-neutral-100 border border-r-0 border-neutral-200 text-xs font-bold text-neutral-700 select-none">
+                      +91
+                    </span>
+                    <input
+                      type="tel"
+                      name="phone"
+                      required
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="9876543210"
+                      className="w-full px-4 py-3 rounded-r-full border border-neutral-200 text-xs font-semibold focus:outline-none focus:border-black font-mono"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* 2. Shipping Address */}
+            {/* 2. Shipping Address — India Format */}
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-neutral-200 shadow-subtle space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-900">
-                  2. Shipping Address
+                <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-900 flex items-center space-x-1.5">
+                  <MapPin className="w-4 h-4 text-neutral-700" />
+                  <span>2. Delivery Address (India)</span>
                 </h2>
                 {user?.addresses && user.addresses.length > 0 && (
-                  <span className="text-[11px] font-bold text-blue-600">
+                  <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
                     {user.addresses.length} saved address(es)
                   </span>
                 )}
@@ -269,9 +327,11 @@ const CheckoutPage = () => {
                               lastName: addr.fullName ? addr.fullName.split(' ').slice(1).join(' ') || prev.lastName : prev.lastName,
                               phone: addr.phone || prev.phone,
                               address: addr.street,
+                              landmark: addr.landmark || '',
                               city: addr.city,
+                              state: addr.state || 'Rajasthan',
                               postalCode: addr.postalCode,
-                              country: addr.country || 'United Kingdom',
+                              country: 'India',
                             }));
                           }}
                           className={`p-3 rounded-xl border text-left text-xs transition-all ${
@@ -288,8 +348,8 @@ const CheckoutPage = () => {
                               {addr.addressType || 'Home'}
                             </span>
                           </div>
-                          <p className="text-neutral-500 line-clamp-1 mt-1 text-[11px]">
-                            {addr.street}, {addr.city} - {addr.postalCode}
+                          <p className="text-neutral-500 line-clamp-2 mt-1 text-[11px]">
+                            {addr.street}, {addr.landmark ? `${addr.landmark}, ` : ''}{addr.city}, {addr.state || ''} - {addr.postalCode}
                           </p>
                         </button>
                       );
@@ -301,7 +361,7 @@ const CheckoutPage = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
-                    Street Address *
+                    Flat, House no., Building, Apartment *
                   </label>
                   <input
                     type="text"
@@ -309,14 +369,29 @@ const CheckoutPage = () => {
                     required
                     value={formData.address}
                     onChange={handleInputChange}
-                    placeholder="Apartment, suite, unit, building, floor..."
+                    placeholder="e.g. Flat 402, Royal Palms, Malviya Nagar"
                     className="input-pill"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
+                    Landmark (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    name="landmark"
+                    value={formData.landmark}
+                    onChange={handleInputChange}
+                    placeholder="e.g. Near World Trade Park (WTP) / Metro Station"
+                    className="input-pill"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
-                      City / Town *
+                      City / District *
                     </label>
                     <input
                       type="text"
@@ -324,41 +399,59 @@ const CheckoutPage = () => {
                       required
                       value={formData.city}
                       onChange={handleInputChange}
-                      placeholder="London"
+                      placeholder="e.g. Jaipur"
                       className="input-pill"
                     />
                   </div>
+
                   <div>
                     <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
-                      Postal Code *
+                      State / UT *
+                    </label>
+                    <select
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 rounded-full border border-neutral-200 text-xs font-semibold bg-white focus:outline-none focus:border-black"
+                    >
+                      {INDIAN_STATES.map((st) => (
+                        <option key={st} value={st}>
+                          {st}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
+                      6-Digit PIN Code *
                     </label>
                     <input
                       type="text"
                       name="postalCode"
+                      maxLength={6}
                       required
                       value={formData.postalCode}
                       onChange={handleInputChange}
-                      placeholder="WC2H 9JQ"
-                      className="input-pill"
+                      placeholder="e.g. 302017"
+                      className="input-pill font-mono"
                     />
                   </div>
                 </div>
+
                 <div>
                   <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
-                    Country / Territory
+                    Country / Region
                   </label>
-                  <select
-                    name="country"
-                    value={formData.country}
-                    onChange={handleInputChange}
-                    className="w-full px-5 py-3 rounded-full border border-neutral-200 text-xs font-semibold bg-white focus:outline-none focus:border-black"
-                  >
-                    <option value="United Kingdom">United Kingdom (UK)</option>
-                    <option value="Ireland">Ireland</option>
-                    <option value="United States">United States</option>
-                    <option value="Germany">Germany</option>
-                    <option value="France">France</option>
-                  </select>
+                  <div className="w-full px-5 py-3 rounded-full border border-neutral-200 text-xs font-bold bg-neutral-100/70 text-neutral-800 flex items-center justify-between shadow-2xs">
+                    <span className="flex items-center space-x-2">
+                      <span>🇮🇳</span>
+                      <span>India</span>
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      Pan-India Express Delivery Enabled
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -381,13 +474,13 @@ const CheckoutPage = () => {
                     />
                     <div>
                       <p className="text-xs font-bold text-neutral-900">
-                        Pan-India Standard Delivery (2–4 Working Days)
+                        Pan-India Standard Delivery (3–5 Working Days)
                       </p>
                       <p className="text-[11px] text-neutral-500">Ekart Logistics & Delhivery Surface</p>
                     </div>
                   </div>
                   <span className="text-xs font-bold text-neutral-900">
-                    {subtotal >= 50 ? 'FREE' : '₹3.99'}
+                    {subtotal >= 499 ? 'FREE' : '₹49.00'}
                   </span>
                 </label>
 
@@ -403,12 +496,12 @@ const CheckoutPage = () => {
                     />
                     <div>
                       <p className="text-xs font-bold text-neutral-900">
-                        Priority Guaranteed Express (1–2 Working Days)
+                        Priority Guaranteed Air Express (1–2 Working Days)
                       </p>
-                      <p className="text-[11px] text-neutral-500">BlueDart / Delhivery Air Express</p>
+                      <p className="text-[11px] text-neutral-500">Blue Dart / Delhivery Air Express</p>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-neutral-900">₹6.99</span>
+                  <span className="text-xs font-bold text-neutral-900">₹99.00</span>
                 </label>
               </div>
             </div>
@@ -521,7 +614,11 @@ const CheckoutPage = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-neutral-900 truncate">{item.name}</p>
                       {item.variant && (
-                        <p className="text-[11px] text-neutral-500">Variant: {item.variant}</p>
+                        <p className="text-[11px] text-neutral-600 mt-0.5">
+                          <span className="font-semibold text-neutral-800 bg-neutral-100 px-1.5 py-0.5 rounded border border-neutral-200/60">
+                            Size: {item.variant}
+                          </span>
+                        </p>
                       )}
                       <p className="text-xs text-neutral-600">Qty: {item.quantity}</p>
                     </div>

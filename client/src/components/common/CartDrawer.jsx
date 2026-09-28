@@ -112,12 +112,15 @@ const CartDrawer = () => {
                         </button>
                       </div>
                       {item.variant && (
-                        <p className="text-xs text-neutral-500 mt-0.5 font-medium">
-                          Variant: {item.variant}
-                        </p>
+                        <div className="mt-1">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-800 bg-neutral-100 border border-neutral-200/80 px-2 py-0.5 rounded-md">
+                            <span className="text-neutral-500 font-normal">Size:</span>
+                            <span className="font-bold text-black">{item.variant}</span>
+                          </span>
+                        </div>
                       )}
                       <p className="text-sm font-bold text-neutral-900 mt-1">
-                        ₹{item.price.toFixed(2)}
+                        ₹{(Number(item.price) || 0).toFixed(2)}
                       </p>
                     </div>
 

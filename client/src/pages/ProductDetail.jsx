@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Heart,
@@ -29,6 +29,7 @@ import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import RatingStars from '../components/common/RatingStars';
 import ProductCard from '../components/common/ProductCard';
+import { analyzeProductSizes } from '../utils/sizeHelper';
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -100,10 +101,23 @@ const ProductDetail = () => {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { user } = useAuth();
 
+  // Intelligent Size Configuration Analysis for current product
+  const sizeConfig = useMemo(() => analyzeProductSizes(product), [product]);
+
   useEffect(() => {
     fetchProductDetails();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [slug]);
+
+  // Sync selected variant with analyzed size configuration
+  useEffect(() => {
+    if (sizeConfig?.defaultSize) {
+      setSelectedVariant((prev) => {
+        if (prev && sizeConfig.sizes.includes(prev)) return prev;
+        return sizeConfig.defaultSize;
+      });
+    }
+  }, [sizeConfig]);
 
   const fetchProductDetails = async () => {
     setLoading(true);
@@ -113,11 +127,6 @@ const ProductDetail = () => {
         setProduct(res.product);
         setRelatedProducts(res.relatedProducts || []);
         setSelectedImageIndex(0);
-
-        // Set default variant if available
-        if (res.product.variants && res.product.variants.length > 0 && res.product.variants[0].options?.length > 0) {
-          setSelectedVariant(res.product.variants[0].options[0]);
-        }
 
         // Fetch reviews
         api.reviews.getForProduct(res.product._id)
@@ -135,12 +144,14 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart(product, quantity, selectedVariant);
+    const finalVariant = selectedVariant || sizeConfig.defaultSize || 'Standard';
+    addToCart(product, quantity, finalVariant);
   };
 
   const handleBuyNow = () => {
     if (!product) return;
-    addToCart(product, quantity, selectedVariant);
+    const finalVariant = selectedVariant || sizeConfig.defaultSize || 'Standard';
+    addToCart(product, quantity, finalVariant);
     navigate('/checkout');
   };
 
@@ -159,7 +170,28 @@ const ProductDetail = () => {
       });
 
       if (res.success && res.review) {
-        setReviewsList([res.review, ...reviewsList]);
+        setReviewsList((prev) => {
+          const exists = prev.some((r) => (r._id && r._id === res.review._id) || (r.id && r.id === res.review.id));
+          if (exists) {
+            return prev.map((r) => ((r._id === res.review._id || r.id === res.review.id) ? res.review : r));
+          }
+          return [res.review, ...prev];
+        });
+
+        // Instantly update product's live rating and review count on the page
+        if (res.product) {
+          setProduct((prev) => ({
+            ...prev,
+            rating: res.product.rating,
+            numReviews: res.product.numReviews,
+          }));
+        } else {
+          setProduct((prev) => ({
+            ...prev,
+            numReviews: (prev?.numReviews || 0) + 1,
+          }));
+        }
+
         setReviewSuccess(true);
         setReviewTitle('');
         setReviewComment('');
@@ -393,51 +425,83 @@ const ProductDetail = () => {
               {product.shortDescription || product.description?.slice(0, 180) + '...'}
             </p>
 
-            {/* Variants Selector with Size Guide */}
-            {product.variants && product.variants.length > 0 && (
-              <div className="space-y-4">
-                {product.variants.map((v) => {
-                  const isSize = v.name.toLowerCase().includes('size') || v.name.toLowerCase().includes('fit');
-                  return (
-                    <div key={v.name} className="space-y-2">
+            {/* Intelligent Category-Aware Size & Variant Selector */}
+            <div className="space-y-4 p-4 rounded-2xl bg-neutral-50/90 border border-neutral-200/90 shadow-2xs">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Ruler className="w-3.5 h-3.5 text-neutral-700" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                      {sizeConfig.label}:
+                    </span>
+                    <span className="text-xs font-extrabold text-black bg-white px-2.5 py-0.5 rounded-md border border-neutral-200 shadow-2xs">
+                      {selectedVariant || sizeConfig.defaultSize}
+                    </span>
+                  </div>
+                  {sizeConfig.hasSizeGuide && (
+                    <button
+                      type="button"
+                      onClick={() => setIsSizeGuideOpen(true)}
+                      className="text-xs font-semibold text-neutral-700 hover:text-black flex items-center space-x-1 underline underline-offset-4 transition-colors"
+                    >
+                      <span>Size & Fit Guide</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Size Options Pill Badges */}
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {sizeConfig.sizes.map((opt) => {
+                    const isSelected = (selectedVariant || sizeConfig.defaultSize) === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setSelectedVariant(opt)}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
+                          isSelected
+                            ? 'bg-black text-white border-black shadow-md scale-105 ring-2 ring-neutral-400/40'
+                            : 'bg-white text-neutral-800 border-neutral-200 hover:border-black hover:bg-neutral-100/60'
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center space-x-1.5 text-[11px] text-neutral-500 pt-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#0D8756] flex-shrink-0" />
+                  <span>
+                    Size <strong className="text-neutral-800 font-bold">{selectedVariant || sizeConfig.defaultSize}</strong> is in stock & reserved upon bag addition
+                  </span>
+                </div>
+              </div>
+
+              {/* Extra Custom Variants if present (e.g. Color) */}
+              {product.variants &&
+                product.variants
+                  .filter((v) => !v.name?.toLowerCase().includes('size') && !v.name?.toLowerCase().includes('fit'))
+                  .map((v) => (
+                    <div key={v.name} className="space-y-1.5 pt-2 border-t border-neutral-200/60">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-                          {v.name}: <strong className="text-black">{selectedVariant || v.options[0]}</strong>
+                          {v.name}: <strong className="text-black">{v.options?.[0]}</strong>
                         </span>
-                        {isSize && (
-                          <button
-                            type="button"
-                            onClick={() => setIsSizeGuideOpen(true)}
-                            className="text-xs font-semibold text-neutral-700 hover:text-black flex items-center space-x-1 underline underline-offset-4 transition-colors"
-                          >
-                            <Ruler className="w-3.5 h-3.5" />
-                            <span>Size Guide</span>
-                          </button>
-                        )}
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {v.options.map((opt) => {
-                          const isSelected = selectedVariant === opt;
-                          return (
-                            <button
-                              key={opt}
-                              onClick={() => setSelectedVariant(opt)}
-                              className={`px-4 py-2 rounded-full text-xs font-semibold border transition-all ${
-                                isSelected
-                                  ? 'bg-black text-white border-black shadow-sm scale-105'
-                                  : 'bg-neutral-50 text-neutral-800 border-neutral-200 hover:border-black'
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          );
-                        })}
+                        {v.options?.map((opt) => (
+                          <span
+                            key={opt}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-neutral-200 text-neutral-700"
+                          >
+                            {opt}
+                          </span>
+                        ))}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  ))}
+            </div>
 
             {/* Frequently Bought Together Bundle Card */}
             <div className="p-3.5 rounded-2xl bg-neutral-50/90 border border-neutral-200/80 space-y-3">
@@ -765,15 +829,25 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Related Products Carousel */}
+        {/* Similar Products & Recommendations Carousel */}
         {relatedProducts.length > 0 && (
           <div className="mt-16 pt-12 border-t border-neutral-100">
-            <h3 className="text-2xl font-bold tracking-tight text-neutral-900 mb-6">
-              You May Also Admire
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+                  Curated For You
+                </span>
+                <h3 className="text-2xl font-bold tracking-tight text-neutral-900 mt-1">
+                  Similar Products & Recommendations
+                </h3>
+              </div>
+              <p className="text-xs text-neutral-500 mt-1 sm:mt-0 font-medium">
+                Matching items in <span className="text-black font-bold">{product.category || 'Store'}</span>
+              </p>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {relatedProducts.map((p) => (
-                <ProductCard key={p._id || p.id} product={p} />
+              {relatedProducts.map((p, idx) => (
+                <ProductCard key={p._id || p.id} product={p} index={idx} />
               ))}
             </div>
           </div>
@@ -807,9 +881,9 @@ const ProductDetail = () => {
                     ₹{product.compareAtPrice.toFixed(2)}
                   </span>
                 )}
-                {selectedVariant && (
-                  <span className="text-neutral-500 font-medium hidden sm:inline">
-                    • {selectedVariant}
+                {(selectedVariant || sizeConfig.defaultSize) && (
+                  <span className="text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded font-semibold text-[11px] hidden sm:inline">
+                    Size: {selectedVariant || sizeConfig.defaultSize}
                   </span>
                 )}
               </div>
@@ -899,51 +973,30 @@ const ProductDetail = () => {
 
             <div className="mt-4 space-y-4 text-xs text-neutral-600">
               <p>
-                All measurements are tailored to British Standards. If you find yourself between two sizes, we recommend sizing up for a relaxed luxury silhouette or true-to-size for tailored elegance.
+                Measurements for <strong className="text-black">{product.category || 'this item'}</strong>. If you are between two sizes, we recommend selecting one size up for a relaxed fit or true-to-size for tailored elegance.
               </p>
 
-              {/* Size Conversion Table */}
+              {/* Dynamic Size Conversion Table */}
               <div className="overflow-x-auto border border-neutral-200 rounded-2xl">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-neutral-100/70 border-b border-neutral-200 text-neutral-900 font-bold uppercase tracking-wider">
-                      <th className="p-3">UK Size</th>
-                      <th className="p-3">Bust (in / cm)</th>
-                      <th className="p-3">Waist (in / cm)</th>
-                      <th className="p-3">Hips (in / cm)</th>
+                    <tr className="bg-neutral-100/80 border-b border-neutral-200 text-neutral-900 font-bold uppercase tracking-wider">
+                      {(sizeConfig.guideHeaders || ['Size', 'Fit']).map((h, idx) => (
+                        <th key={idx} className="p-3">
+                          {h}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200">
-                    <tr>
-                      <td className="p-3 font-bold text-neutral-900">XS (UK 6)</td>
-                      <td className="p-3">32" / 81cm</td>
-                      <td className="p-3">24" / 61cm</td>
-                      <td className="p-3">34" / 86cm</td>
-                    </tr>
-                    <tr className="bg-neutral-50/50">
-                      <td className="p-3 font-bold text-neutral-900">S (UK 8-10)</td>
-                      <td className="p-3">34" / 86cm</td>
-                      <td className="p-3">26" / 66cm</td>
-                      <td className="p-3">36" / 91cm</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 font-bold text-neutral-900">M (UK 12)</td>
-                      <td className="p-3">36" / 91cm</td>
-                      <td className="p-3">28" / 71cm</td>
-                      <td className="p-3">38" / 96cm</td>
-                    </tr>
-                    <tr className="bg-neutral-50/50">
-                      <td className="p-3 font-bold text-neutral-900">L (UK 14)</td>
-                      <td className="p-3">38" / 96cm</td>
-                      <td className="p-3">30" / 76cm</td>
-                      <td className="p-3">40" / 101cm</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 font-bold text-neutral-900">XL (UK 16)</td>
-                      <td className="p-3">40" / 101cm</td>
-                      <td className="p-3">32" / 81cm</td>
-                      <td className="p-3">42" / 106cm</td>
-                    </tr>
+                    {(sizeConfig.guideRows || []).map((row, idx) => (
+                      <tr key={idx} className={idx % 2 === 1 ? 'bg-neutral-50/60' : 'bg-white'}>
+                        <td className="p-3 font-bold text-neutral-900">{row.col1}</td>
+                        {row.col2 && <td className="p-3 text-neutral-700">{row.col2}</td>}
+                        {row.col3 && <td className="p-3 text-neutral-700">{row.col3}</td>}
+                        {row.col4 && <td className="p-3 text-neutral-700">{row.col4}</td>}
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

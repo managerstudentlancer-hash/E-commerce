@@ -30,10 +30,22 @@ const Register = () => {
     }
   }, [user, redirectTarget, navigate]);
 
+  const passCriteria = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+  };
+  const passScore = Object.values(passCriteria).filter(Boolean).length;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (!passCriteria.length) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+    if (!passCriteria.uppercase || !passCriteria.number || !passCriteria.special) {
+      setError('Password must include at least one uppercase letter (A-Z), one number (0-9), and one special symbol.');
       return;
     }
 
@@ -181,12 +193,13 @@ const Register = () => {
                 </div>
                 <input
                   id="register-email"
+                  name="email"
                   type="email"
                   required
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="arpit123@gmail.com"
+                  placeholder="name@example.com"
                   className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-neutral-300 bg-white text-neutral-900 text-sm placeholder-neutral-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
                 />
               </div>
@@ -206,7 +219,9 @@ const Register = () => {
                 </div>
                 <input
                   id="register-phone"
+                  name="tel"
                   type="tel"
+                  autoComplete="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="98765 43210"
@@ -214,7 +229,7 @@ const Register = () => {
                 />
               </div>
               <p className="text-[11px] text-neutral-400 mt-1">
-                Enables instant 1-click OTP login via your Indian phone.
+                Enables instant OTP login via your Indian phone.
               </p>
             </div>
 
@@ -223,6 +238,7 @@ const Register = () => {
               <label className="flex items-start space-x-3 cursor-pointer select-none">
                 <input
                   type="checkbox"
+                  name="isSeller"
                   checked={isSeller}
                   onChange={(e) => setIsSeller(e.target.checked)}
                   className="mt-0.5 w-4 h-4 rounded border-neutral-300 text-black focus:ring-black accent-black cursor-pointer"
@@ -238,13 +254,13 @@ const Register = () => {
               </label>
             </div>
 
-            {/* Password Field */}
+            {/* Password Field with Security Strength Meter */}
             <div>
               <label
                 htmlFor="register-password"
                 className="block text-xs font-bold uppercase tracking-wider text-neutral-800 mb-1.5"
               >
-                Password (min 6 characters) *
+                Security Password (Min 8 Characters) *
               </label>
               <div className="relative flex items-center">
                 <div className="absolute left-4 pointer-events-none text-neutral-400">
@@ -252,6 +268,7 @@ const Register = () => {
                 </div>
                 <input
                   id="register-password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
                   required
                   autoComplete="new-password"
@@ -269,13 +286,57 @@ const Register = () => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+
+              {/* Password Strength Visual Meter */}
+              {password.length > 0 && (
+                <div className="mt-2 space-y-2 animate-in fade-in">
+                  <div className="flex items-center space-x-1.5">
+                    {[1, 2, 3, 4].map((step) => (
+                      <div
+                        key={step}
+                        className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                          passScore >= step
+                            ? passScore === 1
+                              ? 'bg-rose-500'
+                              : passScore === 2
+                              ? 'bg-amber-500'
+                              : passScore === 3
+                              ? 'bg-blue-500'
+                              : 'bg-emerald-500'
+                            : 'bg-neutral-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Criteria Checklist */}
+                  <div className="grid grid-cols-2 gap-1.5 pt-1 text-[11px]">
+                    <span className={`flex items-center space-x-1 ${passCriteria.length ? 'text-emerald-700 font-semibold' : 'text-neutral-400'}`}>
+                      <span>{passCriteria.length ? '✓' : '○'}</span>
+                      <span>8+ Characters</span>
+                    </span>
+                    <span className={`flex items-center space-x-1 ${passCriteria.uppercase ? 'text-emerald-700 font-semibold' : 'text-neutral-400'}`}>
+                      <span>{passCriteria.uppercase ? '✓' : '○'}</span>
+                      <span>Uppercase (A-Z)</span>
+                    </span>
+                    <span className={`flex items-center space-x-1 ${passCriteria.number ? 'text-emerald-700 font-semibold' : 'text-neutral-400'}`}>
+                      <span>{passCriteria.number ? '✓' : '○'}</span>
+                      <span>Number (0-9)</span>
+                    </span>
+                    <span className={`flex items-center space-x-1 ${passCriteria.special ? 'text-emerald-700 font-semibold' : 'text-neutral-400'}`}>
+                      <span>{passCriteria.special ? '✓' : '○'}</span>
+                      <span>Symbol (!@#$)</span>
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
-              className="btn-pill-dark w-full py-4 text-xs uppercase tracking-wider flex items-center justify-center space-x-2 shadow-md hover:shadow-lg active:scale-98 transition-all mt-3"
+              disabled={loading || (password.length > 0 && passScore < 4)}
+              className="btn-pill-dark w-full py-4 text-xs uppercase tracking-wider flex items-center justify-center space-x-2 shadow-md hover:shadow-lg active:scale-98 transition-all mt-3 disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -284,7 +345,7 @@ const Register = () => {
                 </>
               ) : (
                 <>
-                  <span>Create Account</span>
+                  <span>Create Account Securely</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

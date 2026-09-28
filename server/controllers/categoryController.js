@@ -33,7 +33,7 @@ const getAllCategoriesAdmin = async (req, res, next) => {
   }
 };
 
-// @desc Get category by slug with products
+// @desc Get category by slug with full filtering, top brands, and product limits
 // @route GET /api/categories/:slug
 const getCategoryBySlug = async (req, res, next) => {
   try {
@@ -43,14 +43,18 @@ const getCategoryBySlug = async (req, res, next) => {
     const slugAliases = {
       women: 'women-wear',
       'womens-fashion': 'women-wear',
+      'women-fashion': 'women-wear',
       men: 'men-wear',
       'mens-fashion': 'men-wear',
+      'men-fashion': 'men-wear',
       kids: 'kids-wear',
       home: 'home-living',
       audio: 'electronics',
       tech: 'electronics',
       activewear: 'health-fitness',
       eyewear: 'vision-care',
+      watch: 'jewellery',
+      watches: 'jewellery',
     };
 
     const slug = slugAliases[rawSlug] || rawSlug;
@@ -62,7 +66,7 @@ const getCategoryBySlug = async (req, res, next) => {
       'kids-wear': "Kids' Wear",
       shoes: 'Shoes & Footwear',
       beauty: 'Beauty & Skincare',
-      jewellery: 'Fine Jewellery',
+      jewellery: 'Watches & Fine Jewellery',
       bags: 'Bags & Luggage',
       hats: 'Hats & Headwear',
       'vision-care': 'Vision Care & Eyewear',
@@ -83,48 +87,111 @@ const getCategoryBySlug = async (req, res, next) => {
       category = {
         name: friendlyName,
         slug: slug,
-        description: `Premium ${friendlyName} collection with uncompromising quality and British craftsmanship.`,
-        image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80',
+        description: `Explore our premium ${friendlyName} collection curated for modern style, exceptional durability, and everyday luxury.`,
+        image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80',
         itemCount: 0,
       };
     }
 
-    // Support pagination if query params are provided
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 0;
-    const skip = (page - 1) * limit;
-
-    const query = {
+    // Base category matching query
+    const baseQuery = {
       $or: [
         { categorySlug: slug },
+        { categorySlug: rawSlug },
         { category: new RegExp(`^${category.name}$`, 'i') },
         { category: new RegExp(`^${slug}$`, 'i') },
-        { category: new RegExp(slug, 'i') },
+        { category: new RegExp(slug.replace(/-/g, ' '), 'i') },
+        { subcategory: new RegExp(slug.replace(/-/g, ' '), 'i') },
+        { tags: new RegExp(slug.replace(/-/g, ' '), 'i') },
       ],
       status: 'active',
     };
 
-    let total = await Product.countDocuments(query);
-    let productQuery = Product.find(query).sort({ createdAt: -1 });
+    // Extract all unique brands and subcategories in this category for filters
+    const allCategoryProducts = await Product.find(baseQuery).select('brand subcategory price');
+    const availableBrands = [...new Set(allCategoryProducts.map((p) => p.brand).filter(Boolean))];
+    const availableSubcategories = [...new Set(allCategoryProducts.map((p) => p.subcategory).filter(Boolean))];
 
-    if (limit > 0) {
-      productQuery = productQuery.skip(skip).limit(limit);
+    // Build dynamic filtered query
+    const filterQuery = { ...baseQuery };
+
+    // Brand filter (supports single or multiple comma-separated brands)
+    if (req.query.brand && req.query.brand !== 'all') {
+      const brandList = req.query.brand.split(',').map((b) => b.trim()).filter(Boolean);
+      if (brandList.length === 1) {
+        filterQuery.brand = new RegExp(`^${brandList[0]}$`, 'i');
+      } else if (brandList.length > 1) {
+        filterQuery.brand = { $in: brandList.map((b) => new RegExp(`^${b}$`, 'i')) };
+      }
     }
 
-    let products = await productQuery;
+    // Subcategory filter
+    if (req.query.subcategory && req.query.subcategory !== 'all') {
+      filterQuery.subcategory = new RegExp(`^${req.query.subcategory}$`, 'i');
+    }
 
-    if (products.length === 0) {
-      products = await Product.find({ status: 'active' }).limit(8);
-      total = products.length;
+    // Price range filter
+    if (req.query.minPrice || req.query.maxPrice) {
+      filterQuery.price = {};
+      if (req.query.minPrice) filterQuery.price.$gte = Number(req.query.minPrice);
+      if (req.query.maxPrice) filterQuery.price.$lte = Number(req.query.maxPrice);
+    }
+
+    // Customer Rating filter (e.g. 4+ stars)
+    if (req.query.rating) {
+      filterQuery.rating = { $gte: Number(req.query.rating) };
+    }
+
+    // Discount filter (e.g. 20% or more, 50% or more)
+    if (req.query.minDiscount) {
+      filterQuery.discount = { $gte: Number(req.query.minDiscount) };
+    }
+
+    // In Stock filter
+    if (req.query.inStock === 'true') {
+      filterQuery.stock = { $gt: 0 };
+    }
+
+    // On Sale / Discount filter
+    if (req.query.onSale === 'true') {
+      filterQuery.discount = { $gt: 0 };
+    }
+
+    // Sorting
+    let sortOptions = { createdAt: -1 };
+    if (req.query.sort === 'price-asc') sortOptions = { price: 1 };
+    else if (req.query.sort === 'price-desc') sortOptions = { price: -1 };
+    else if (req.query.sort === 'rating') sortOptions = { rating: -1, numReviews: -1 };
+    else if (req.query.sort === 'popular') sortOptions = { bestseller: -1, rating: -1 };
+    else if (req.query.sort === 'newest') sortOptions = { createdAt: -1, newArrival: -1 };
+
+    // Pagination & Product Limits (e.g. limit: 12, 24, 36, 48)
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 12;
+    const skip = (page - 1) * limit;
+
+    const total = await Product.countDocuments(filterQuery);
+    let products = await Product.find(filterQuery)
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(limit);
+
+    // If completely empty due to no matching products in raw query, provide fallback items
+    if (products.length === 0 && total === 0 && !req.query.brand && !req.query.subcategory) {
+      products = await Product.find({ status: 'active' }).limit(limit);
     }
 
     res.json({
       success: true,
       category,
-      total,
+      total: total || products.length,
       productCount: products.length,
-      hasMore: limit > 0 ? total > skip + products.length : false,
       currentPage: page,
+      limit,
+      totalPages: Math.ceil((total || products.length) / (limit || 12)),
+      hasMore: (total || products.length) > skip + products.length,
+      availableBrands,
+      availableSubcategories,
       products,
     });
   } catch (error) {
@@ -149,10 +216,10 @@ const createCategory = async (req, res, next) => {
       slug,
       description,
       image,
-      icon,
-      parentCategory: parentCategory || '',
-      status: status || 'active',
+      icon: icon || 'Tag',
       sortOrder: sortOrder || 0,
+      status: status || 'active',
+      parentCategory: parentCategory || null,
     });
 
     res.status(201).json({ success: true, category });
@@ -170,14 +237,20 @@ const updateCategory = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Category not found' });
     }
 
-    if (req.body.name) {
-      req.body.slug = slugify(req.body.name);
+    const { name, description, image, icon, sortOrder, status, parentCategory } = req.body;
+    if (name) {
+      category.name = name;
+      category.slug = slugify(name);
     }
+    if (description !== undefined) category.description = description;
+    if (image !== undefined) category.image = image;
+    if (icon !== undefined) category.icon = icon;
+    if (sortOrder !== undefined) category.sortOrder = sortOrder;
+    if (status !== undefined) category.status = status;
+    if (parentCategory !== undefined) category.parentCategory = parentCategory;
 
-    Object.assign(category, req.body);
-    const updated = await category.save();
-
-    res.json({ success: true, category: updated });
+    await category.save();
+    res.json({ success: true, category });
   } catch (error) {
     next(error);
   }

@@ -19,15 +19,20 @@ const {
   changePassword,
   forgotPassword,
   resetPassword,
+  adminForgotPassword,
+  adminResetPassword,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { checkBruteForce, sanitizeAuthInputs } = require('../middleware/securityMiddleware');
 
-router.post('/register', register);
-router.post('/login', login);
-router.post('/admin-login', adminLogin);
-router.post('/send-otp', sendOtp);
-router.post('/verify-otp', verifyOtp);
+router.post('/register', sanitizeAuthInputs, register);
+router.post('/login', sanitizeAuthInputs, checkBruteForce, login);
+router.post('/admin-login', sanitizeAuthInputs, checkBruteForce, adminLogin);
+router.post('/admin-forgot-password', sanitizeAuthInputs, adminForgotPassword);
+router.post('/admin-reset-password', sanitizeAuthInputs, adminResetPassword);
+router.post('/send-otp', sanitizeAuthInputs, sendOtp);
+router.post('/verify-otp', sanitizeAuthInputs, verifyOtp);
 router.post('/logout', logout);
 router.get('/me', protect, getMe);
 

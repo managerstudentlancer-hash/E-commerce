@@ -48,6 +48,16 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(credentials),
       }),
+    adminForgotPassword: (email) =>
+      request('/auth/admin-forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      }),
+    adminResetPassword: (data) =>
+      request('/auth/admin-reset-password', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
     register: (userData) => request('/auth/register', { method: 'POST', body: JSON.stringify(userData) }),
     login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
     logout: () => request('/auth/logout', { method: 'POST' }),
@@ -124,7 +134,12 @@ export const api = {
     getSellerOrders: () => request('/orders/seller/my'),
     getById: (id) => request(`/orders/${id}`),
     cancel: (id, reason) => request(`/orders/${id}/cancel`, { method: 'PUT', body: JSON.stringify({ reason }) }),
-    return: (id, reason) => request(`/orders/${id}/return`, { method: 'PUT', body: JSON.stringify({ reason }) }),
+    return: (id, payload) =>
+      request(`/orders/${id}/return`, {
+        method: 'PUT',
+        body: JSON.stringify(typeof payload === 'string' ? { reason: payload } : payload),
+      }),
+    deliver: (id) => request(`/orders/${id}/deliver`, { method: 'PUT' }),
     getAll: (params = {}) => {
       const query = new URLSearchParams(params).toString();
       return request(`/orders${query ? `?${query}` : ''}`);
@@ -178,7 +193,13 @@ export const api = {
   },
 
   // Search
-  search: (q) => request(`/search?q=${encodeURIComponent(q || '')}`),
+  search: (q, category) => {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (category && category !== 'All Categories') params.set('category', category);
+    const qs = params.toString();
+    return request(`/search${qs ? `?${qs}` : ''}`);
+  },
 
   // Banners
   banners: {
@@ -207,6 +228,7 @@ export const api = {
     getUsers: () => request('/admin/users'),
     updateUserRole: (id, role) => request(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
     deleteUser: (id) => request(`/admin/users/${id}`, { method: 'DELETE' }),
+    uploadImage: (formData) => request('/admin/upload', { method: 'POST', body: formData }),
   },
 
   // Support / Customer Care

@@ -12,9 +12,24 @@ const {
   updateProductStock,
 } = require('../controllers/adminController');
 const { protect, adminOnly } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 // All routes here strictly require authentication + admin role
 router.use(protect, adminOnly);
+
+// Universal Admin Upload (images for banners, logo, etc.)
+router.post('/upload', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'Please upload an image file' });
+  }
+  const fileUrl = `/uploads/${req.file.filename}`;
+  res.json({
+    success: true,
+    message: 'File uploaded successfully',
+    url: fileUrl,
+    filename: req.file.filename,
+  });
+});
 
 // Dashboard
 router.get('/dashboard', getDashboardStats);
