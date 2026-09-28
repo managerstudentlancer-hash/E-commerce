@@ -7,13 +7,15 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('vexivo_token') || null);
   const [user, setUser] = useState(() => {
     try {
+      const savedToken = localStorage.getItem('vexivo_token');
+      if (!savedToken) return null;
       const cached = localStorage.getItem('vexivo_user');
       return cached ? JSON.parse(cached) : null;
     } catch {
       return null;
     }
   });
-  const [loading, setLoading] = useState(!user);
+  const [loading, setLoading] = useState(Boolean(token) && !user);
 
   // Validate user profile on server if token exists
   useEffect(() => {
@@ -138,7 +140,7 @@ export const AuthProvider = ({ children }) => {
         updateProfile,
         isAdmin,
         isSeller,
-        isAuthenticated: !!user,
+        isAuthenticated: Boolean(user && token),
       }}
     >
       {children}

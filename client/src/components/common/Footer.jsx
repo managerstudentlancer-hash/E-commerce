@@ -45,10 +45,20 @@ const Footer = () => {
           {/* Brand & Newsletter Column (2 spans on desktop) */}
           <div className="lg:col-span-2 space-y-5">
             <Link to="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-extrabold tracking-tight text-white uppercase">
-                {settings?.siteName || 'VEXIVO'}
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#C4301C] mb-1" />
+              {settings?.logo ? (
+                <img
+                  src={settings.logo}
+                  alt={settings?.siteName || 'VEXIVO'}
+                  className="h-8 w-auto max-w-[150px] object-contain"
+                />
+              ) : (
+                <>
+                  <span className="text-2xl font-extrabold tracking-tight text-white uppercase">
+                    {settings?.siteName || 'VEXIVO'}
+                  </span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#C4301C] mb-1" />
+                </>
+              )}
             </Link>
 
             <p className="text-xs text-neutral-400 max-w-sm leading-relaxed">

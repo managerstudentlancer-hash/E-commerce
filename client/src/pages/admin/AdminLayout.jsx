@@ -39,6 +39,7 @@ const adminNavItems = [
   { name: 'Coupons', path: '/admin/coupons', icon: Tag, badge: null },
   { name: 'Reviews', path: '/admin/reviews', icon: Star, badge: null },
   { name: 'Banners', path: '/admin/banners', icon: ImageIcon, badge: null },
+  { name: 'Brand Logo', path: '/admin/logo', icon: Sparkles, badge: 'Live' },
   { name: 'Settings', path: '/admin/settings', icon: Sliders, badge: null },
 ];
 
@@ -133,8 +134,29 @@ const AdminLayout = () => {
           </Link>
         </div>
 
+        {/* Logged In Admin Identity Card */}
+        <div className="px-5 pt-3">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-cyan-500/15 via-indigo-500/10 to-transparent border border-cyan-500/30 flex items-center space-x-3 shadow-md">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 p-[1.5px] flex-shrink-0 shadow-lg shadow-cyan-500/20">
+              <div className="w-full h-full bg-[#0C111D] rounded-[14px] flex items-center justify-center font-black text-sm text-cyan-300">
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+              </div>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center space-x-1.5">
+                <p className="text-xs font-black text-white truncate">{user?.name || 'Administrator'}</p>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+              </div>
+              <p className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-wider mt-0.5">
+                Master Admin Portal
+              </p>
+              <p className="text-[10px] text-slate-400 truncate font-mono mt-0.5">{user?.email}</p>
+            </div>
+          </div>
+        </div>
+
         {/* Live Telemetry Pill */}
-        <div className="px-5 pt-4">
+        <div className="px-5 pt-2">
           <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="relative flex h-2.5 w-2.5">
@@ -269,18 +291,18 @@ const AdminLayout = () => {
 
             {/* Admin User Profile */}
             <div className="flex items-center space-x-3 pl-2 sm:pl-3 border-l border-white/10">
-              <div className="text-right hidden md:block">
-                <p className="text-xs font-extrabold text-white">{user.name}</p>
-                <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider flex items-center justify-end space-x-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>{user.role} Privilege</span>
+              <div className="text-right">
+                <p className="text-xs font-black text-white">{user?.name || 'Administrator'}</p>
+                <p className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-wider flex items-center justify-end space-x-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>{user?.role || 'admin'} Access</span>
                 </p>
               </div>
 
               <div className="relative group cursor-pointer">
                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 p-[1.5px] shadow-lg shadow-cyan-500/20">
                   <div className="w-full h-full bg-[#0C111D] rounded-[14px] flex items-center justify-center font-black text-sm text-cyan-300">
-                    {user.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                    {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
                   </div>
                 </div>
               </div>
@@ -303,7 +325,7 @@ const AdminLayout = () => {
           />
           <div className="relative w-72 max-w-xs bg-[#0C111D] text-white h-full flex flex-col justify-between p-5 shadow-2xl z-10 border-r border-white/10">
             <div>
-              <div className="flex items-center justify-between pb-5 border-b border-white/10">
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center space-x-2.5">
                   <span className="text-lg font-black tracking-wider text-white">VEXIVO</span>
                   <span className="text-[9px] font-extrabold tracking-widest px-2 py-0.5 rounded-full bg-cyan-500 text-slate-950 font-black">
@@ -316,6 +338,18 @@ const AdminLayout = () => {
                 >
                   <X className="w-5 h-5" />
                 </button>
+              </div>
+
+              {/* Mobile Drawer Admin Info */}
+              <div className="p-3 my-3 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-cyan-500 text-slate-950 font-black flex items-center justify-center text-xs shadow-md">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-black text-white truncate">{user?.name || 'Administrator'}</p>
+                  <p className="text-[10px] text-emerald-400 font-bold uppercase">{user?.role} Session</p>
+                  <p className="text-[9px] text-slate-400 font-mono truncate">{user?.email}</p>
+                </div>
               </div>
 
               <nav className="space-y-1.5 pt-4 overflow-y-auto max-h-[calc(100vh-170px)] custom-scrollbar">

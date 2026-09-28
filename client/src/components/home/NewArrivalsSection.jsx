@@ -153,8 +153,8 @@ const NewArrivalsSection = ({ products = [] }) => {
           ref={scrollRef}
           className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6"
         >
-          {items.slice(0, 4).map((product) => (
-            <ProductCard key={product._id || product.id} product={product} />
+          {items.slice(0, 8).map((product, idx) => (
+            <ProductCard key={product._id || product.id || idx} product={product} index={idx} />
           ))}
         </div>
       </div>

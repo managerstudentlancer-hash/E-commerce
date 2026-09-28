@@ -135,14 +135,72 @@ const getProductBySlug = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // Fetch related products from same category
-    const relatedProducts = await Product.find({
-      category: product.category,
-      _id: { $ne: product._id },
-      status: 'active',
-    })
-      .limit(4)
-      .select('name slug price compareAtPrice discount images thumbnail rating numReviews');
+    // Fetch similar / related products strictly prioritizing same subcategory and category first
+    let relatedProducts = [];
+
+    // Step 1: Same category (with same subcategory prioritized if available)
+    if (product.category || product.categorySlug) {
+      const categoryQuery = {
+        $or: [
+          ...(product.category ? [{ category: product.category }] : []),
+          ...(product.categorySlug ? [{ categorySlug: product.categorySlug }] : []),
+        ],
+        _id: { $ne: product._id },
+        status: 'active',
+      };
+
+      if (product.subcategory) {
+        // Find same subcategory first
+        const subcatProds = await Product.find({
+          ...categoryQuery,
+          subcategory: product.subcategory,
+        })
+          .limit(8)
+          .select('name slug price compareAtPrice discount images thumbnail hoverImage rating numReviews brand category categorySlug subcategory tags');
+        relatedProducts.push(...subcatProds);
+      }
+
+      // If we need more from the same category
+      if (relatedProducts.length < 8) {
+        const remainingCategoryProds = await Product.find({
+          ...categoryQuery,
+          _id: { $nin: [product._id, ...relatedProducts.map((p) => p._id)] },
+        })
+          .limit(8 - relatedProducts.length)
+          .select('name slug price compareAtPrice discount images thumbnail hoverImage rating numReviews brand category categorySlug subcategory tags');
+        relatedProducts.push(...remainingCategoryProds);
+      }
+    }
+
+    // Step 2: Fallback to same brand or tags if fewer than 4 found
+    if (relatedProducts.length < 4) {
+      const specificTags = (product.tags || []).filter(
+        (t) => !['luxury', 'vexivo', 'trending', 'popular'].includes(t.toLowerCase())
+      );
+      const fallbackQuery = {
+        $or: [
+          ...(product.brand ? [{ brand: product.brand }] : []),
+          ...(specificTags.length > 0 ? [{ tags: { $in: specificTags } }] : []),
+        ],
+        _id: { $nin: [product._id, ...relatedProducts.map((p) => p._id)] },
+        status: 'active',
+      };
+      const extraProducts = await Product.find(fallbackQuery)
+        .limit(8 - relatedProducts.length)
+        .select('name slug price compareAtPrice discount images thumbnail hoverImage rating numReviews brand category categorySlug subcategory tags');
+      relatedProducts.push(...extraProducts);
+    }
+
+    // Step 3: Global fallback if catalog is small
+    if (relatedProducts.length < 4) {
+      const globalFallbacks = await Product.find({
+        _id: { $nin: [product._id, ...relatedProducts.map((p) => p._id)] },
+        status: 'active',
+      })
+        .limit(8 - relatedProducts.length)
+        .select('name slug price compareAtPrice discount images thumbnail hoverImage rating numReviews brand category categorySlug subcategory tags');
+      relatedProducts.push(...globalFallbacks);
+    }
 
     res.json({
       success: true,
@@ -158,13 +216,19 @@ const getProductBySlug = async (req, res, next) => {
 // @route POST /api/products
 const createProduct = async (req, res, next) => {
   try {
+    // Security: Only verified Sellers or Admins can list products
+    if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'seller')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Denied: Only approved sellers or administrators are authorized to publish products.',
+      });
+    }
+
     const productData = { ...req.body };
 
     // Attach seller information if user is authenticated
-    if (req.user) {
-      productData.sellerId = req.user._id;
-      productData.sellerName = req.body.sellerName || req.user.name || 'Independent Seller';
-    }
+    productData.sellerId = req.user._id;
+    productData.sellerName = req.body.sellerName || req.user.name || 'Independent Seller';
 
     if (!productData.slug && productData.name) {
       const baseSlug = slugify(productData.name);

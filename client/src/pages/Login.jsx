@@ -10,9 +10,10 @@ import {
   EyeOff,
   CheckCircle2,
   ShieldCheck,
+  ShieldAlert,
   Sparkles,
-  KeyRound,
-  RotateCcw,
+  X,
+  History,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -26,6 +27,11 @@ const Login = () => {
   const [devOtpHint, setDevOtpHint] = useState('');
   const [countdown, setCountdown] = useState(0);
 
+  // Suggestions & Saved Accounts State
+  const [savedEmails, setSavedEmails] = useState([]);
+  const [savedPhones, setSavedPhones] = useState([]);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
@@ -36,6 +42,35 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const redirectTarget = searchParams.get('redirect');
 
+  // Load saved suggestions and remembered email on mount
+  useEffect(() => {
+    try {
+      const storedEmails = JSON.parse(localStorage.getItem('vexivo_saved_emails') || '[]');
+      if (Array.isArray(storedEmails)) setSavedEmails(storedEmails);
+
+      const storedPhones = JSON.parse(localStorage.getItem('vexivo_saved_phones') || '[]');
+      if (Array.isArray(storedPhones)) setSavedPhones(storedPhones);
+
+      const rememberedEmail = localStorage.getItem('vexivo_remembered_email');
+      if (rememberedEmail) {
+        setEmail(rememberedEmail);
+        setRememberMe(true);
+      }
+    } catch {
+      // Ignore localStorage parse errors
+    }
+  }, []);
+
+  // Lockout countdown timer
+  useEffect(() => {
+    let timer;
+    if (lockoutSeconds > 0) {
+      timer = setTimeout(() => setLockoutSeconds((prev) => prev - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [lockoutSeconds]);
+
+  // Navigate if already logged in
   useEffect(() => {
     if (user) {
       if (user.role === 'admin') {
@@ -48,6 +83,7 @@ const Login = () => {
     }
   }, [user, redirectTarget, navigate]);
 
+  // OTP resend countdown
   useEffect(() => {
     let timer;
     if (countdown > 0) {
@@ -56,29 +92,65 @@ const Login = () => {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  const handleQuickFillEmail = (demoEmail, demoPassword) => {
-    setAuthMode('email');
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    setError('');
+  // Save successful email to history for browser/custom suggestions
+  const persistEmailSuggestion = (emailToSave) => {
+    const trimmed = emailToSave.trim().toLowerCase();
+    if (!trimmed) return;
+    try {
+      if (rememberMe) {
+        localStorage.setItem('vexivo_remembered_email', trimmed);
+      } else {
+        localStorage.removeItem('vexivo_remembered_email');
+      }
+      const updated = Array.from(new Set([trimmed, ...savedEmails])).slice(0, 5);
+      setSavedEmails(updated);
+      localStorage.setItem('vexivo_saved_emails', JSON.stringify(updated));
+    } catch {
+      // Storage quota or private mode safe
+    }
   };
 
-  const handleQuickFillPhone = (demoPhone) => {
-    setAuthMode('phone');
-    setPhone(demoPhone);
-    setOtpSent(false);
-    setDevOtpHint('');
-    setError('');
+  // Save successful phone to history
+  const persistPhoneSuggestion = (phoneToSave) => {
+    const trimmed = phoneToSave.trim();
+    if (!trimmed) return;
+    try {
+      const updated = Array.from(new Set([trimmed, ...savedPhones])).slice(0, 5);
+      setSavedPhones(updated);
+      localStorage.setItem('vexivo_saved_phones', JSON.stringify(updated));
+    } catch {
+      // Storage safe
+    }
+  };
+
+  // Remove saved account suggestion
+  const handleRemoveSavedEmail = (emailToRemove) => {
+    const updated = savedEmails.filter((item) => item !== emailToRemove);
+    setSavedEmails(updated);
+    try {
+      localStorage.setItem('vexivo_saved_emails', JSON.stringify(updated));
+      if (localStorage.getItem('vexivo_remembered_email') === emailToRemove) {
+        localStorage.removeItem('vexivo_remembered_email');
+        if (email === emailToRemove) setEmail('');
+      }
+    } catch {
+      // Storage safe
+    }
   };
 
   // 1. Email Login Submit
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
+    if (lockoutSeconds > 0) return;
+
     setError('');
     setLoading(true);
 
     try {
-      const loggedInUser = await login(email, password);
+      const loggedInUser = await login(email.trim(), password);
+      // Persist login suggestion so future sessions suggest it automatically
+      persistEmailSuggestion(email);
+
       if (loggedInUser.role === 'admin') {
         navigate(redirectTarget?.startsWith('/admin') ? redirectTarget : '/admin');
       } else if (loggedInUser.role === 'seller') {
@@ -87,6 +159,9 @@ const Login = () => {
         navigate(redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account');
       }
     } catch (err) {
+      if (err.status === 429 || (err.message && err.message.toLowerCase().includes('lockout'))) {
+        setLockoutSeconds(15 * 60); // 15 mins lock
+      }
       setError(err.message || 'Invalid email or password');
     } finally {
       setLoading(false);
@@ -135,7 +210,9 @@ const Login = () => {
     setLoading(true);
     try {
       const loggedInUser = await loginWithOtp(phone, otp.trim());
-      // Security: Mobile login is only for customer / seller
+      // Persist phone suggestion
+      persistPhoneSuggestion(phone);
+
       if (loggedInUser.role === 'seller') {
         navigate(redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account/seller');
       } else {
@@ -150,6 +227,18 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
+      {/* Native Browser Suggestions Datalists */}
+      <datalist id="saved-emails-list">
+        {savedEmails.map((item) => (
+          <option key={item} value={item} />
+        ))}
+      </datalist>
+      <datalist id="saved-phones-list">
+        {savedPhones.map((item) => (
+          <option key={item} value={item} />
+        ))}
+      </datalist>
+
       <div className="max-w-4xl w-full bg-white rounded-3xl shadow-xl border border-neutral-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12">
         {/* Left Editorial Visual Column (5 Cols) */}
         <div className="hidden md:flex md:col-span-5 relative bg-neutral-900 text-white flex-col justify-between p-8 sm:p-10 overflow-hidden">
@@ -192,9 +281,14 @@ const Login = () => {
             </div>
           </div>
 
-          <div className="relative z-10 text-[11px] text-neutral-400 flex items-center space-x-1.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>256-Bit SSL Encrypted Authentication</span>
+          <div className="relative z-10 space-y-2">
+            <div className="text-[11px] text-neutral-300 flex items-center space-x-2 bg-white/10 px-3 py-2 rounded-xl backdrop-blur-sm border border-white/10">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <span>256-Bit TLS Bank-Grade Encryption</span>
+            </div>
+            <p className="text-[10px] text-neutral-400">
+              Protected against automated brute-force intrusion.
+            </p>
           </div>
         </div>
 
@@ -253,18 +347,67 @@ const Login = () => {
             </button>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-5 p-3.5 rounded-2xl bg-red-50 text-[#C4301C] text-xs font-semibold border border-red-200 flex items-start space-x-2 animate-in fade-in">
-              <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1"></span>
-              <span>{error}</span>
+          {/* Security Lockout Banner */}
+          {lockoutSeconds > 0 && (
+            <div className="mb-5 p-4 rounded-2xl bg-amber-50 text-amber-900 text-xs border border-amber-200 flex items-start space-x-3">
+              <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-amber-950">Security Lockout Active</p>
+                <p className="mt-0.5 text-amber-800 leading-relaxed">
+                  Too many failed attempts detected. Please wait{' '}
+                  <span className="font-mono font-bold text-amber-950">
+                    {Math.floor(lockoutSeconds / 60)}m {lockoutSeconds % 60}s
+                  </span>{' '}
+                  before attempting to sign in again.
+                </p>
+              </div>
             </div>
           )}
 
-          {/* MODE 1: Email + Password Form (Admin, Customer, Seller) */}
+          {/* Standard Error Message */}
+          {error && lockoutSeconds === 0 && (
+            <div className="mb-5 p-3.5 rounded-2xl bg-red-50 text-[#C4301C] text-xs font-semibold border border-red-200 flex items-start space-x-2 animate-in fade-in">
+              <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1"></span>
+              <span className="leading-relaxed">{error}</span>
+            </div>
+          )}
+
+          {/* MODE 1: Email + Password Form (Customer & Seller) */}
           {authMode === 'email' && (
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
-              {/* Email Field */}
+            <form
+              method="POST"
+              action="#"
+              autoComplete="on"
+              onSubmit={handleEmailSubmit}
+              className="space-y-4"
+            >
+              {/* Recently Used Login Suggestion Pill */}
+              {savedEmails.length > 0 && (
+                <div className="p-2.5 bg-neutral-50 rounded-xl border border-neutral-200 flex items-center justify-between text-xs animate-in fade-in">
+                  <div className="flex items-center space-x-1.5 min-w-0">
+                    <History className="w-3.5 h-3.5 text-neutral-500 flex-shrink-0" />
+                    <span className="text-neutral-500 font-medium">Suggestion:</span>
+                    <button
+                      type="button"
+                      onClick={() => setEmail(savedEmails[0])}
+                      className="font-bold text-neutral-900 hover:text-black underline truncate max-w-[180px] sm:max-w-[220px]"
+                      title="Click to fill saved email"
+                    >
+                      {savedEmails[0]}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSavedEmail(savedEmails[0])}
+                    className="p-1 text-neutral-400 hover:text-neutral-700 transition-colors ml-1"
+                    title="Remove this suggestion"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Email Field with Browser Autocomplete & Datalist */}
               <div>
                 <label
                   htmlFor="login-email"
@@ -278,12 +421,14 @@ const Login = () => {
                   </div>
                   <input
                     id="login-email"
+                    name="email"
                     type="email"
                     required
-                    autoComplete="email"
+                    autoComplete="username email"
+                    list="saved-emails-list"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
+                    placeholder="Enter your registered email"
                     className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-neutral-300 bg-white text-neutral-900 text-sm placeholder-neutral-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
                   />
                 </div>
@@ -311,6 +456,7 @@ const Login = () => {
                   </div>
                   <input
                     id="login-password"
+                    name="password"
                     type={showPassword ? 'text' : 'password'}
                     required
                     autoComplete="current-password"
@@ -339,15 +485,15 @@ const Login = () => {
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="w-4 h-4 rounded border-neutral-300 text-black focus:ring-black cursor-pointer accent-black"
                   />
-                  <span>Remember me on this browser</span>
+                  <span>Remember me &amp; suggest on this browser</span>
                 </label>
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={loading}
-                className="btn-pill-dark w-full py-4 text-xs uppercase tracking-wider flex items-center justify-center space-x-2 shadow-md hover:shadow-lg active:scale-98 transition-all mt-2"
+                disabled={loading || lockoutSeconds > 0}
+                className="btn-pill-dark w-full py-4 text-xs uppercase tracking-wider flex items-center justify-center space-x-2 shadow-md hover:shadow-lg active:scale-98 transition-all mt-2 disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -356,7 +502,7 @@ const Login = () => {
                   </>
                 ) : (
                   <>
-                    <span>Sign In</span>
+                    <span>Sign In Securely</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -371,9 +517,32 @@ const Login = () => {
                 💡 <span className="font-semibold text-neutral-900">Normal User Login:</span> Enter your 10-digit Indian mobile number to log in or register instantly. (Admin access requires email credentials).
               </div>
 
+              {/* Suggested Mobile Phone */}
+              {savedPhones.length > 0 && !phone && (
+                <div className="p-2.5 bg-neutral-50 rounded-xl border border-neutral-200 flex items-center justify-between text-xs animate-in fade-in">
+                  <div className="flex items-center space-x-1.5 min-w-0">
+                    <History className="w-3.5 h-3.5 text-neutral-500 flex-shrink-0" />
+                    <span className="text-neutral-500 font-medium">Saved Phone:</span>
+                    <button
+                      type="button"
+                      onClick={() => setPhone(savedPhones[0])}
+                      className="font-bold text-neutral-900 hover:text-black underline truncate font-mono"
+                    >
+                      {savedPhones[0]}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {!otpSent ? (
                 // Step 1: Enter Mobile Number
-                <form onSubmit={handleRequestOtp} className="space-y-4">
+                <form
+                  method="POST"
+                  action="#"
+                  autoComplete="on"
+                  onSubmit={handleRequestOtp}
+                  className="space-y-4"
+                >
                   <div>
                     <label
                       htmlFor="login-phone"
@@ -387,8 +556,11 @@ const Login = () => {
                       </div>
                       <input
                         id="login-phone"
+                        name="tel"
                         type="tel"
                         required
+                        autoComplete="tel"
+                        list="saved-phones-list"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="98765 43210"
@@ -448,50 +620,49 @@ const Login = () => {
                     >
                       Enter 6-Digit OTP
                     </label>
-                    <div className="relative flex items-center">
-                      <div className="absolute left-4 pointer-events-none text-neutral-400">
-                        <KeyRound className="w-4 h-4" />
-                      </div>
-                      <input
-                        id="login-otp"
-                        type="text"
-                        maxLength={6}
-                        required
-                        autoFocus
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                        placeholder="• • • • • •"
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-neutral-300 bg-white text-neutral-900 text-lg tracking-[0.3em] font-mono text-center placeholder-neutral-300 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
-                      />
-                    </div>
+                    <input
+                      id="login-otp"
+                      name="one-time-code"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      required
+                      autoComplete="one-time-code"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      placeholder="• • • • • •"
+                      className="w-full py-3.5 px-4 text-center tracking-[0.5em] font-mono text-lg font-bold rounded-xl border border-neutral-300 bg-white text-neutral-900 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                    />
                   </div>
 
-                  {/* Dev / Test Auto-Fill Helper Chip */}
+                  {/* Dev OTP hint (if active in dev environment) */}
                   {devOtpHint && (
-                    <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between text-xs text-amber-900">
-                      <span>Test Code: <strong className="font-mono">{devOtpHint}</strong></span>
+                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 flex items-center justify-between">
+                      <span>Development SMS Code: <strong className="font-mono text-amber-950 font-bold">{devOtpHint}</strong></span>
                       <button
                         type="button"
                         onClick={() => setOtp(devOtpHint)}
-                        className="font-bold underline text-amber-800 hover:text-black ml-2"
+                        className="text-xs font-bold text-amber-900 underline"
                       >
-                        Auto-fill
+                        Auto-Fill
                       </button>
                     </div>
                   )}
 
-                  {/* Resend Timer */}
                   <div className="flex items-center justify-between text-xs text-neutral-500 pt-1">
+                    <span>Didn't receive code?</span>
                     {countdown > 0 ? (
-                      <span>Resend code in {countdown}s</span>
+                      <span className="font-semibold text-neutral-400">
+                        Resend in {countdown}s
+                      </span>
                     ) : (
                       <button
                         type="button"
                         onClick={handleRequestOtp}
-                        className="flex items-center space-x-1 font-bold text-neutral-900 hover:text-black"
+                        className="font-bold text-neutral-900 hover:underline"
                       >
-                        <RotateCcw className="w-3 h-3" />
-                        <span>Resend OTP</span>
+                        Resend OTP
                       </button>
                     )}
                   </div>
@@ -518,34 +689,19 @@ const Login = () => {
             </div>
           )}
 
-          {/* Demo 1-Click Fill Helper for Customers/Sellers */}
-          <div className="mt-6 pt-5 border-t border-neutral-100 bg-neutral-50/80 p-4 rounded-2xl border border-neutral-200/60">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-neutral-700 flex items-center space-x-1">
-                <Sparkles className="w-3 h-3 text-amber-500" />
-                <span>Instant 1-Click Demo Fill:</span>
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFillEmail('arpit123@gmail.com', 'Arpit123!')}
-                className="py-2.5 px-3 rounded-xl bg-white border border-neutral-300 hover:border-black text-neutral-900 text-xs font-bold text-center transition-all shadow-sm hover:shadow"
-              >
-                👤 Arpit (Email)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFillPhone('9876543210')}
-                className="py-2.5 px-3 rounded-xl bg-white border border-neutral-300 hover:border-black text-neutral-900 text-xs font-bold text-center transition-all shadow-sm hover:shadow"
-              >
-                📱 Mobile OTP (9876543210)
-              </button>
-            </div>
+          {/* Security & Authentication Assurance Footer */}
+          <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-500">
+            <span className="flex items-center space-x-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Max 5 login attempts before safety lockout</span>
+            </span>
+            <span className="text-neutral-400">
+              Never share your credentials
+            </span>
           </div>
 
           {/* Dedicated Administrator Portal Separation */}
-          <div className="mt-4 pt-4 border-t border-neutral-100 text-center">
+          <div className="mt-3 pt-3 border-t border-neutral-100 text-center">
             <p className="text-[11px] text-neutral-500 flex items-center justify-center space-x-1.5">
               <span>Are you a store administrator?</span>
               <Link to="/admin/login" className="font-bold text-[#C4301C] hover:underline inline-flex items-center space-x-0.5">

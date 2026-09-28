@@ -56,6 +56,7 @@ import AdminInventory from './pages/admin/AdminInventory';
 import AdminCoupons from './pages/admin/AdminCoupons';
 import AdminReviews from './pages/admin/AdminReviews';
 import AdminBanners from './pages/admin/AdminBanners';
+import AdminLogo from './pages/admin/AdminLogo';
 import AdminSettings from './pages/admin/AdminSettings';
 
 import MobileStickyBar from './components/common/MobileStickyBar';
@@ -146,6 +147,7 @@ const App = () => {
                   <Route path="coupons" element={<AdminCoupons />} />
                   <Route path="reviews" element={<AdminReviews />} />
                   <Route path="banners" element={<AdminBanners />} />
+                  <Route path="logo" element={<AdminLogo />} />
                   <Route path="settings" element={<AdminSettings />} />
                 </Route>
 

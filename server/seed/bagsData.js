@@ -6,6 +6,36 @@
 
 const bagsData = [
   {
+    name: 'Structured Pebbled Leather Tote Handbag',
+    slug: 'structured-pebbled-leather-tote-handbag',
+    sku: 'VEX-BAG-STR-01',
+    description:
+      'Expertly crafted from full-grain pebbled leather, this structured tote handbag features reinforced tubular handles, interior multi-compartment dividers, a protective metallic base stud foundation, and gold-tone hardware. The quintessential daily workhorse and evening luxury companion.',
+    shortDescription: 'Structured full-grain pebbled leather tote handbag with multi-compartment interior.',
+    price: 38.0,
+    compareAtPrice: 65.0,
+    images: [
+      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80',
+    category: 'Bags & Luggage',
+    categorySlug: 'bags',
+    subcategory: 'Totes',
+    collectionSlug: 'bestsellers',
+    brand: 'VEXIVO Atelier',
+    variants: [{ name: 'Color', options: ['Classic Black', 'Cognac Tan', 'Deep Burgundy', 'Warm Taupe'] }],
+    stock: 50,
+    tags: ['Bag', 'Tote', 'Handbag', 'Pebbled Leather', 'Workwear', 'Luxury', 'Bestseller'],
+    featured: true,
+    bestseller: true,
+    newArrival: true,
+    specialOffer: false,
+    rating: 4.95,
+    numReviews: 128,
+    status: 'active',
+  },
+  {
     name: 'VEXIVO Classic Vegan Leather Crossbody Purse',
     slug: 'vexivo-classic-vegan-leather-crossbody-purse',
     sku: 'VEX-BAG-001',

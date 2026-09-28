@@ -1,15 +1,30 @@
+const mongoose = require('mongoose');
 const Review = require('../models/Review');
 const Product = require('../models/Product');
-const Order = require('../models/Order');
 const ReviewLike = require('../models/ReviewLike');
 
-// @desc Get reviews for a product
+// Helper to reliably find a product by ObjectId or slug
+const findProductByIdOrSlug = async (identifier) => {
+  if (!identifier) return null;
+  if (mongoose.Types.ObjectId.isValid(identifier)) {
+    const byId = await Product.findById(identifier);
+    if (byId) return byId;
+  }
+  return await Product.findOne({ slug: identifier });
+};
+
+// @desc Get reviews for a product (all live non-rejected reviews)
 // @route GET /api/products/:productId/reviews
 const getProductReviews = async (req, res, next) => {
   try {
+    const product = await findProductByIdOrSlug(req.params.productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
     const reviews = await Review.find({
-      product: req.params.productId,
-      status: 'approved',
+      product: product._id,
+      status: { $ne: 'rejected' },
     }).sort({ createdAt: -1 });
 
     res.json({ success: true, count: reviews.length, reviews });
@@ -18,64 +33,58 @@ const getProductReviews = async (req, res, next) => {
   }
 };
 
-// @desc Add a review for a product (STRICT: Delivered purchasers only, 1 per user)
+// @desc Add a review for a product (INSTANT AUTO-PUBLISH: No admin approval required)
 // @route POST /api/products/:productId/reviews
 const createReview = async (req, res, next) => {
   try {
-    const { rating, title, comment } = req.body;
-    const product = await Product.findById(req.params.productId);
+    const { rating, title, comment, userName, userEmail } = req.body;
+    const product = await findProductByIdOrSlug(req.params.productId);
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required. Please sign in to submit a review.',
+    const reviewerName = (req.user?.name || userName || 'Verified Customer').trim();
+    const reviewerEmail = (req.user?.email || userEmail || '').trim();
+
+    // If user is authenticated and has existing review, update it directly
+    if (req.user) {
+      const existingReview = await Review.findOne({
+        product: product._id,
+        user: req.user._id,
       });
+
+      if (existingReview) {
+        existingReview.rating = Number(rating) || 5;
+        existingReview.title = title || 'Customer Review';
+        existingReview.comment = comment || '';
+        existingReview.status = 'approved';
+        await existingReview.save();
+
+        // Recalculate product rating & numReviews
+        const allReviews = await Review.find({ product: product._id, status: { $ne: 'rejected' } });
+        const avgRating = allReviews.reduce((acc, r) => acc + r.rating, 0) / (allReviews.length || 1);
+        product.rating = Math.round(avgRating * 10) / 10;
+        product.numReviews = allReviews.length;
+        await product.save();
+
+        return res.json({
+          success: true,
+          review: existingReview,
+          product: { rating: product.rating, numReviews: product.numReviews },
+          message: 'Your review has been updated and published automatically.',
+        });
+      }
     }
 
-    // One-review-per-user-per-product enforcement
-    const existingReview = await Review.findOne({
-      product: product._id,
-      user: req.user._id,
-    });
-    if (existingReview) {
-      return res.status(400).json({
-        success: false,
-        message: 'You have already submitted a review for this product.',
-      });
-    }
-
-    // HARD RULE: Only users who purchased the product AND have a DELIVERED order can review
-    const orders = await Order.find({
-      user: req.user._id,
-      'items.product': product._id,
-    });
-
-    if (!orders || orders.length === 0) {
-      return res.status(403).json({
-        success: false,
-        message: 'Review rejected: You can only review products you have purchased.',
-      });
-    }
-
-    const deliveredOrder = orders.find((o) => o.orderStatus === 'delivered');
-    if (!deliveredOrder) {
-      return res.status(403).json({
-        success: false,
-        message: 'Review rejected: Your order is still processing/shipping and has not been delivered yet.',
-      });
-    }
-
+    // Create review - auto-approved immediately without requiring admin intervention
     const review = await Review.create({
       product: product._id,
-      user: req.user._id,
-      userName: req.user.name,
-      userEmail: req.user.email,
+      user: req.user ? req.user._id : null,
+      userName: reviewerName,
+      userEmail: reviewerEmail,
       rating: Number(rating) || 5,
-      title: title || 'Verified Purchase Review',
+      title: title || 'Customer Review',
       comment: comment || '',
       verifiedPurchase: true,
       status: 'approved',
@@ -83,8 +92,8 @@ const createReview = async (req, res, next) => {
       likedBy: [],
     });
 
-    // Update product rating and reviews count
-    const allReviews = await Review.find({ product: product._id, status: 'approved' });
+    // Instantly update product rating and reviews count in database
+    const allReviews = await Review.find({ product: product._id, status: { $ne: 'rejected' } });
     const avgRating =
       allReviews.reduce((acc, r) => acc + r.rating, 0) / (allReviews.length || 1);
 
@@ -92,7 +101,12 @@ const createReview = async (req, res, next) => {
     product.numReviews = allReviews.length;
     await product.save();
 
-    res.status(201).json({ success: true, review });
+    res.status(201).json({
+      success: true,
+      review,
+      product: { rating: product.rating, numReviews: product.numReviews },
+      message: 'Your review has been published automatically.',
+    });
   } catch (error) {
     next(error);
   }
@@ -112,11 +126,9 @@ const toggleReviewLike = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
 
-    // Check if like record exists
     const existingLike = await ReviewLike.findOne({ review: reviewId, user: req.user._id });
 
     if (existingLike) {
-      // Unlike
       await ReviewLike.findByIdAndDelete(existingLike._id);
       const updatedReview = await Review.findByIdAndUpdate(
         reviewId,
@@ -133,7 +145,6 @@ const toggleReviewLike = async (req, res, next) => {
         message: 'Review unliked',
       });
     } else {
-      // Like (enforcing compound unique index)
       try {
         await ReviewLike.create({ review: reviewId, user: req.user._id });
       } catch (err) {
@@ -189,6 +200,18 @@ const updateReviewStatus = async (req, res, next) => {
     review.status = status;
     await review.save();
 
+    // Recalculate product rating
+    if (review.product) {
+      const allReviews = await Review.find({ product: review.product, status: { $ne: 'rejected' } });
+      const avgRating = allReviews.length > 0
+        ? allReviews.reduce((acc, r) => acc + r.rating, 0) / allReviews.length
+        : 5;
+      await Product.findByIdAndUpdate(review.product, {
+        rating: Math.round(avgRating * 10) / 10,
+        numReviews: allReviews.length,
+      });
+    }
+
     res.json({ success: true, review });
   } catch (error) {
     next(error);
@@ -204,7 +227,21 @@ const deleteReview = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
 
+    const productId = review.product;
     await Review.findByIdAndDelete(req.params.id);
+
+    // Recalculate product rating & review count
+    if (productId) {
+      const allReviews = await Review.find({ product: productId, status: { $ne: 'rejected' } });
+      const avgRating = allReviews.length > 0
+        ? allReviews.reduce((acc, r) => acc + r.rating, 0) / allReviews.length
+        : 5;
+      await Product.findByIdAndUpdate(productId, {
+        rating: Math.round(avgRating * 10) / 10,
+        numReviews: allReviews.length,
+      });
+    }
+
     res.json({ success: true, message: 'Review deleted successfully' });
   } catch (error) {
     next(error);

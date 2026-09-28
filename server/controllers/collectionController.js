@@ -14,9 +14,34 @@ const slugify = (text) => {
 // @route GET /api/collections
 const getCollections = async (req, res, next) => {
   try {
-    const collections = await Collection.find({ status: 'active' })
+    let collections = await Collection.find({ status: 'active' })
       .populate('products')
       .sort({ sortOrder: 1 });
+
+    const Product = require('../models/Product');
+    // Ensure all collections have products populated
+    collections = await Promise.all(
+      collections.map(async (col) => {
+        let colObj = col.toObject ? col.toObject() : col;
+        if (!colObj.products || colObj.products.length === 0) {
+          const rawSlug = (colObj.slug || '').toLowerCase();
+          const prods = await Product.find({
+            $or: [
+              { collectionSlug: rawSlug },
+              { tags: { $regex: rawSlug, $options: 'i' } },
+              { categorySlug: rawSlug },
+              ...(rawSlug.includes('new') ? [{ newArrival: true }] : []),
+              ...(rawSlug.includes('special') || rawSlug.includes('sale') ? [{ specialOffer: true }, { discount: { $gte: 15 } }] : []),
+              ...(rawSlug.includes('best') || rawSlug.includes('trend') ? [{ bestseller: true }, { featured: true }] : []),
+            ],
+            status: 'active',
+          }).limit(16);
+          colObj.products = prods && prods.length > 0 ? prods : await Product.find({ status: 'active' }).limit(12);
+        }
+        return colObj;
+      })
+    );
+
     res.json({ success: true, count: collections.length, collections });
   } catch (error) {
     next(error);
@@ -37,36 +62,48 @@ const getCollectionBySlug = async (req, res, next) => {
       }
     }
 
-    // If still not found, dynamically assemble a curated collection from products
-    if (!collection) {
-      const Product = require('../models/Product');
+    const Product = require('../models/Product');
+
+    // If not found or if collection has 0 products, dynamically assemble products
+    if (!collection || !collection.products || collection.products.length === 0) {
       let products = await Product.find({
         $or: [
           { collectionSlug: rawSlug },
           { tags: { $regex: rawSlug, $options: 'i' } },
           { categorySlug: rawSlug },
-          ...(rawSlug === 'trending' || rawSlug === 'bestsellers' ? [{ bestseller: true }, { featured: true }] : [])
+          ...(rawSlug.includes('new') ? [{ newArrival: true }] : []),
+          ...(rawSlug.includes('special') || rawSlug.includes('sale') || rawSlug.includes('offer')
+            ? [{ specialOffer: true }, { discount: { $gte: 15 } }]
+            : []),
+          ...(rawSlug === 'trending' || rawSlug === 'bestsellers' || rawSlug.includes('trend')
+            ? [{ bestseller: true }, { featured: true }]
+            : []),
         ],
         status: 'active',
-      }).limit(24);
+      }).limit(36);
 
       if (!products || products.length === 0) {
-        products = await Product.find({ status: 'active' }).sort({ rating: -1, numReviews: -1 }).limit(16);
+        products = await Product.find({ status: 'active' }).sort({ rating: -1, numReviews: -1 }).limit(24);
       }
 
-      const formattedName = rawSlug
-        .split('-')
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(' ');
+      if (collection) {
+        collection = collection.toObject ? collection.toObject() : { ...collection };
+        collection.products = products;
+      } else {
+        const formattedName = rawSlug
+          .split('-')
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' ');
 
-      collection = {
-        _id: 'dyn-' + rawSlug,
-        name: formattedName ? `${formattedName} Collection` : 'Featured Collection',
-        slug: rawSlug,
-        description: `Explore our handpicked ${formattedName || 'trending'} selections curated for modern luxury and lifestyle.`,
-        products: products || [],
-        featured: true,
-      };
+        collection = {
+          _id: 'dyn-' + rawSlug,
+          name: formattedName ? `${formattedName} Collection` : 'Featured Collection',
+          slug: rawSlug,
+          description: `Explore our handpicked ${formattedName || 'trending'} selections curated for modern luxury and lifestyle.`,
+          products: products || [],
+          featured: true,
+        };
+      }
     }
 
     res.json({ success: true, collection });

@@ -26,8 +26,10 @@ import {
   Filter,
 } from 'lucide-react';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminDashboard = () => {
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -177,7 +179,41 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="space-y-8 animate-fade-in text-slate-100">
+    <div className="space-y-6 sm:space-y-8 animate-fade-in text-slate-100">
+      {/* Personalized Welcome Banner with Registered Admin's Name */}
+      <div className="bg-gradient-to-r from-cyan-950/40 via-indigo-950/30 to-purple-950/20 p-6 rounded-3xl border border-cyan-500/25 shadow-xl backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center space-x-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 p-[2px] shadow-lg shadow-cyan-500/20 flex-shrink-0">
+            <div className="w-full h-full bg-[#0C111D] rounded-[14px] flex items-center justify-center font-black text-xl text-cyan-300">
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-xl sm:text-2xl font-black text-white">
+                Welcome back, {user?.name || 'Administrator'}! 👋
+              </h1>
+              <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-[10px] font-extrabold uppercase">
+                Master Admin
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Logged in with account: <span className="font-mono text-slate-200">{user?.email}</span> • Real-time telemetry, store metrics, and control active.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2 text-xs">
+          <button
+            onClick={handleRefresh}
+            className="px-4 py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 flex items-center space-x-2 transition-all active:scale-95"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-cyan-400' : ''}`} />
+            <span>Refresh Telemetry</span>
+          </button>
+        </div>
+      </div>
+
       {/* Top Header & Fast Action Launchpad */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 bg-gradient-to-r from-white/[0.04] via-white/[0.02] to-transparent p-6 rounded-3xl border border-white/10 shadow-xl backdrop-blur-xl">
         <div className="space-y-1">

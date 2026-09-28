@@ -8,6 +8,7 @@ const {
   updateOrderStatus,
   cancelOrder,
   returnOrder,
+  simulateDelivery,
   getMySellerOrders,
 } = require('../controllers/orderController');
 const { protect, adminOnly, optionalAuth } = require('../middleware/auth');
@@ -21,6 +22,7 @@ router.get('/seller/my', protect, getMySellerOrders);
 
 router.put('/:id/cancel', protect, cancelOrder);
 router.put('/:id/return', protect, returnOrder);
+router.put('/:id/deliver', protect, simulateDelivery);
 
 router.route('/:id')
   .get(optionalAuth, getOrderById);

@@ -14,7 +14,7 @@ const defaultLookbookItems = [
     x: 48,
     y: 35,
     slug: 'vexivo-classic-venetian-suede-driving-loafers',
-    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
+    image: 'https://images.unsplash.com/photo-1550639525-c97d455acf70?auto=format&fit=crop&w=800&q=80',
     category: "Women's Suiting",
   },
   {

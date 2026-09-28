@@ -31,6 +31,7 @@ import {
   Copy,
   ChevronDown,
   ArrowRight,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -76,7 +77,7 @@ const INDIAN_STATES = [
 const AccountDashboard = () => {
   const { user, isAuthenticated, loading: authLoading, logout, updateProfile } = useAuth();
   const { wishlist, removeFromWishlist } = useWishlist();
-  const { addToCart } = useCart();
+  const { addToCart, addMultipleToCart } = useCart();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -93,6 +94,42 @@ const AccountDashboard = () => {
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [buyingAgainId, setBuyingAgainId] = useState(null);
+
+  // Buy Again Handler (Safely extracts product details and batches to cart)
+  const handleBuyAgain = (order) => {
+    if (!order?.items || order.items.length === 0) return;
+    setBuyingAgainId(order._id);
+
+    try {
+      const itemsToAdd = order.items.map((it) => {
+        const prod = (typeof it.product === 'object' && it.product !== null) ? it.product : {};
+        return {
+          _id: prod._id || it.product || it._id || `item-${Date.now()}`,
+          id: prod._id || it.product || it._id || `item-${Date.now()}`,
+          name: it.name || prod.name || 'Order Item',
+          price: Number(it.price ?? prod.price ?? 0),
+          quantity: it.quantity || 1,
+          image: it.image || prod.thumbnail || (prod.images && prod.images[0]) || '',
+          variant: it.variant || '',
+          slug: prod.slug || '',
+        };
+      });
+
+      if (typeof addMultipleToCart === 'function') {
+        addMultipleToCart(itemsToAdd);
+      } else {
+        itemsToAdd.forEach((item) => addToCart(item, item.quantity));
+      }
+
+      navigate('/cart');
+    } catch (err) {
+      console.error('Failed to buy again:', err);
+      navigate('/cart');
+    } finally {
+      setTimeout(() => setBuyingAgainId(null), 1000);
+    }
+  };
 
   // Order Action Modals
   const [cancelModalOrder, setCancelModalOrder] = useState(null);
@@ -101,7 +138,10 @@ const AccountDashboard = () => {
 
   const [returnModalOrder, setReturnModalOrder] = useState(null);
   const [returnReason, setReturnReason] = useState('Defective or damaged product');
+  const [returnRequestType, setReturnRequestType] = useState('return'); // 'return' | 'exchange'
+  const [exchangeNote, setExchangeNote] = useState('');
   const [isReturning, setIsReturning] = useState(false);
+  const [deliveringId, setDeliveringId] = useState(null);
 
   // Profile Form State
   const [profileName, setProfileName] = useState('');
@@ -122,9 +162,9 @@ const AccountDashboard = () => {
     phone: '',
     street: '',
     city: '',
-    state: '',
+    state: 'Maharashtra',
     postalCode: '',
-    country: 'United Kingdom',
+    country: 'India',
     landmark: '',
     addressType: 'Home',
     isDefault: false,
@@ -325,21 +365,41 @@ const AccountDashboard = () => {
     }
   };
 
-  // Return Order Handler
+  // Return or Exchange Order Handler
   const handleReturnOrder = async () => {
     if (!returnModalOrder) return;
     setIsReturning(true);
     try {
-      const res = await api.orders.return(returnModalOrder._id, returnReason);
+      const res = await api.orders.return(returnModalOrder._id, {
+        reason: returnReason,
+        requestType: returnRequestType,
+        exchangeNote,
+      });
       if (res.success) {
         setReturnModalOrder(null);
         fetchOrders();
         fetchNotifications();
       }
     } catch (err) {
-      alert(err.message || 'Failed to submit return request');
+      alert(err.message || 'Failed to submit return/exchange request');
     } finally {
       setIsReturning(false);
+    }
+  };
+
+  // Simulate Delivery Handler (Fast-track to test Return / Exchange)
+  const handleSimulateDelivery = async (order) => {
+    setDeliveringId(order._id);
+    try {
+      const res = await api.orders.deliver(order._id);
+      if (res.success) {
+        await fetchOrders();
+        await fetchNotifications();
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to mark order as delivered');
+    } finally {
+      setDeliveringId(null);
     }
   };
 
@@ -878,6 +938,17 @@ const AccountDashboard = () => {
                                   <span className="text-sm font-extrabold text-neutral-900">
                                     ₹{(item.price * item.quantity).toFixed(2)}
                                   </span>
+                                  <button
+                                    onClick={() => {
+                                      addToCart(item, 1);
+                                      navigate('/cart');
+                                    }}
+                                    className="mt-1.5 inline-flex items-center space-x-1 px-2 py-0.5 rounded border border-neutral-200 hover:border-blue-600 text-[11px] font-bold text-neutral-700 hover:text-blue-600 transition-colors"
+                                    title="Buy this product again"
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                    <span>Buy Again</span>
+                                  </button>
                                 </div>
                               </div>
                             ))}
@@ -942,14 +1013,16 @@ const AccountDashboard = () => {
                             <div className="flex items-center space-x-2 flex-wrap gap-2">
                               {/* Buy Again Button */}
                               <button
-                                onClick={() => {
-                                  order.items?.forEach((it) => addToCart(it.product || it, it.quantity || 1));
-                                  navigate('/cart');
-                                }}
-                                className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors flex items-center space-x-1 shadow-sm"
+                                onClick={() => handleBuyAgain(order)}
+                                disabled={buyingAgainId === order._id}
+                                className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all flex items-center space-x-1.5 shadow-sm active:scale-95 disabled:opacity-50"
                               >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                                <span>Buy Again</span>
+                                {buyingAgainId === order._id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                )}
+                                <span>{buyingAgainId === order._id ? 'Adding to Bag...' : 'Buy Again'}</span>
                               </button>
 
                               {/* Cancel Button */}
@@ -962,14 +1035,35 @@ const AccountDashboard = () => {
                                 </button>
                               )}
 
-                              {/* Return / Refund Button */}
+                              {/* Simulate Delivery Button (Fast-track to test Return/Exchange) */}
+                              {!isDelivered && !isCancelled && !isReturned && (
+                                <button
+                                  onClick={() => handleSimulateDelivery(order)}
+                                  disabled={deliveringId === order._id}
+                                  className="px-2.5 py-1.5 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold transition-all flex items-center space-x-1 shadow-2xs active:scale-95 disabled:opacity-50"
+                                  title="Mark order as delivered to test Return and Exchange"
+                                >
+                                  {deliveringId === order._id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Truck className="w-3.5 h-3.5" />
+                                  )}
+                                  <span>{deliveringId === order._id ? 'Delivering...' : '⚡ Mark Delivered (Test)'}</span>
+                                </button>
+                              )}
+
+                              {/* Return / Exchange Button */}
                               {isDelivered && (
                                 <button
-                                  onClick={() => setReturnModalOrder(order)}
+                                  onClick={() => {
+                                    setReturnModalOrder(order);
+                                    setReturnRequestType('return');
+                                    setExchangeNote('');
+                                  }}
                                   className="px-3 py-1.5 rounded-lg border border-amber-300 text-amber-800 hover:bg-amber-50 font-bold transition-colors flex items-center space-x-1"
                                 >
                                   <RotateCcw className="w-3.5 h-3.5" />
-                                  <span>Return / Refund</span>
+                                  <span>Return / Exchange</span>
                                 </button>
                               )}
 
@@ -1127,23 +1221,28 @@ const AccountDashboard = () => {
                     />
                   </div>
 
-                  {/* Email (Readonly) */}
+                  {/* Registered Login Email (Locked & Non-Editable) */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="font-bold text-neutral-700 uppercase tracking-wider">
-                        Email Address
+                      <label className="font-bold text-neutral-700 uppercase tracking-wider flex items-center space-x-1.5">
+                        <Lock className="w-3.5 h-3.5 text-neutral-500" />
+                        <span>Registered Login Email</span>
                       </label>
-                      <span className="text-[10px] font-bold text-emerald-600 flex items-center space-x-1">
-                        <Check className="w-3 h-3" />
-                        <span>Verified Account</span>
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80 flex items-center space-x-1">
+                        <Lock className="w-2.5 h-2.5" />
+                        <span>Non-Editable (Permanent Login ID)</span>
                       </span>
                     </div>
                     <input
                       type="email"
+                      readOnly
                       disabled
                       value={user?.email || ''}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-500 cursor-not-allowed text-xs font-mono"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-100 border border-neutral-300 text-neutral-600 cursor-not-allowed text-xs font-mono font-bold select-none shadow-2xs"
                     />
+                    <p className="text-[11px] text-neutral-400 mt-1">
+                      🔒 Yeh aapka registered login email hai. Account security ke liye ise edit nahi kiya ja sakta.
+                    </p>
                   </div>
 
                   {/* Mobile Number */}
@@ -1201,9 +1300,9 @@ const AccountDashboard = () => {
                         phone: user?.phone || '',
                         street: '',
                         city: '',
-                        state: '',
+                        state: 'Maharashtra',
                         postalCode: '',
-                        country: 'United Kingdom',
+                        country: 'India',
                         landmark: '',
                         addressType: 'Home',
                         isDefault: false,
@@ -1242,7 +1341,7 @@ const AccountDashboard = () => {
                           required
                           value={addressForm.fullName}
                           onChange={(e) => setAddressForm({ ...addressForm, fullName: e.target.value })}
-                          placeholder="Arpit Sharma"
+                          placeholder="Full Name"
                           className="w-full px-3 py-2 rounded-lg bg-white border border-neutral-300 outline-none focus:border-blue-600"
                         />
                       </div>
@@ -2073,26 +2172,70 @@ const AccountDashboard = () => {
         </div>
       )}
 
-      {/* ================= RETURN / REFUND MODAL ================= */}
+      {/* ================= RETURN / EXCHANGE MODAL ================= */}
       {returnModalOrder && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white max-w-md w-full rounded-2xl p-6 shadow-2xl space-y-4 animate-scale-up text-xs">
             <div className="flex items-center space-x-3 text-amber-600 pb-2 border-b border-neutral-100">
               <RotateCcw className="w-6 h-6" />
-              <h3 className="text-base font-bold text-neutral-900">Return Order #{returnModalOrder.orderNumber}</h3>
+              <div>
+                <h3 className="text-base font-bold text-neutral-900">
+                  {returnRequestType === 'exchange' ? 'Exchange' : 'Return'} Order #{returnModalOrder.orderNumber}
+                </h3>
+                <p className="text-[11px] text-neutral-500 font-normal">
+                  VEXIVO 30-Day Hassle-Free Return &amp; Exchange Assurance
+                </p>
+              </div>
             </div>
 
-            <p className="text-neutral-500">
-              We offer hassle-free 30-day returns. Please let us know the reason so we can arrange courier pickup.
-            </p>
+            {/* Request Type Switcher */}
+            <div>
+              <label className="block font-bold text-neutral-700 mb-1.5 uppercase tracking-wider text-[10px]">
+                Choose Service Type:
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReturnRequestType('return')}
+                  className={`p-2.5 rounded-xl border text-left font-bold transition-all ${
+                    returnRequestType === 'return'
+                      ? 'border-amber-500 bg-amber-50/60 text-amber-900 shadow-2xs'
+                      : 'border-neutral-200 text-neutral-600 hover:border-neutral-300'
+                  }`}
+                >
+                  <p className="text-xs">🔄 Return &amp; Refund</p>
+                  <p className="text-[10px] font-normal text-neutral-500 mt-0.5">
+                    Doorstep pickup &amp; full refund
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setReturnRequestType('exchange')}
+                  className={`p-2.5 rounded-xl border text-left font-bold transition-all ${
+                    returnRequestType === 'exchange'
+                      ? 'border-blue-500 bg-blue-50/60 text-blue-900 shadow-2xs'
+                      : 'border-neutral-200 text-neutral-600 hover:border-neutral-300'
+                  }`}
+                >
+                  <p className="text-xs">🔁 Size / Color Exchange</p>
+                  <p className="text-[10px] font-normal text-neutral-500 mt-0.5">
+                    Fast replacement dispatched
+                  </p>
+                </button>
+              </div>
+            </div>
 
             <div>
-              <label className="block font-bold text-neutral-700 mb-1.5">Reason for Return:</label>
+              <label className="block font-bold text-neutral-700 mb-1.5">
+                Reason for {returnRequestType === 'exchange' ? 'Exchange' : 'Return'}:
+              </label>
               <select
                 value={returnReason}
                 onChange={(e) => setReturnReason(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-neutral-300 outline-none focus:border-blue-600 bg-white"
               >
+                <option value="Size doesn't fit (Need Exchange)">Size doesn't fit (Need Exchange)</option>
                 <option value="Defective or damaged product">Defective or damaged product</option>
                 <option value="Wrong item or size received">Wrong item or size received</option>
                 <option value="Quality not as expected">Quality not as expected</option>
@@ -2100,6 +2243,21 @@ const AccountDashboard = () => {
                 <option value="Other reason">Other reason</option>
               </select>
             </div>
+
+            {returnRequestType === 'exchange' && (
+              <div>
+                <label className="block font-bold text-neutral-700 mb-1.5">
+                  Exchange Preference / Details:
+                </label>
+                <input
+                  type="text"
+                  value={exchangeNote}
+                  onChange={(e) => setExchangeNote(e.target.value)}
+                  placeholder="e.g. Need size 32 instead of 30, or replace with Blue variant"
+                  className="w-full px-3 py-2 rounded-lg border border-neutral-300 outline-none focus:border-blue-600 text-xs"
+                />
+              </div>
+            )}
 
             <div className="flex items-center justify-end space-x-2 pt-3">
               <button
@@ -2113,9 +2271,17 @@ const AccountDashboard = () => {
                 type="button"
                 onClick={handleReturnOrder}
                 disabled={isReturning}
-                className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold transition-colors"
+                className={`px-4 py-2 rounded-lg text-white font-bold transition-colors ${
+                  returnRequestType === 'exchange'
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-amber-600 hover:bg-amber-700'
+                }`}
               >
-                {isReturning ? 'Submitting...' : 'Submit Return Request'}
+                {isReturning
+                  ? 'Submitting...'
+                  : returnRequestType === 'exchange'
+                  ? 'Submit Exchange Request'
+                  : 'Submit Return Request'}
               </button>
             </div>
           </div>

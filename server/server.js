@@ -28,13 +28,35 @@ connectDB().then(async () => {
   }
 });
 
-// Middleware
+const {
+  setSecurityHeaders,
+  globalRateLimiter,
+  sanitizeAuthInputs,
+  xssProtection,
+  hppProtection,
+} = require('./middleware/securityMiddleware');
+
+// Security: Hide server framework signature
+app.disable('x-powered-by');
+
+// Security & Header Fortification
+app.use(setSecurityHeaders);
+app.use(globalRateLimiter);
+
+// Secure CORS
 app.use(cors({
   origin: process.env.CLIENT_URL || ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
 }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Payload Body Limiting (Mitigate Buffer Overflow & ReDoS)
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+// Anti-Injection & Anti-XSS Sanitization Pipeline
+app.use(sanitizeAuthInputs);
+app.use(xssProtection);
+app.use(hppProtection);
 
 // Static directory for uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -50,7 +72,6 @@ app.use('/api/wishlist', require('./routes/wishlistRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/coupons', require('./routes/couponRoutes'));
 app.use('/api/reviews', require('./routes/reviewRoutes'));
-app.use('/api/products/:productId/reviews', require('./routes/reviewRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/banners', require('./routes/bannerRoutes'));
 app.use('/api/site-settings', require('./routes/settingsRoutes'));
@@ -118,10 +139,10 @@ if (fs.existsSync(clientDist)) {
 app.use(errorHandler);
 
 // Start server
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`====================================================`);
   console.log(`🚀 VEXIVO Server running in ${process.env.NODE_ENV || 'development'} mode`);
-  console.log(`🌐 API Live at: http://localhost:${PORT}`);
+  console.log(`🌐 API Live at: http://127.0.0.1:${PORT}`);
   console.log(`🛡️  Zero Python: Verified Node.js Runtime`);
   console.log(`====================================================`);
 });

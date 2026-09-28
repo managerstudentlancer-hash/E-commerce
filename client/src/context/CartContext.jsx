@@ -42,33 +42,113 @@ export const CartProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
-  const addToCart = (product, quantity = 1, variant = '') => {
+  const addToCart = (productInput, quantity = 1, variant = '') => {
+    if (!productInput) return;
+
+    // Resolve product object or order item
+    const resolvedProduct =
+      typeof productInput === 'object' && productInput.product && typeof productInput.product === 'object'
+        ? { ...productInput.product, ...productInput }
+        : productInput;
+
+    const pId =
+      typeof resolvedProduct === 'string'
+        ? resolvedProduct
+        : (resolvedProduct._id || resolvedProduct.id || resolvedProduct.product || `prod-${Date.now()}`);
+
+    const name = resolvedProduct.name || resolvedProduct.title || 'Marketplace Item';
+    const price = Number(resolvedProduct.price) || 0;
+    const image =
+      resolvedProduct.image ||
+      resolvedProduct.thumbnail ||
+      (resolvedProduct.images && resolvedProduct.images[0]) ||
+      '';
+    const itemVariant = variant || resolvedProduct.variant || '';
+    const slug = resolvedProduct.slug || '';
+    const qty = Math.max(1, Number(quantity) || 1);
+
     setItems((prevItems) => {
-      const pId = product._id || product.id;
       const existingIndex = prevItems.findIndex(
-        (item) => (item.product === pId || item.id === pId) && item.variant === variant
+        (item) => (item.product === pId || item.id === pId) && item.variant === itemVariant
       );
 
       if (existingIndex > -1) {
         const updated = [...prevItems];
-        updated[existingIndex].quantity += Number(quantity);
+        updated[existingIndex].quantity += qty;
         return updated;
       } else {
         const newItem = {
-          id: `${pId}-${variant || 'default'}-${Date.now()}`,
+          id: `${pId}-${itemVariant || 'default'}-${Date.now()}`,
           product: pId,
-          name: product.name,
-          price: product.price,
-          quantity: Number(quantity),
-          image: product.thumbnail || (product.images && product.images[0]) || '',
-          variant: variant || '',
-          slug: product.slug,
+          name,
+          price,
+          quantity: qty,
+          image,
+          variant: itemVariant,
+          slug,
         };
         return [...prevItems, newItem];
       }
     });
 
-    // Auto open cart drawer
+    setIsCartOpen(true);
+  };
+
+  const addMultipleToCart = (productsArray = []) => {
+    if (!Array.isArray(productsArray) || productsArray.length === 0) return;
+
+    setItems((prevItems) => {
+      let updated = [...prevItems];
+
+      for (const itemInput of productsArray) {
+        if (!itemInput) continue;
+        const resolved =
+          typeof itemInput === 'object' && itemInput.product && typeof itemInput.product === 'object'
+            ? { ...itemInput.product, ...itemInput }
+            : itemInput;
+
+        const pId =
+          typeof resolved === 'string'
+            ? resolved
+            : (resolved._id || resolved.id || resolved.product || `prod-${Date.now()}`);
+
+        const name = resolved.name || resolved.title || 'Marketplace Item';
+        const price = Number(resolved.price) || 0;
+        const image =
+          resolved.image ||
+          resolved.thumbnail ||
+          (resolved.images && resolved.images[0]) ||
+          '';
+        const itemVariant = resolved.variant || '';
+        const slug = resolved.slug || '';
+        const qty = Math.max(1, Number(resolved.quantity || 1));
+
+        const existingIndex = updated.findIndex(
+          (it) => (it.product === pId || it.id === pId) && it.variant === itemVariant
+        );
+
+        if (existingIndex > -1) {
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            quantity: updated[existingIndex].quantity + qty,
+          };
+        } else {
+          updated.push({
+            id: `${pId}-${itemVariant || 'default'}-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            product: pId,
+            name,
+            price,
+            quantity: qty,
+            image,
+            variant: itemVariant,
+            slug,
+          });
+        }
+      }
+
+      return updated;
+    });
+
     setIsCartOpen(true);
   };
 
@@ -116,6 +196,7 @@ export const CartProvider = ({ children }) => {
         openCart,
         closeCart,
         addToCart,
+        addMultipleToCart,
         updateQuantity,
         removeFromCart,
         clearCart,

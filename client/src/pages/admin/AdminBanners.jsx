@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Sparkles,
   ArrowRight,
+  Upload,
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -22,6 +23,7 @@ const AdminBanners = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [formError, setFormError] = useState('');
   const [toastMessage, setToastMessage] = useState('');
 
@@ -93,10 +95,32 @@ const AdminBanners = () => {
     setIsModalOpen(true);
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const data = new FormData();
+    data.append('image', file);
+    setIsUploadingImage(true);
+    setFormError('');
+
+    try {
+      const res = await api.admin.uploadImage(data);
+      if (res.success && res.url) {
+        setFormData((prev) => ({ ...prev, image: res.url }));
+        showToast('Slide image uploaded successfully from your device!');
+      }
+    } catch (err) {
+      setFormError(err.message || 'Failed to upload image file');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const handleSaveBanner = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.image) {
-      setFormError('Please specify banner title and image URL');
+      setFormError('Please specify banner headline and upload or enter an image');
       return;
     }
 
@@ -357,18 +381,80 @@ const AdminBanners = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block font-bold uppercase text-slate-300 mb-1.5">
-                  Banner Image URL *
-                </label>
-                <input
-                  type="url"
-                  required
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
-                />
+              {/* Banner Image Upload & URL Section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold uppercase text-slate-300">
+                    Slide Image *
+                  </label>
+                  <span className="text-[10px] text-cyan-400 font-medium">Upload from device or enter URL</span>
+                </div>
+
+                {/* Direct File Upload Area */}
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <label className={`flex-1 w-full py-3 px-4 rounded-2xl border-2 border-dashed ${
+                    formData.image ? 'border-cyan-500/40 bg-cyan-500/5' : 'border-white/10 hover:border-cyan-500/40 hover:bg-white/[0.02]'
+                  } transition-all cursor-pointer flex items-center justify-center space-x-2 text-xs font-bold text-slate-300`}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isUploadingImage}
+                      className="hidden"
+                    />
+                    {isUploadingImage ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                        <span className="text-cyan-300">Uploading Slide Image...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 text-cyan-400" />
+                        <span>Upload Image File from Device (PNG, JPG, WEBP)</span>
+                      </>
+                    )}
+                  </label>
+                </div>
+
+                {/* Alternative URL Input */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={formData.image}
+                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    placeholder="Or paste image URL (e.g. https://... or /uploads/...)"
+                    className="w-full px-4 py-2.5 rounded-xl admin-input font-mono text-xs"
+                  />
+                  {formData.image && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, image: '' })}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-white text-xs"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Live Image Preview Card */}
+                {formData.image && (
+                  <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-slate-950/80 p-3 flex items-center space-x-3 mt-2">
+                    <img
+                      src={formData.image}
+                      alt="Banner Preview"
+                      className="w-20 h-14 object-cover rounded-xl border border-white/10 flex-shrink-0"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80';
+                      }}
+                    />
+                    <div className="min-w-0 flex-1 text-xs">
+                      <p className="font-bold text-white truncate">Image Attached</p>
+                      <p className="text-[10px] text-slate-400 font-mono truncate">{formData.image}</p>
+                      <span className="text-[9px] text-emerald-400 font-bold">✓ Ready for live storefront publish</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

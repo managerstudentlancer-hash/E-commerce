@@ -59,6 +59,13 @@ setInterval(() => {
   }
 }, 60000);
 
+const {
+  validatePasswordStrength,
+  recordFailedLogin,
+  clearFailedLogin,
+  performDummyPasswordVerification,
+} = require('../middleware/securityMiddleware');
+
 // @desc Register new customer or seller
 // @route POST /api/auth/register
 const register = async (req, res, next) => {
@@ -67,6 +74,12 @@ const register = async (req, res, next) => {
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'Please provide name, email, and password' });
+    }
+
+    // Security: Strict Password Complexity Check
+    const passCheck = validatePasswordStrength(password);
+    if (!passCheck.valid) {
+      return res.status(400).json({ success: false, message: passCheck.message });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -129,13 +142,41 @@ const login = async (req, res, next) => {
 
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      await performDummyPasswordVerification(password);
+      const fail = recordFailedLogin(req);
+      if (fail.isLocked) {
+        return res.status(429).json({
+          success: false,
+          message: `Security Lockout: Too many failed login attempts. Account temporarily locked for ${fail.lockedMinutes} minutes.`,
+          isLocked: true,
+        });
+      }
+      return res.status(401).json({
+        success: false,
+        message: `Invalid email or password. (${fail.remainingAttempts} attempt(s) remaining before security lockout)`,
+        remainingAttempts: fail.remainingAttempts,
+      });
     }
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      const fail = recordFailedLogin(req);
+      if (fail.isLocked) {
+        return res.status(429).json({
+          success: false,
+          message: `Security Lockout: Too many failed login attempts. Account temporarily locked for ${fail.lockedMinutes} minutes.`,
+          isLocked: true,
+        });
+      }
+      return res.status(401).json({
+        success: false,
+        message: `Invalid email or password. (${fail.remainingAttempts} attempt(s) remaining before security lockout)`,
+        remainingAttempts: fail.remainingAttempts,
+      });
     }
+
+    // Clear failed attempts on successful login
+    clearFailedLogin(req);
 
     const token = generateToken(user._id);
 
@@ -163,12 +204,37 @@ const adminLogin = async (req, res, next) => {
 
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid administrator credentials' });
+      await performDummyPasswordVerification(password);
+      const fail = recordFailedLogin(req);
+      if (fail.isLocked) {
+        return res.status(429).json({
+          success: false,
+          message: `Admin Lockout: 5 failed attempts reached. Portal temporarily locked for ${fail.lockedMinutes} minutes.`,
+          isLocked: true,
+        });
+      }
+      return res.status(401).json({
+        success: false,
+        message: `Invalid administrator credentials. (${fail.remainingAttempts} attempt(s) remaining before lockout)`,
+        remainingAttempts: fail.remainingAttempts,
+      });
     }
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid administrator credentials' });
+      const fail = recordFailedLogin(req);
+      if (fail.isLocked) {
+        return res.status(429).json({
+          success: false,
+          message: `Admin Lockout: 5 failed attempts reached. Portal temporarily locked for ${fail.lockedMinutes} minutes.`,
+          isLocked: true,
+        });
+      }
+      return res.status(401).json({
+        success: false,
+        message: `Invalid administrator credentials. (${fail.remainingAttempts} attempt(s) remaining before lockout)`,
+        remainingAttempts: fail.remainingAttempts,
+      });
     }
 
     // Strict Security Guard: User MUST have role === 'admin'
@@ -178,6 +244,8 @@ const adminLogin = async (req, res, next) => {
         message: 'Access Denied: Only accounts with Administrator privileges can log in through the Admin Portal.',
       });
     }
+
+    clearFailedLogin(req);
 
     const token = generateToken(user._id);
 
@@ -240,6 +308,14 @@ const updateProfile = async (req, res, next) => {
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Security: Registered login email is permanent and cannot be changed
+    if (req.body.email && req.body.email.toLowerCase().trim() !== user.email.toLowerCase().trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Registered login email address cannot be edited.',
+      });
     }
 
     if (req.body.name) user.name = req.body.name.trim();
@@ -516,6 +592,122 @@ const changePassword = async (req, res, next) => {
   }
 };
 
+// In-memory admin reset code storage (10 minutes)
+const adminResetStore = new Map();
+
+// @desc Request password reset for administrator
+// @route POST /api/auth/admin-forgot-password
+const adminForgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Please provide administrator email address' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const adminUser = await User.findOne({ email: normalizedEmail, role: 'admin' });
+
+    if (!adminUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'No administrator account found with this email address.',
+      });
+    }
+
+    // Generate 6-digit cryptographic verification code
+    const resetCode = crypto.randomInt(100000, 1000000).toString();
+    adminResetStore.set(normalizedEmail, {
+      code: resetCode,
+      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+      attempts: 0,
+    });
+
+    console.log(`\n======================================================`);
+    console.log(`🛡️ [ADMIN RECOVERY SERVICE] Password Reset Code for ${normalizedEmail}:`);
+    console.log(`👉 Code: ${resetCode} (Valid for 10 minutes)`);
+    console.log(`======================================================\n`);
+
+    res.json({
+      success: true,
+      message: `A 6-digit administrative verification code has been dispatched to ${normalizedEmail}.`,
+      email: normalizedEmail,
+      devCode: resetCode,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc Reset administrator password with verification code
+// @route POST /api/auth/admin-reset-password
+const adminResetPassword = async (req, res, next) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide administrator email, verification code, and new password.',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters in length.',
+      });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const record = adminResetStore.get(normalizedEmail);
+
+    if (!record || record.expiresAt < Date.now()) {
+      adminResetStore.delete(normalizedEmail);
+      return res.status(400).json({
+        success: false,
+        message: 'Reset verification code has expired. Please request a new code.',
+      });
+    }
+
+    if (record.code !== code.trim()) {
+      record.attempts = (record.attempts || 0) + 1;
+      if (record.attempts >= 5) {
+        adminResetStore.delete(normalizedEmail);
+        return res.status(429).json({
+          success: false,
+          message: 'Too many incorrect verification attempts. Please request a new code.',
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification code. Please check and try again.',
+      });
+    }
+
+    const adminUser = await User.findOne({ email: normalizedEmail, role: 'admin' });
+    if (!adminUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Administrator account not found.',
+      });
+    }
+
+    // Set new password (pre-save hook will hash with bcrypt)
+    adminUser.passwordHash = newPassword;
+    await adminUser.save();
+
+    // Invalidate code
+    adminResetStore.delete(normalizedEmail);
+
+    res.json({
+      success: true,
+      message: 'Master Administrator password updated successfully. You can now log in.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc Request password reset
 // @route POST /api/auth/forgot-password
 const forgotPassword = async (req, res) => {
@@ -723,6 +915,8 @@ module.exports = {
   changePassword,
   forgotPassword,
   resetPassword,
+  adminForgotPassword,
+  adminResetPassword,
   sendOtp,
   verifyOtp,
   validateAndFormatIndianPhone,

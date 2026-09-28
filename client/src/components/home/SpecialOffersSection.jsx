@@ -37,8 +37,8 @@ const SpecialOffersSection = ({ products = [] }) => {
 
         {/* 4-Column Product Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
-          {offerProducts.map((product) => (
-            <ProductCard key={product._id || product.id} product={product} />
+          {offerProducts.map((product, idx) => (
+            <ProductCard key={product._id || product.id || idx} product={product} index={idx} />
           ))}
         </div>
       </div>

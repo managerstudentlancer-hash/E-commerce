@@ -92,8 +92,8 @@ const FeaturedCollectionTabs = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
-            {products.map((item) => (
-              <ProductCard key={item._id || item.id} product={item} />
+            {products.map((item, idx) => (
+              <ProductCard key={item._id || item.id || idx} product={item} index={idx} />
             ))}
           </div>
         )}

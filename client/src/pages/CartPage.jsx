@@ -121,7 +121,12 @@ const CartPage = () => {
                     </div>
 
                     {item.variant && (
-                      <p className="text-xs text-neutral-500 mt-0.5">Option: {item.variant}</p>
+                      <div className="mt-1">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-800 bg-neutral-100 border border-neutral-200/80 px-2.5 py-0.5 rounded-md">
+                          <span className="text-neutral-500 font-normal">Size:</span>
+                          <span className="font-bold text-black">{item.variant}</span>
+                        </span>
+                      </div>
                     )}
 
                     <div className="mt-4 flex items-center justify-between">
@@ -143,7 +148,7 @@ const CartPage = () => {
                       </div>
 
                       <span className="text-sm sm:text-base font-extrabold text-neutral-900">
-                        ₹{(item.price * item.quantity).toFixed(2)}
+                        ₹{((Number(item.price) || 0) * (item.quantity || 1)).toFixed(2)}
                       </span>
                     </div>
                   </div>
