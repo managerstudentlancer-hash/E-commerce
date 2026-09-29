@@ -20,10 +20,35 @@ const getCart = async (req, res, next) => {
 const addToCart = async (req, res, next) => {
   try {
     const { productId, quantity = 1, variant = '' } = req.body;
+    const reqQty = Math.max(1, parseInt(quantity, 10) || 1);
 
     const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found' });
+    if (!product || product.status !== 'active') {
+      return res.status(404).json({ success: false, message: 'Product not found or unavailable' });
+    }
+
+    // Determine variant-specific stock & price if configured
+    let availableStock = product.stock !== undefined ? product.stock : 50;
+    let effectivePrice = product.price;
+
+    if (variant && Array.isArray(product.options) && product.options.length > 0) {
+      const matchedOpt = product.options.find(
+        (opt) =>
+          opt.size?.toLowerCase() === variant.toLowerCase() ||
+          opt.color?.toLowerCase() === variant.toLowerCase() ||
+          `${opt.size} / ${opt.color}`.toLowerCase() === variant.toLowerCase()
+      );
+      if (matchedOpt) {
+        if (matchedOpt.stock !== undefined) availableStock = matchedOpt.stock;
+        if (matchedOpt.price && matchedOpt.price > 0) effectivePrice = matchedOpt.price;
+      }
+    }
+
+    if (availableStock <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Sorry, "${product.name}" is currently out of stock.`,
+      });
     }
 
     let cart = await Cart.findOne({ user: req.user._id });
@@ -35,14 +60,24 @@ const addToCart = async (req, res, next) => {
       (item) => item.product.toString() === productId && item.variant === variant
     );
 
+    const currentCartQty = itemIndex > -1 ? cart.items[itemIndex].quantity : 0;
+    const totalRequestedQty = currentCartQty + reqQty;
+
+    if (totalRequestedQty > availableStock) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot add ${reqQty} more unit(s). Only ${availableStock} unit(s) available in stock (you already have ${currentCartQty} in cart).`,
+      });
+    }
+
     if (itemIndex > -1) {
-      cart.items[itemIndex].quantity += Number(quantity);
+      cart.items[itemIndex].quantity = totalRequestedQty;
     } else {
       cart.items.push({
         product: product._id,
         name: product.name,
-        price: product.price,
-        quantity: Number(quantity),
+        price: effectivePrice,
+        quantity: reqQty,
         image: product.thumbnail || (product.images && product.images[0]) || '',
         variant,
       });
@@ -60,6 +95,7 @@ const addToCart = async (req, res, next) => {
 const updateCartItem = async (req, res, next) => {
   try {
     const { quantity } = req.body;
+    const reqQty = parseInt(quantity, 10);
     const cart = await Cart.findOne({ user: req.user._id });
 
     if (!cart) {
@@ -71,10 +107,32 @@ const updateCartItem = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Item not found in cart' });
     }
 
-    if (Number(quantity) <= 0) {
+    if (reqQty <= 0) {
       cart.items.pull(req.params.itemId);
     } else {
-      item.quantity = Number(quantity);
+      // Validate against product stock
+      const product = await Product.findById(item.product).select('stock name options');
+      if (product) {
+        let availableStock = product.stock !== undefined ? product.stock : 50;
+        if (item.variant && Array.isArray(product.options) && product.options.length > 0) {
+          const matchedOpt = product.options.find(
+            (opt) =>
+              opt.size?.toLowerCase() === item.variant.toLowerCase() ||
+              opt.color?.toLowerCase() === item.variant.toLowerCase() ||
+              `${opt.size} / ${opt.color}`.toLowerCase() === item.variant.toLowerCase()
+          );
+          if (matchedOpt && matchedOpt.stock !== undefined) {
+            availableStock = matchedOpt.stock;
+          }
+        }
+        if (reqQty > availableStock) {
+          return res.status(400).json({
+            success: false,
+            message: `Only ${availableStock} unit(s) available in stock for "${product.name}".`,
+          });
+        }
+      }
+      item.quantity = reqQty;
     }
 
     await cart.save();

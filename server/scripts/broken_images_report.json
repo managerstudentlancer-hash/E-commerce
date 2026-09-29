@@ -1,0 +1,24 @@
+{
+  "totalReferences": 2016,
+  "uniqueUrlsChecked": 289,
+  "workingCount": 2015,
+  "brokenCount": 1,
+  "supabaseCount": 0,
+  "cloudinaryCount": 0,
+  "unsplashCount": 2016,
+  "localCount": 0,
+  "brokenEntities": [
+    {
+      "type": "banner",
+      "id": "6abaa7bfbfeb43ed59771ee0",
+      "name": "Italian Nappa Footwear Capsule",
+      "field": "image",
+      "url": "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=1600&q=85",
+      "status": 408,
+      "error": "Timeout"
+    }
+  ],
+  "uniqueBrokenUrls": [
+    "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=1600&q=85"
+  ]
+}

@@ -1,16 +1,64 @@
 const API_URL = '/api';
 
+/**
+ * Robust token retriever:
+ * 1. Checks localStorage('vexivo_token')
+ * 2. Checks sessionStorage('vexivo_token')
+ * 3. Checks localStorage('token') & sessionStorage('token')
+ * 4. Filters out falsy values, 'null', 'undefined', or whitespace
+ */
+export const getAuthToken = () => {
+  try {
+    const candidate =
+      localStorage.getItem('vexivo_token') ||
+      sessionStorage.getItem('vexivo_token') ||
+      localStorage.getItem('token') ||
+      sessionStorage.getItem('token') ||
+      '';
+    const trimmed = String(candidate).trim();
+    if (!trimmed || trimmed === 'null' || trimmed === 'undefined') {
+      return '';
+    }
+    return trimmed;
+  } catch {
+    return '';
+  }
+};
+
+/**
+ * Universal store token helper (keeps both localStorage and sessionStorage in sync)
+ */
+export const setAuthToken = (token) => {
+  try {
+    if (token) {
+      localStorage.setItem('vexivo_token', token);
+      sessionStorage.setItem('vexivo_token', token);
+    } else {
+      localStorage.removeItem('vexivo_token');
+      sessionStorage.removeItem('vexivo_token');
+      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
+    }
+  } catch {}
+};
+
 const request = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('vexivo_token');
+  const token = options.token || getAuthToken();
+
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(token ? { Authorization: `Bearer ${token}`, 'x-auth-token': token } : {}),
     ...options.headers,
   };
 
   // If uploading FormData, delete Content-Type to let browser set boundary
   if (options.body instanceof FormData) {
     delete headers['Content-Type'];
+  }
+
+  // If options explicitly provided an Authorization header, respect it
+  if (options.headers?.Authorization) {
+    headers.Authorization = options.headers.Authorization;
   }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
@@ -24,6 +72,17 @@ const request = async (endpoint, options = {}) => {
     const error = new Error(data.message || 'Something went wrong. Please try again.');
     error.status = response.status;
     error.data = data;
+    error.endpoint = endpoint;
+
+    // Trigger auth unauthorized event if 401 occurs on protected endpoint
+    if (response.status === 401 && typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('vexivo_auth_unauthorized', {
+          detail: { endpoint, message: data.message },
+        })
+      );
+    }
+
     throw error;
   }
 

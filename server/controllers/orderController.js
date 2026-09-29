@@ -29,47 +29,109 @@ const createOrder = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Complete shipping address is required' });
     }
 
-    // Enrich items and enforce Server-Side Price Integrity (Anti-Tampering)
-    let computedSubtotal = 0;
-    const enrichedItems = await Promise.all(
-      items.map(async (item) => {
-        let seller = null;
-        let sellerName = 'VEXIVO Official';
-        let verifiedPrice = Number(item.price) || 0;
-        let verifiedName = item.name;
-        let verifiedImage = item.image || '';
+    // Idempotency: Prevent duplicate submissions within 4 seconds
+    const fourSecAgo = new Date(Date.now() - 4000);
+    const recentDuplicate = await Order.findOne({
+      ...(req.user ? { user: req.user._id } : { guestEmail }),
+      createdAt: { $gte: fourSecAgo },
+    });
+    if (recentDuplicate) {
+      return res.status(200).json({
+        success: true,
+        message: 'Order already processed',
+        order: recentDuplicate,
+      });
+    }
 
-        if (item.product) {
-          const prod = await Product.findById(item.product).select('price salePrice name images sellerId sellerName stock').lean();
-          if (prod) {
-            // Security: Use authenticated database price (never trust client payload)
-            verifiedPrice = prod.salePrice && prod.salePrice < prod.price ? prod.salePrice : prod.price;
-            verifiedName = prod.name;
-            if (prod.images && prod.images.length > 0) {
-              verifiedImage = prod.images[0].url || verifiedImage;
-            }
-            if (prod.sellerId) {
-              seller = prod.sellerId;
-              sellerName = prod.sellerName || 'Independent Seller';
-            }
+    // Enrich items, validate inventory stock, and enforce Server-Side Price Integrity
+    let computedSubtotal = 0;
+    const sellerEarningsMap = {};
+
+    const enrichedItems = [];
+    for (const item of items) {
+      let seller = null;
+      let sellerName = 'VEXIVO Official';
+      let verifiedPrice = Number(item.price) || 0;
+      let verifiedName = item.name;
+      let verifiedImage = item.image || '';
+      let availableStock = 999;
+
+      if (item.product) {
+        const prod = await Product.findById(item.product).select('price salePrice name images sellerId sellerName stock options status').lean();
+        if (!prod || prod.status !== 'active') {
+          return res.status(400).json({
+            success: false,
+            message: `Product "${item.name}" is no longer available.`,
+          });
+        }
+
+        availableStock = prod.stock !== undefined ? prod.stock : 50;
+
+        // Check variant-specific stock if variant specified
+        if (item.variant && Array.isArray(prod.options) && prod.options.length > 0) {
+          const matchedOpt = prod.options.find(
+            (opt) =>
+              opt.size?.toLowerCase() === item.variant.toLowerCase() ||
+              opt.color?.toLowerCase() === item.variant.toLowerCase() ||
+              `${opt.size} / ${opt.color}`.toLowerCase() === item.variant.toLowerCase()
+          );
+          if (matchedOpt && matchedOpt.stock !== undefined) {
+            availableStock = matchedOpt.stock;
           }
         }
 
         const validQty = Math.max(1, Math.min(99, parseInt(item.quantity, 10) || 1));
-        computedSubtotal += verifiedPrice * validQty;
+        if (availableStock < validQty) {
+          return res.status(400).json({
+            success: false,
+            message: `Sorry, "${prod.name}" has only ${availableStock} unit(s) remaining in stock. Please adjust your quantity.`,
+          });
+        }
 
-        return {
-          product: item.product,
-          name: verifiedName,
-          price: verifiedPrice,
-          quantity: validQty,
-          image: verifiedImage,
-          variant: item.variant || '',
-          seller,
-          sellerName,
-        };
-      })
-    );
+        // Security: Authenticated database price (never trust client price payload)
+        verifiedPrice = prod.salePrice && prod.salePrice < prod.price ? prod.salePrice : prod.price;
+        verifiedName = prod.name;
+        if (prod.images && prod.images.length > 0) {
+          verifiedImage = typeof prod.images[0] === 'object' ? prod.images[0].url : prod.images[0];
+        }
+        if (prod.sellerId) {
+          seller = prod.sellerId;
+          sellerName = prod.sellerName || 'Independent Seller';
+        }
+      }
+
+      const validQty = Math.max(1, Math.min(99, parseInt(item.quantity, 10) || 1));
+      const lineTotal = verifiedPrice * validQty;
+      computedSubtotal += lineTotal;
+
+      // Platform commission calculation: 10% platform fee, 90% seller earning
+      if (seller) {
+        const sId = seller.toString();
+        const commission = Math.round(lineTotal * 0.10);
+        const sellerNet = lineTotal - commission;
+        if (!sellerEarningsMap[sId]) {
+          sellerEarningsMap[sId] = {
+            seller,
+            amount: 0,
+            commission: 0,
+            payoutStatus: 'pending',
+          };
+        }
+        sellerEarningsMap[sId].amount += sellerNet;
+        sellerEarningsMap[sId].commission += commission;
+      }
+
+      enrichedItems.push({
+        product: item.product,
+        name: verifiedName,
+        price: verifiedPrice,
+        quantity: validQty,
+        image: verifiedImage,
+        variant: item.variant || '',
+        seller,
+        sellerName,
+      });
+    }
 
     // Validate coupon against database if provided
     let verifiedDiscount = 0;
@@ -128,12 +190,13 @@ const createOrder = async (req, res, next) => {
       paymentStatus: 'paid', // Mark as paid for standard checkout flow
       orderStatus: req.body.orderStatus || 'processing',
       trackingHistory: initialTracking,
+      sellerEarnings: Object.values(sellerEarningsMap),
     });
 
     const createdOrder = await order.save();
 
-    // Deduct stock asynchronously
-    for (const item of items) {
+    // Deduct stock atomically
+    for (const item of enrichedItems) {
       if (item.product) {
         await Product.findByIdAndUpdate(item.product, {
           $inc: { stock: -Number(item.quantity || 1) },
@@ -141,7 +204,7 @@ const createOrder = async (req, res, next) => {
       }
     }
 
-    // Credit reward points to customer (1 point per ₹100 spent) & create notification
+    // Customer Notification & Rewards
     if (req.user) {
       const earnedPoints = Math.max(10, Math.floor(verifiedTotal / 100));
       await User.findByIdAndUpdate(req.user._id, {
@@ -162,6 +225,18 @@ const createOrder = async (req, res, next) => {
         message: `Your order ${orderNumber} for ₹${verifiedTotal.toLocaleString('en-IN')} has been placed and is being prepared for dispatch.`,
         type: 'order',
         link: `/account?tab=orders`,
+      }).catch(() => {});
+    }
+
+    // Seller Notifications
+    for (const sId of Object.keys(sellerEarningsMap)) {
+      const sData = sellerEarningsMap[sId];
+      await Notification.create({
+        user: sId,
+        title: 'New Order Received! 📦',
+        message: `You have received order ${orderNumber} with your products. Net earnings: ₹${sData.amount.toLocaleString('en-IN')} (Platform fee: ₹${sData.commission.toLocaleString('en-IN')}).`,
+        type: 'order',
+        link: `/account/seller`,
       }).catch(() => {});
     }
 
@@ -297,8 +372,24 @@ const updateOrderStatus = async (req, res, next) => {
     }
 
     const previousStatus = order.orderStatus;
+    const normalizedStatus = orderStatus ? orderStatus.toLowerCase().trim() : '';
 
-    if (orderStatus) {
+    if (normalizedStatus) {
+      // Data Integrity: Prevent invalid status transitions
+      if (previousStatus === 'cancelled' && normalizedStatus !== 'cancelled') {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot update status of a cancelled order.',
+        });
+      }
+
+      if (previousStatus === 'delivered' && ['pending', 'processing', 'confirmed'].includes(normalizedStatus)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Delivered orders cannot be rolled back to pending or processing.',
+        });
+      }
+
       if (normalizedStatus === 'delivered') {
         order.deliveredAt = new Date();
       }
@@ -320,6 +411,29 @@ const updateOrderStatus = async (req, res, next) => {
             }
           }
         }
+      }
+
+      // Add to tracking history
+      const statusTitle = normalizedStatus
+        .split('_')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+
+      order.trackingHistory.push({
+        status: statusTitle,
+        message: `Order status updated to ${statusTitle}`,
+        timestamp: new Date(),
+      });
+
+      // Notify customer of status change
+      if (order.user) {
+        await Notification.create({
+          user: order.user,
+          title: `Order Update: ${statusTitle}`,
+          message: `Your order ${order.orderNumber} is now ${statusTitle.toLowerCase()}.`,
+          type: 'order',
+          link: `/account?tab=orders`,
+        }).catch(() => {});
       }
     }
 
@@ -492,21 +606,59 @@ const getMySellerOrders = async (req, res, next) => {
       .sort({ createdAt: -1 })
       .lean();
 
+    let totalSales = 0;
+    let totalCommission = 0;
+    let totalEarnings = 0;
+
     // Filter items to only show seller's own products (Data Isolation Guarantee)
     const sanitizedOrders = orders.map((order) => {
       const sellerItems = order.items.filter(
         (item) => item.seller && item.seller.toString() === req.user._id.toString()
       );
       const sellerSubtotal = sellerItems.reduce((acc, it) => acc + it.price * it.quantity, 0);
+      const commissionRate = 0.10; // 10% platform commission
+      const platformFee = Math.round(sellerSubtotal * commissionRate);
+      const netEarning = sellerSubtotal - platformFee;
+
+      totalSales += sellerSubtotal;
+      totalCommission += platformFee;
+      totalEarnings += netEarning;
+
+      // Payout eligibility: delivered orders are eligible for payout; cancelled orders are cancelled
+      let payoutStatus = 'pending';
+      if (order.orderStatus === 'delivered') payoutStatus = 'eligible';
+      else if (order.orderStatus === 'cancelled' || order.orderStatus === 'returned') payoutStatus = 'cancelled';
 
       return {
         ...order,
         items: sellerItems,
         sellerSubtotal,
+        platformFee,
+        netEarning,
+        payoutStatus,
       };
     });
 
-    res.json({ success: true, count: sanitizedOrders.length, orders: sanitizedOrders });
+    const pendingPayout = sanitizedOrders
+      .filter((o) => o.payoutStatus === 'pending')
+      .reduce((sum, o) => sum + o.netEarning, 0);
+
+    const eligiblePayout = sanitizedOrders
+      .filter((o) => o.payoutStatus === 'eligible')
+      .reduce((sum, o) => sum + o.netEarning, 0);
+
+    res.json({
+      success: true,
+      count: sanitizedOrders.length,
+      orders: sanitizedOrders,
+      metrics: {
+        totalSales,
+        totalCommission,
+        totalEarnings,
+        pendingPayout,
+        eligiblePayout,
+      },
+    });
   } catch (error) {
     next(error);
   }

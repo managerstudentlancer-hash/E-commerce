@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const supabaseStorage = require('../services/supabaseStorage');
 
 // Helper to slugify string
 const slugify = (text) => {
@@ -25,6 +26,15 @@ const getProducts = async (req, res, next) => {
       bestseller,
       newArrival,
       specialOffer,
+      brand,
+      subcategory,
+      rating,
+      minRating,
+      inStock,
+      minDiscount,
+      onSale,
+      size,
+      color,
       sort,
       page = 1,
       limit = 12,
@@ -42,15 +52,67 @@ const getProducts = async (req, res, next) => {
       andConditions.push({ stock: { $lte: 0 } });
     } else if (stockStatus === 'low') {
       andConditions.push({ stock: { $gt: 0, $lte: 10 } });
-    } else if (stockStatus === 'in') {
-      andConditions.push({ stock: { $gt: 10 } });
+    } else if (stockStatus === 'in' || inStock === 'true') {
+      andConditions.push({ stock: { $gt: 0 } });
     }
 
     if (category) {
+      const catSafe = category.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       andConditions.push({
         $or: [
-          { categorySlug: category.toLowerCase() },
-          { category: new RegExp(category, 'i') },
+          { categorySlug: category.toLowerCase().trim() },
+          { category: new RegExp(`^${catSafe}$`, 'i') },
+          { category: new RegExp(catSafe, 'i') },
+        ],
+      });
+    }
+
+    if (subcategory && subcategory !== 'all') {
+      const subSafe = subcategory.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      andConditions.push({ subcategory: new RegExp(`^${subSafe}$`, 'i') });
+    }
+
+    if (brand && brand !== 'all') {
+      const brandList = brand.split(',').map((b) => b.trim()).filter(Boolean);
+      if (brandList.length === 1) {
+        const bSafe = brandList[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        andConditions.push({ brand: new RegExp(`^${bSafe}$`, 'i') });
+      } else if (brandList.length > 1) {
+        andConditions.push({
+          brand: { $in: brandList.map((b) => new RegExp(`^${b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')) },
+        });
+      }
+    }
+
+    const effectiveRating = rating || minRating;
+    if (effectiveRating) {
+      andConditions.push({ rating: { $gte: Number(effectiveRating) } });
+    }
+
+    if (minDiscount) {
+      andConditions.push({ discount: { $gte: Number(minDiscount) } });
+    }
+
+    if (onSale === 'true') {
+      andConditions.push({ discount: { $gt: 0 } });
+    }
+
+    if (size) {
+      const sSafe = size.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      andConditions.push({
+        $or: [
+          { 'variants.options': new RegExp(`^${sSafe}$`, 'i') },
+          { 'options.size': new RegExp(`^${sSafe}$`, 'i') },
+        ],
+      });
+    }
+
+    if (color) {
+      const cSafe = color.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      andConditions.push({
+        $or: [
+          { 'variants.options': new RegExp(`^${cSafe}$`, 'i') },
+          { 'options.color': new RegExp(`^${cSafe}$`, 'i') },
         ],
       });
     }
@@ -72,13 +134,15 @@ const getProducts = async (req, res, next) => {
     }
 
     if (search) {
-      const searchRegex = new RegExp(search, 'i');
+      const safeSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const searchRegex = new RegExp(safeSearch, 'i');
       andConditions.push({
         $or: [
           { name: searchRegex },
           { description: searchRegex },
           { tags: searchRegex },
           { brand: searchRegex },
+          { sku: searchRegex },
         ],
       });
     }
@@ -87,11 +151,19 @@ const getProducts = async (req, res, next) => {
 
     // Sorting
     let sortOptions = { createdAt: -1 }; // default newest
-    if (sort === 'price-asc') sortOptions = { price: 1 };
-    else if (sort === 'price-desc') sortOptions = { price: -1 };
-    else if (sort === 'rating') sortOptions = { rating: -1 };
-    else if (sort === 'bestseller') sortOptions = { bestseller: -1, rating: -1 };
-    else if (sort === 'name-asc') sortOptions = { name: 1 };
+    if (sort === 'price-asc' || sort === 'price_asc' || sort === 'price-low-to-high') {
+      sortOptions = { price: 1 };
+    } else if (sort === 'price-desc' || sort === 'price_desc' || sort === 'price-high-to-low') {
+      sortOptions = { price: -1 };
+    } else if (sort === 'rating' || sort === 'rating-desc') {
+      sortOptions = { rating: -1, numReviews: -1 };
+    } else if (sort === 'bestseller' || sort === 'popular') {
+      sortOptions = { bestseller: -1, rating: -1, numReviews: -1 };
+    } else if (sort === 'name-asc') {
+      sortOptions = { name: 1 };
+    } else if (sort === 'name-desc') {
+      sortOptions = { name: -1 };
+    }
 
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
@@ -311,6 +383,18 @@ const deleteProduct = async (req, res, next) => {
       }
     }
 
+    // Clean up Supabase images associated with this product
+    const allImages = [
+      product.thumbnail,
+      product.hoverImage,
+      ...(product.images || []),
+      ...(product.options || []).map((o) => o.image),
+    ].filter(Boolean);
+
+    for (const imgUrl of allImages) {
+      await supabaseStorage.deleteFromSupabase(imgUrl).catch(() => {});
+    }
+
     await Product.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Product deleted successfully' });
   } catch (error) {
@@ -333,14 +417,87 @@ const getMySellerProducts = async (req, res, next) => {
   }
 };
 
-// @desc Upload product image
+// @desc Upload product image to Supabase Storage (products/{productId}/{unique-file-name})
 // @route POST /api/products/upload-image
-const uploadProductImage = (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ success: false, message: 'Please upload an image file' });
+const uploadProductImage = async (req, res, next) => {
+  try {
+    const hasSingle = Boolean(req.file);
+    const hasMultiple = Boolean(req.files && Array.isArray(req.files) && req.files.length > 0);
+
+    if (!hasSingle && !hasMultiple) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please upload an image file (JPEG, PNG, WEBP, GIF up to 5MB)',
+      });
+    }
+
+    const productId = req.body.productId || req.params.id || (req.user ? req.user._id : 'general');
+    const folder = req.body.folder === 'sellers' ? 'sellers' : 'products';
+
+    if (hasMultiple) {
+      const uploadPromises = req.files.map((file) =>
+        supabaseStorage.uploadToSupabase({
+          buffer: file.buffer,
+          mimetype: file.mimetype,
+          originalname: file.originalname,
+          folder,
+          entityId: productId,
+        })
+      );
+      const results = await Promise.all(uploadPromises);
+      return res.json({
+        success: true,
+        urls: results.map((r) => r.url),
+        images: results,
+      });
+    }
+
+    const result = await supabaseStorage.uploadToSupabase({
+      buffer: req.file.buffer,
+      mimetype: req.file.mimetype,
+      originalname: req.file.originalname,
+      folder,
+      entityId: productId,
+    });
+
+    res.json({
+      success: true,
+      url: result.url,
+      path: result.path,
+      filename: result.filename,
+      bucket: result.bucket,
+    });
+  } catch (error) {
+    console.error('[Product Image Upload Error]:', error.message);
+    const isConfigError = error.message.includes('configured');
+    res.status(isConfigError ? 503 : 400).json({
+      success: false,
+      message: error.message,
+    });
   }
-  const fileUrl = `/uploads/${req.file.filename}`;
-  res.json({ success: true, url: fileUrl });
+};
+
+// @desc Delete an image from product & Supabase Storage
+// @route DELETE /api/products/delete-image
+const deleteProductImage = async (req, res, next) => {
+  try {
+    const { url, productId } = req.body;
+    if (!url) {
+      return res.status(400).json({ success: false, message: 'Image URL is required' });
+    }
+
+    await supabaseStorage.deleteFromSupabase(url);
+
+    if (productId) {
+      await Product.findByIdAndUpdate(productId, {
+        $pull: { images: url },
+      });
+    }
+
+    res.json({ success: true, message: 'Image deleted successfully from Supabase Storage' });
+  } catch (error) {
+    next(error);
+  }
 };
 
 module.exports = {
@@ -351,4 +508,5 @@ module.exports = {
   deleteProduct,
   getMySellerProducts,
   uploadProductImage,
+  deleteProductImage,
 };

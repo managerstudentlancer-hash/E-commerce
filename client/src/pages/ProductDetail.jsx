@@ -30,6 +30,7 @@ import { useAuth } from '../context/AuthContext';
 import RatingStars from '../components/common/RatingStars';
 import ProductCard from '../components/common/ProductCard';
 import { analyzeProductSizes } from '../utils/sizeHelper';
+import { getCategoryFallback, resolveImageUrl } from '../utils/imageHelper';
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -128,6 +129,13 @@ const ProductDetail = () => {
         setRelatedProducts(res.relatedProducts || []);
         setSelectedImageIndex(0);
 
+        // Dynamic SEO & Title
+        document.title = `${res.product.name} | Buy Online | VEXIVO`;
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+          metaDesc.setAttribute('content', res.product.shortDescription || res.product.description?.slice(0, 155) || res.product.name);
+        }
+
         // Fetch reviews
         api.reviews.getForProduct(res.product._id)
           .then((revRes) => {
@@ -225,12 +233,13 @@ const ProductDetail = () => {
     );
   }
 
-  const fallbackImg = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
-  const images = (product.images && product.images.length > 0)
+  const fallbackImg = getCategoryFallback(product?.category, product?.categorySlug);
+  const rawImages = (product?.images && product.images.length > 0)
     ? product.images.filter(Boolean)
-    : [product.thumbnail || product.image || fallbackImg];
-  const activeImage = images[selectedImageIndex] || product.thumbnail || product.image || fallbackImg;
-  const inWishlist = isInWishlist(product._id);
+    : [product?.thumbnail || product?.image || fallbackImg];
+  const images = rawImages.map((img) => resolveImageUrl(img, product?.category, product?.categorySlug));
+  const activeImage = images[selectedImageIndex] || resolveImageUrl(product?.thumbnail || product?.image, product?.category, product?.categorySlug) || fallbackImg;
+  const inWishlist = isInWishlist(product?._id);
 
   return (
     <div className="bg-white min-h-screen pb-20">

@@ -101,6 +101,8 @@ const AdminBanners = () => {
 
     const data = new FormData();
     data.append('image', file);
+    data.append('folder', 'banners');
+    if (editingBanner?._id) data.append('bannerId', editingBanner._id);
     setIsUploadingImage(true);
     setFormError('');
 

@@ -1,6 +1,8 @@
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 
+const escapeRegex = (str = '') => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // @desc Unified search & autocomplete
 // @route GET /api/search
 const search = async (req, res, next) => {
@@ -28,14 +30,24 @@ const search = async (req, res, next) => {
     const andConditions = [{ status: 'active' }];
 
     if (queryStr) {
-      const regex = new RegExp(queryStr, 'i');
+      const safeQuery = escapeRegex(queryStr);
+      const regex = new RegExp(safeQuery, 'i');
       andConditions.push({
-        $or: [{ name: regex }, { description: regex }, { tags: regex }, { brand: regex }, { category: regex }],
+        $or: [
+          { name: regex },
+          { description: regex },
+          { tags: regex },
+          { brand: regex },
+          { category: regex },
+          { subcategory: regex },
+          { sku: regex },
+        ],
       });
     }
 
     if (categoryStr && categoryStr !== 'All Categories') {
-      const catRegex = new RegExp(categoryStr, 'i');
+      const safeCat = escapeRegex(categoryStr);
+      const catRegex = new RegExp(safeCat, 'i');
       const catSlug = categoryStr.toLowerCase().replace(/\s+/g, '-');
       andConditions.push({
         $or: [
@@ -48,16 +60,18 @@ const search = async (req, res, next) => {
 
     const products = await Product.find({ $and: andConditions })
       .limit(24)
-      .select('name slug price compareAtPrice thumbnail category discount rating');
+      .select('name slug price compareAtPrice thumbnail category discount rating sku');
 
     let catQuery = { status: 'active' };
     if (categoryStr && categoryStr !== 'All Categories') {
+      const safeCat = escapeRegex(categoryStr);
       catQuery.$or = [
-        { name: new RegExp(categoryStr, 'i') },
+        { name: new RegExp(safeCat, 'i') },
         { slug: categoryStr.toLowerCase().replace(/\s+/g, '-') },
       ];
     } else if (queryStr) {
-      const regex = new RegExp(queryStr, 'i');
+      const safeQuery = escapeRegex(queryStr);
+      const regex = new RegExp(safeQuery, 'i');
       catQuery.$or = [{ name: regex }, { description: regex }];
     }
 

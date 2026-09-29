@@ -1,0 +1,218 @@
+{
+  "timestamp": "2026-09-28T18:09:10.018Z",
+  "sections": {
+    "connection": {
+      "supabaseUrlPresent": true,
+      "supabaseUrlValid": true,
+      "supabaseSecretKeyPresent": true,
+      "supabaseSecretKeyMasked": "sb_secret_...[CONFIDENTIAL REDACTED]",
+      "bucketNameConfigured": "vexivo-images",
+      "clientInitialized": true,
+      "authSuccess": true,
+      "envProtectedByGitignore": true,
+      "noSecretInClient": true,
+      "noSecretInTrackedGit": true,
+      "availableBuckets": [
+        "vexivo-images"
+      ]
+    },
+    "bucket": {
+      "bucketExists": true,
+      "isExactNameVexivoImages": true,
+      "isPublic": true,
+      "uploadAllowed": true,
+      "publicUrlAccessible": true,
+      "deleteAllowed": true
+    },
+    "folderStructure": {
+      "consistentFormat": true,
+      "samples": [
+        {
+          "input": "products/prod123",
+          "output": "products/prod123/1790610000000-abcd1234ef56.jpg",
+          "matches": true
+        },
+        {
+          "input": "categories/cat456",
+          "output": "categories/cat456/1790610000000-abcd1234ef56.png",
+          "matches": true
+        },
+        {
+          "input": "banners/ban789",
+          "output": "banners/ban789/1790610000000-abcd1234ef56.webp",
+          "matches": true
+        },
+        {
+          "input": "profiles/user101",
+          "output": "profiles/user101/1790610000000-abcd1234ef56.jpeg",
+          "matches": true
+        },
+        {
+          "input": "sellers/sell202",
+          "output": "sellers/sell202/1790610000000-abcd1234ef56.png",
+          "matches": true
+        }
+      ]
+    },
+    "uploadAndValidation": {
+      "adminAuthWorks": true,
+      "customerAuthWorks": true,
+      "formatTests": {
+        ".png": {
+          "statusCode": 200,
+          "success": "https://aalvydwftpaujfgtsvng.supabase.co/storage/v1/object/public/vexivo-images/products/audit-test-entity/1790618952313-1b9a41b2fa90.png",
+          "returnedUrl": "https://aalvydwftpaujfgtsvng.supabase.co/storage/v1/object/public/vexivo-images/products/audit-test-entity/1790618952313-1b9a41b2fa90.png",
+          "returnedPath": "products/audit-test-entity/1790618952313-1b9a41b2fa90.png"
+        },
+        ".jpg": {
+          "statusCode": 200,
+          "success": "https://aalvydwftpaujfgtsvng.supabase.co/storage/v1/object/public/vexivo-images/products/audit-test-entity/1790618953379-f16f2e739883.jpg",
+          "returnedUrl": "https://aalvydwftpaujfgtsvng.supabase.co/storage/v1/object/public/vexivo-images/products/audit-test-entity/1790618953379-f16f2e739883.jpg",
+          "returnedPath": "products/audit-test-entity/1790618953379-f16f2e739883.jpg"
+        },
+        ".jpeg": {
+          "statusCode": 200,
+          "success": "https://aalvydwftpaujfgtsvng.supabase.co/storage/v1/object/public/vexivo-images/products/audit-test-entity/1790618953982-b74ea1c05379.jpeg",
+          "returnedUrl": "https://aalvydwftpaujfgtsvng.supabase.co/storage/v1/object/public/vexivo-images/products/audit-test-entity/1790618953982-b74ea1c05379.jpeg",
+          "returnedPath": "products/audit-test-entity/1790618953982-b74ea1c05379.jpeg"
+        },
+        ".webp": {
+          "statusCode": 200,
+          "success": "https://aalvydwftpaujfgtsvng.supabase.co/storage/v1/object/public/vexivo-images/products/audit-test-entity/1790618954770-c0b9b25cba9e.webp",
+          "returnedUrl": "https://aalvydwftpaujfgtsvng.supabase.co/storage/v1/object/public/vexivo-images/products/audit-test-entity/1790618954770-c0b9b25cba9e.webp",
+          "returnedPath": "products/audit-test-entity/1790618954770-c0b9b25cba9e.webp"
+        }
+      },
+      "securityValidation": {
+        "svgRejected": true,
+        "executableRejected": true,
+        "oversizedRejected": true
+      },
+      "downloadVerification": {
+        ".png": {
+          "statusCode": 200,
+          "contentType": "image/png",
+          "byteLength": 69,
+          "validSignature": true
+        },
+        ".jpg": {
+          "statusCode": 200,
+          "contentType": "image/jpeg",
+          "byteLength": 138,
+          "validSignature": true
+        },
+        ".jpeg": {
+          "statusCode": 200,
+          "contentType": "image/jpeg",
+          "byteLength": 138,
+          "validSignature": true
+        },
+        ".webp": {
+          "statusCode": 200,
+          "contentType": "image/webp",
+          "byteLength": 34,
+          "validSignature": true
+        }
+      }
+    },
+    "databaseReferences": {
+      "totalSupabaseRefs": 0,
+      "healthySupabaseRefs": 0,
+      "brokenSupabaseRefs": []
+    },
+    "deleteAndReplacement": {
+      "uploadInitialTestImage": true,
+      "initialImageAccessible": true,
+      "replacementImageUploaded": true,
+      "initialImageDeleted": true,
+      "initialImage404AfterDelete": false,
+      "replacementImageStillAccessible": true
+    },
+    "migratedImages": {
+      "migratedFolderExists": true,
+      "migratedObjects": [],
+      "healthyCount": 0,
+      "brokenCount": 0
+    },
+    "oldReferencesAndServerStorage": {
+      "cloudinaryReferencesCount": 0,
+      "localReferencesCount": 0,
+      "uploadsDirExists": true,
+      "uploadsFilesCount": 7,
+      "uploadsFilesList": [
+        "image-1790533586498-224211774.png",
+        "image-1790536768416-164766525.png",
+        "image-1790536774575-186767505.png",
+        "image-1790536804142-803076241.png",
+        "image-1790537471709-912256923.png",
+        "photo-1790537829867-94906554.png",
+        "photo-1790580186292-564303243.png"
+      ],
+      "multerUsesMemoryStorage": true
+    },
+    "securityAndEndpoints": {
+      "unauthenticatedAdminUploadBlocked": true,
+      "customerAdminUploadBlocked": true,
+      "unauthenticatedProductUploadBlocked": true,
+      "unauthenticatedProfilePhotoBlocked": true,
+      "customerProfilePhotoAllowed": true
+    },
+    "frontendIntegration": {
+      "components": [
+        {
+          "file": "client/src/pages/admin/AdminProducts.jsx",
+          "exists": true,
+          "pass": true,
+          "matchedChecks": [
+            "imageHelper",
+            "supabase"
+          ]
+        },
+        {
+          "file": "client/src/pages/admin/AdminCategories.jsx",
+          "exists": true,
+          "pass": false,
+          "matchedChecks": []
+        },
+        {
+          "file": "client/src/pages/admin/AdminBanners.jsx",
+          "exists": true,
+          "pass": false,
+          "matchedChecks": []
+        },
+        {
+          "file": "client/src/pages/admin/AdminSettings.jsx",
+          "exists": true,
+          "pass": false,
+          "matchedChecks": []
+        },
+        {
+          "file": "client/src/pages/account/SellerDashboard.jsx",
+          "exists": true,
+          "pass": false,
+          "matchedChecks": []
+        },
+        {
+          "file": "client/src/pages/account/AccountDashboard.jsx",
+          "exists": true,
+          "pass": false,
+          "matchedChecks": []
+        }
+      ]
+    },
+    "errorHandling": {
+      "missingFileUploadHandled": true,
+      "missingDeleteUrlHandled": false
+    },
+    "e2e": {
+      "step1_uploadImage": true,
+      "step2_createProductWithImage": true,
+      "step3_fetchProductFromApi": true,
+      "step4_verifyImageLoadsOverHttp": true,
+      "step5_replaceImage": true,
+      "step6_cleanupTestProduct": true,
+      "step7_cleanupSupabaseObjects": true
+    }
+  },
+  "summary": {}
+}
