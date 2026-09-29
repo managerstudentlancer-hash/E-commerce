@@ -4,22 +4,22 @@ import api from '../services/api';
 const defaultSettings = {
   siteName: 'VEXIVO',
   logo: '',
-  announcementText: '✨ FREE UK NEXT-DAY DELIVERY OVER £50 | USE CODE VEX10 FOR 10% OFF',
+  announcementText: '✨ FREE PAN-INDIA EXPRESS DELIVERY OVER ₹499 | USE CODE VEX10 FOR 10% OFF',
   announcements: [
-    '✨ FREE UK NEXT-DAY DELIVERY OVER £50',
-    '🔥 SPRING / SUMMER CAPSULE LIVE | USE CODE VEX10 FOR 10% OFF',
-    '⭐ OVER 18,500+ VERIFIED 5-STAR REVIEWS ACROSS THE UK',
-    '⚡ 30-DAY COMPLIMENTARY RETURNS & BESPOKE PACKAGING',
+    '✨ FREE PAN-INDIA EXPRESS DELIVERY OVER ₹499',
+    '🔥 FESTIVE SEASON CAPSULE LIVE | USE CODE VEX10 FOR 10% OFF',
+    '⭐ OVER 18,500+ VERIFIED 5-STAR REVIEWS ACROSS INDIA',
+    '⚡ 7-DAY COMPLIMENTARY REPLACEMENTS & PREMIUM PACKAGING',
   ],
   contactInfo: {
-    email: 'concierge@vexivo.com',
-    phone: '+44 20 7946 0991',
-    address: '71-75 Shelton Street, Covent Garden, London, WC2H 9JQ',
-    hours: 'Monday - Saturday: 9:00 AM - 6:00 PM GMT',
+    email: 'support@vexivo.com',
+    phone: '+91 98765 43210',
+    address: 'DLF Cyber City, Tower B, Gurugram, Haryana, 122002',
+    hours: 'Monday - Saturday: 9:00 AM - 7:00 PM IST',
   },
-  freeShippingThreshold: 50,
-  currency: '£',
-  currencyCode: 'GBP',
+  freeShippingThreshold: 499,
+  currency: '₹',
+  currencyCode: 'INR',
 };
 
 const SettingsContext = createContext({

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  PoundSterling,
+  IndianRupee,
   ShoppingCart,
   Users,
   Package,
@@ -279,12 +279,12 @@ const AdminDashboard = () => {
               Gross Revenue
             </span>
             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 glow-emerald">
-              <PoundSterling className="w-4 h-4" />
+              <IndianRupee className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-4">
             <p className="text-xl font-black text-white tracking-tight font-mono">
-              £{(s.totalRevenue || 0).toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+              ₹{(s.totalRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </p>
             <span className="text-[10px] text-emerald-400 font-bold flex items-center mt-1">
               <TrendingUp className="w-3 h-3 mr-1" /> All-Time Volume
@@ -323,7 +323,7 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-xl font-black text-white tracking-tight font-mono">£{averageOrderValue}</p>
+            <p className="text-xl font-black text-white tracking-tight font-mono">₹{averageOrderValue}</p>
             <span className="text-[10px] text-purple-300 font-bold flex items-center mt-1">
               <ArrowUpRight className="w-3 h-3 mr-0.5" /> AOV Efficiency
             </span>
@@ -477,7 +477,7 @@ const AdminDashboard = () => {
           <div>
             <p className="text-[10px] uppercase font-bold text-slate-400">Period Total Revenue</p>
             <p className="text-lg font-black text-emerald-400 font-mono mt-0.5">
-              £{totalPeriodRevenue.toFixed(2)}
+              ₹{totalPeriodRevenue.toFixed(2)}
             </p>
           </div>
           <div>
@@ -489,13 +489,13 @@ const AdminDashboard = () => {
           <div>
             <p className="text-[10px] uppercase font-bold text-slate-400">Period Avg Basket</p>
             <p className="text-lg font-black text-purple-300 font-mono mt-0.5">
-              £{averageOrderValue}
+              ₹{averageOrderValue}
             </p>
           </div>
           <div>
             <p className="text-[10px] uppercase font-bold text-slate-400">Peak Velocity</p>
             <p className="text-lg font-black text-amber-300 font-mono mt-0.5">
-              £{maxSales.toFixed(2)} / day
+              ₹{maxSales.toFixed(2)} / day
             </p>
           </div>
         </div>
@@ -519,7 +519,7 @@ const AdminDashboard = () => {
                 <div className="flex justify-between items-center text-slate-300">
                   <span>Revenue:</span>
                   <span className="font-black text-emerald-400 font-mono text-sm">
-                    £{hoveredPoint.data.sales.toFixed(2)}
+                    ₹{hoveredPoint.data.sales.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-slate-300">
@@ -685,7 +685,7 @@ const AdminDashboard = () => {
         <div className="flex flex-wrap items-center justify-center gap-6 pt-2 border-t border-white/5 text-xs text-slate-400 font-semibold">
           <div className="flex items-center space-x-2">
             <span className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400" />
-            <span>Gross Revenue (£)</span>
+            <span>Gross Revenue (₹)</span>
           </div>
           {chartType === 'dual' && (
             <div className="flex items-center space-x-2">
@@ -695,7 +695,7 @@ const AdminDashboard = () => {
           )}
           <div className="flex items-center space-x-2">
             <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
-            <span>Baseline Volume (£0.00)</span>
+            <span>Baseline Volume (₹0.00)</span>
           </div>
         </div>
       </div>
@@ -748,7 +748,7 @@ const AdminDashboard = () => {
                         <span className="text-[10px] text-slate-400 font-mono">({cat.count} items)</span>
                       </div>
                       <div className="text-right flex items-center space-x-3">
-                        <span className="text-[11px] text-slate-400 font-mono">Avg £{cat.avgPrice}</span>
+                        <span className="text-[11px] text-slate-400 font-mono">Avg ₹{cat.avgPrice}</span>
                         <span className="font-black font-mono text-cyan-300">{cat.percentage}%</span>
                       </div>
                     </div>
@@ -903,7 +903,7 @@ const AdminDashboard = () => {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-xs font-black text-emerald-400 font-mono">
-                      £{prod.revenue?.toFixed(2)}
+                      ₹{prod.revenue?.toFixed(2)}
                     </p>
                   </div>
                 </div>

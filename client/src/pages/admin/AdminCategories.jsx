@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Image as ImageIcon,
   Sparkles,
+  Upload,
 } from 'lucide-react';
 import api from '../../services/api';
 import { useCategories } from '../../context/CategoryContext';
@@ -48,6 +49,30 @@ const AdminCategories = () => {
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3500);
+  };
+
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleCategoryImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const data = new FormData();
+    data.append('image', file);
+    data.append('folder', 'categories');
+    if (editingCategory?._id) data.append('categoryId', editingCategory._id);
+    setIsUploadingImage(true);
+    setFormError('');
+    try {
+      const res = await api.admin.uploadImage(data);
+      if (res.success && res.url) {
+        setFormData((prev) => ({ ...prev, image: res.url }));
+        showToast('Category image uploaded to Supabase Storage!');
+      }
+    } catch (err) {
+      setFormError(err.message || 'Image upload failed');
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   const fetchCategories = async () => {
@@ -397,16 +422,52 @@ const AdminCategories = () => {
               </div>
 
               <div>
-                <label className="block font-bold uppercase text-slate-300 mb-1.5">
-                  Category Image URL
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-bold uppercase text-slate-300">
+                    Category Cover Image
+                  </label>
+                  <label className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 cursor-pointer flex items-center space-x-1 bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/20">
+                    {isUploadingImage ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Uploading to Supabase...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Upload File from Device</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isUploadingImage}
+                      onChange={handleCategoryImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
                 <input
                   type="url"
                   value={formData.image}
                   onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://images.unsplash.com/photo-..."
+                  placeholder="https://... or upload from your device above"
                   className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
                 />
+                {formData.image && (
+                  <div className="mt-2 flex items-center space-x-3 bg-white/5 p-2 rounded-xl border border-white/10">
+                    <img
+                      src={formData.image}
+                      alt="Category Preview"
+                      className="w-12 h-14 object-cover rounded-lg bg-slate-800"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] text-white font-bold truncate">Category Cover Attached</p>
+                      <p className="text-[10px] text-slate-400 font-mono truncate">{formData.image}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>

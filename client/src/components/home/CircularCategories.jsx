@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { getCategoryFallback } from '../../utils/imageHelper';
 
 const referenceCategories = [
   {
@@ -120,7 +121,7 @@ const CircularCategories = () => {
                     alt={cat.name}
                     className="w-full h-full object-cover object-center group-hover:scale-115 transition-transform duration-700 ease-out"
                     onError={(e) => {
-                      e.currentTarget.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=400&q=80';
+                      e.currentTarget.src = getCategoryFallback(cat.name, cat.slug);
                     }}
                   />
                 </div>

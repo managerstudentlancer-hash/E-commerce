@@ -18,10 +18,14 @@ import {
   Eye,
   Layers,
   Star,
+  Upload,
 } from 'lucide-react';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { getCategoryFallback } from '../../utils/imageHelper';
 
 const AdminProducts = () => {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,12 +74,84 @@ const AdminProducts = () => {
   }, []);
 
   useEffect(() => {
-    fetchProducts();
-  }, [categoryFilter, stockFilter, statusFilter, currentPage, searchTerm]);
+    if (!authLoading) {
+      fetchProducts();
+    }
+  }, [categoryFilter, stockFilter, statusFilter, currentPage, searchTerm, authLoading]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3500);
+  };
+
+  const [isUploadingThumb, setIsUploadingThumb] = useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+
+  const handleThumbnailUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!isAuthenticated || authLoading) {
+      setFormError('Authentication required: Administrator session is still verifying or expired.');
+      return;
+    }
+
+    const data = new FormData();
+    data.append('image', file);
+    data.append('folder', 'products');
+    if (editingProduct?._id) data.append('productId', editingProduct._id);
+    setIsUploadingThumb(true);
+    setFormError('');
+    try {
+      const res = await api.admin.uploadImage(data);
+      if (res.success && res.url) {
+        setFormData((prev) => ({ ...prev, thumbnail: res.url }));
+        showToast('Product cover uploaded to Supabase Storage!');
+      }
+    } catch (err) {
+      if (err.status === 401 || err.message?.toLowerCase().includes('authorized') || err.message?.toLowerCase().includes('token')) {
+        setFormError('Session expired. Please re-login to upload images. Your form data is saved.');
+      } else {
+        setFormError(err.message || 'Image upload failed');
+      }
+    } finally {
+      setIsUploadingThumb(false);
+    }
+  };
+
+  const handleGalleryUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!isAuthenticated || authLoading) {
+      setFormError('Authentication required: Administrator session is still verifying or expired.');
+      return;
+    }
+
+    const data = new FormData();
+    data.append('image', file);
+    data.append('folder', 'products');
+    if (editingProduct?._id) data.append('productId', editingProduct._id);
+    setIsUploadingGallery(true);
+    setFormError('');
+    try {
+      const res = await api.admin.uploadImage(data);
+      if (res.success && res.url) {
+        setFormData((prev) => ({
+          ...prev,
+          imagesText: prev.imagesText ? `${prev.imagesText}\n${res.url}` : res.url,
+        }));
+        showToast('Gallery image uploaded to Supabase Storage!');
+      }
+    } catch (err) {
+      if (err.status === 401 || err.message?.toLowerCase().includes('authorized') || err.message?.toLowerCase().includes('token')) {
+        setFormError('Session expired. Please re-login to upload images. Your form data is saved.');
+      } else {
+        setFormError(err.message || 'Image upload failed');
+      }
+    } finally {
+      setIsUploadingGallery(false);
+    }
   };
 
   const fetchCategories = async () => {
@@ -180,6 +256,11 @@ const AdminProducts = () => {
       return;
     }
 
+    if (!isAuthenticated || authLoading) {
+      setFormError('Authentication required: Administrator session is still verifying or expired.');
+      return;
+    }
+
     setIsSaving(true);
     setFormError('');
 
@@ -247,7 +328,11 @@ const AdminProducts = () => {
       setIsModalOpen(false);
       fetchProducts();
     } catch (err) {
-      setFormError(err.message || 'Failed to save product');
+      if (err.status === 401 || err.message?.toLowerCase().includes('authorized') || err.message?.toLowerCase().includes('token')) {
+        setFormError('Session expired. Please re-login to save products. Your form data is saved.');
+      } else {
+        setFormError(err.message || 'Failed to save product');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -255,6 +340,10 @@ const AdminProducts = () => {
 
   const handleDeleteProduct = async () => {
     if (!deleteConfirmId) return;
+    if (!isAuthenticated || authLoading) {
+      showToast('Authentication required: Administrator session expired.');
+      return;
+    }
     setIsDeleting(true);
     try {
       await api.products.delete(deleteConfirmId);
@@ -420,8 +509,11 @@ const AdminProducts = () => {
                         <td className="py-4 px-6">
                           <div className="flex items-center space-x-3.5">
                             <img
-                              src={prod.thumbnail || prod.images?.[0] || ''}
+                              src={prod.thumbnail || prod.images?.[0] || getCategoryFallback(prod.category)}
                               alt=""
+                              onError={(e) => {
+                                e.currentTarget.src = getCategoryFallback(prod.category);
+                              }}
                               className="w-12 h-12 object-cover rounded-2xl bg-slate-900 border border-white/10 flex-shrink-0 group-hover:scale-105 transition-transform"
                             />
                             <div>
@@ -710,31 +802,91 @@ const AdminProducts = () => {
               </div>
 
               {/* Images */}
-              <div>
-                <label className="block font-bold uppercase text-slate-300 mb-1.5">
-                  Primary Thumbnail Image URL *
-                </label>
-                <input
-                  type="url"
-                  required
-                  value={formData.thumbnail}
-                  onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
-                />
-              </div>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block font-bold uppercase text-slate-300">
+                      Primary Thumbnail Image *
+                    </label>
+                    <label className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 cursor-pointer flex items-center space-x-1 bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/20">
+                      {isUploadingThumb ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Uploading to Supabase...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Upload File from Device</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploadingThumb}
+                        onChange={handleThumbnailUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <input
+                    type="url"
+                    required
+                    value={formData.thumbnail}
+                    onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+                    placeholder="https://... or upload from your device above"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
+                  />
+                  {formData.thumbnail && (
+                    <div className="mt-2 flex items-center space-x-3 bg-white/5 p-2 rounded-xl border border-white/10">
+                      <img
+                        src={formData.thumbnail}
+                        alt="Thumbnail Preview"
+                        className="w-12 h-14 object-cover rounded-lg bg-slate-800"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] text-white font-bold truncate">Cover Image Attached</p>
+                        <p className="text-[10px] text-slate-400 font-mono truncate">{formData.thumbnail}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-              <div>
-                <label className="block font-bold uppercase text-slate-300 mb-1.5">
-                  Additional Carousel Images (one URL per line)
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.imagesText}
-                  onChange={(e) => setFormData({ ...formData, imagesText: e.target.value })}
-                  placeholder="https://images.unsplash.com/photo-2...&#10;https://images.unsplash.com/photo-3..."
-                  className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
-                />
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block font-bold uppercase text-slate-300">
+                      Additional Carousel Images (one URL per line)
+                    </label>
+                    <label className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 cursor-pointer flex items-center space-x-1 bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/20">
+                      {isUploadingGallery ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Uploading to Supabase...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Upload to Carousel</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploadingGallery}
+                        onChange={handleGalleryUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <textarea
+                    rows={2}
+                    value={formData.imagesText}
+                    onChange={(e) => setFormData({ ...formData, imagesText: e.target.value })}
+                    placeholder="https://images.unsplash.com/...&#10;https://...supabase.co/..."
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
+                  />
+                </div>
               </div>
 
               {/* Description */}

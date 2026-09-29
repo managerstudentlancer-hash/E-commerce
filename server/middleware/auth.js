@@ -16,9 +16,21 @@ const protect = async (req, res, next) => {
   let token;
 
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    token = req.headers.authorization.split(' ')[1];
+    const parts = req.headers.authorization.split(' ');
+    if (parts.length > 1) {
+      token = parts.slice(1).join(' ').trim();
+    }
+  } else if (req.headers['x-auth-token']) {
+    token = req.headers['x-auth-token'];
   } else if (req.cookies && req.cookies.token) {
     token = req.cookies.token;
+  }
+
+  if (typeof token === 'string') {
+    token = token.trim();
+    if (token === 'null' || token === 'undefined' || token === '') {
+      token = null;
+    }
   }
 
   if (!token) {
@@ -48,8 +60,23 @@ const adminOnly = (req, res, next) => {
 const optionalAuth = async (req, res, next) => {
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    token = req.headers.authorization.split(' ')[1];
+    const parts = req.headers.authorization.split(' ');
+    if (parts.length > 1) {
+      token = parts.slice(1).join(' ').trim();
+    }
+  } else if (req.headers['x-auth-token']) {
+    token = req.headers['x-auth-token'];
+  } else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
   }
+
+  if (typeof token === 'string') {
+    token = token.trim();
+    if (token === 'null' || token === 'undefined' || token === '') {
+      token = null;
+    }
+  }
+
   if (token) {
     try {
       const decoded = jwt.verify(token, getJwtSecret());

@@ -10,7 +10,7 @@ import {
   Mail,
   Phone,
   ShoppingBag,
-  PoundSterling,
+  IndianRupee,
   X,
   CheckCircle2,
   AlertCircle,
@@ -161,11 +161,11 @@ const AdminCustomers = () => {
               Lifetime Spend Volume
             </p>
             <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1 font-mono">
-              £{totalSpentAll.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+              ₹{totalSpentAll.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-            <PoundSterling className="w-6 h-6" />
+            <IndianRupee className="w-6 h-6" />
           </div>
         </div>
       </div>
@@ -229,7 +229,7 @@ const AdminCustomers = () => {
                   <th className="py-4 px-4">Contact Phone</th>
                   <th className="py-4 px-4">Joined Date</th>
                   <th className="py-4 px-4">Orders</th>
-                  <th className="py-4 px-4">Total Spent (£)</th>
+                  <th className="py-4 px-4">Total Spent (₹)</th>
                   <th className="py-4 px-4">Account Status</th>
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
@@ -279,7 +279,7 @@ const AdminCustomers = () => {
                         </td>
 
                         <td className="py-4 px-4 font-black text-emerald-400 font-mono text-sm">
-                          £{cust.totalSpent?.toFixed(2) || '0.00'}
+                          ₹{cust.totalSpent?.toFixed(2) || '0.00'}
                         </td>
 
                         <td className="py-4 px-4">
@@ -387,7 +387,7 @@ const AdminCustomers = () => {
               <div>
                 <p className="text-[10px] uppercase font-bold text-slate-400">Total Spent</p>
                 <p className="font-black text-emerald-400 mt-1 font-mono">
-                  £{selectedCustomer.totalSpent?.toFixed(2) || '0.00'}
+                  ₹{selectedCustomer.totalSpent?.toFixed(2) || '0.00'}
                 </p>
               </div>
               <div>
@@ -444,7 +444,7 @@ const AdminCustomers = () => {
 
                       <div className="text-right">
                         <p className="font-black text-emerald-400 font-mono text-sm">
-                          £{ord.total?.toFixed(2)}
+                          ₹{ord.total?.toFixed(2)}
                         </p>
                         <span
                           className={`text-[10px] font-bold uppercase ${

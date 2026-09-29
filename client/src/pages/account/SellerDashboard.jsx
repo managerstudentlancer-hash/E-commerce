@@ -15,9 +15,15 @@ import {
   Layers,
   ArrowUp,
   ArrowDown,
+  ShoppingBag,
+  Wallet,
+  Clock,
+  CheckCircle2,
+  TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import { getCategoryFallback } from '../../utils/imageHelper';
 
 const MARKETPLACE_CATEGORIES = [
   { name: 'Women Wear', slug: 'women-wear' },
@@ -41,9 +47,21 @@ const SellerDashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  const [activeTab, setActiveTab] = useState('products'); // 'products' | 'orders' | 'payouts'
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Seller Orders & Payouts State
+  const [sellerOrders, setSellerOrders] = useState([]);
+  const [sellerMetrics, setSellerMetrics] = useState({
+    totalSales: 0,
+    totalCommission: 0,
+    totalEarnings: 0,
+    pendingPayout: 0,
+    eligiblePayout: 0,
+  });
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -82,14 +100,15 @@ const SellerDashboard = () => {
   useEffect(() => {
     if (isAuthenticated && user?.isSeller) {
       fetchMyProducts();
+      fetchSellerOrders();
     }
   }, [isAuthenticated, user]);
 
   useEffect(() => {
-    if (searchParams.get('action') === 'add') {
+    if (!authLoading && isAuthenticated && user?.isSeller && searchParams.get('action') === 'add') {
       handleOpenModal();
     }
-  }, [searchParams]);
+  }, [searchParams, authLoading, isAuthenticated, user]);
 
   const fetchMyProducts = async () => {
     setLoading(true);
@@ -102,6 +121,23 @@ const SellerDashboard = () => {
       console.error('Failed to load seller products:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSellerOrders = async () => {
+    setOrdersLoading(true);
+    try {
+      const res = await api.orders.getSellerOrders();
+      if (res.success) {
+        setSellerOrders(res.orders || []);
+        if (res.metrics) {
+          setSellerMetrics(res.metrics);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load seller orders:', err);
+    } finally {
+      setOrdersLoading(false);
     }
   };
 
@@ -163,6 +199,12 @@ const SellerDashboard = () => {
   const handleFileUpload = async (e, field) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!isAuthenticated || authLoading) {
+      alert('Authentication required: Seller session is still verifying or expired. Please sign in to upload images.');
+      return;
+    }
+
     setUploadingField(field);
     try {
       const fd = new FormData();
@@ -182,7 +224,11 @@ const SellerDashboard = () => {
         }
       }
     } catch (err) {
-      alert(err.message || 'Image upload failed. You can also paste an image URL directly.');
+      if (err.status === 401 || err.message?.toLowerCase().includes('authorized') || err.message?.toLowerCase().includes('token')) {
+        setFormError('Session expired. Please sign in again to upload photos. Your product details are preserved.');
+      } else {
+        alert(err.message || 'Image upload failed. You can also paste an image URL directly.');
+      }
     } finally {
       setUploadingField(null);
       e.target.value = '';
@@ -217,6 +263,11 @@ const SellerDashboard = () => {
       return;
     }
 
+    if (!isAuthenticated || authLoading) {
+      setFormError('Authentication required: Seller session is still verifying or expired. Please sign in.');
+      return;
+    }
+
     setIsSaving(true);
     setFormError('');
     try {
@@ -245,7 +296,11 @@ const SellerDashboard = () => {
       setIsModalOpen(false);
       fetchMyProducts();
     } catch (err) {
-      setFormError(err.message || 'Failed to publish product');
+      if (err.status === 401 || err.message?.toLowerCase().includes('authorized') || err.message?.toLowerCase().includes('token')) {
+        setFormError('Session expired. Please re-login to publish product. Your entered details are safe.');
+      } else {
+        setFormError(err.message || 'Failed to publish product');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -327,7 +382,52 @@ const SellerDashboard = () => {
           </button>
         </div>
 
-        {/* Seller Metrics Bar */}
+        {/* Seller Navigation Tabs */}
+        <div className="flex items-center space-x-2 border-b border-neutral-200 pb-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('products')}
+            className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all flex items-center space-x-2 ${
+              activeTab === 'products'
+                ? 'bg-neutral-900 text-white shadow-xs'
+                : 'bg-white text-neutral-600 hover:text-black border border-neutral-200'
+            }`}
+          >
+            <Package className="w-3.5 h-3.5" />
+            <span>Products ({products.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('orders')}
+            className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all flex items-center space-x-2 ${
+              activeTab === 'orders'
+                ? 'bg-neutral-900 text-white shadow-xs'
+                : 'bg-white text-neutral-600 hover:text-black border border-neutral-200'
+            }`}
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>Orders & Earnings ({sellerOrders.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('payouts')}
+            className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all flex items-center space-x-2 ${
+              activeTab === 'payouts'
+                ? 'bg-neutral-900 text-white shadow-xs'
+                : 'bg-white text-neutral-600 hover:text-black border border-neutral-200'
+            }`}
+          >
+            <Wallet className="w-3.5 h-3.5" />
+            <span>Payouts & Bank</span>
+          </button>
+        </div>
+
+        {/* TAB 1: PRODUCTS VIEW */}
+        {activeTab === 'products' && (
+          <div className="space-y-8 animate-fade-in">
+            {/* Seller Metrics Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
           <div className="bg-white p-6 rounded-3xl border border-neutral-200/80 shadow-subtle flex items-center space-x-4">
             <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-900">
@@ -422,11 +522,11 @@ const SellerDashboard = () => {
                     <tr key={prod._id} className="hover:bg-neutral-50 transition-colors">
                       <td className="py-3.5 px-6 flex items-center space-x-3">
                         <img
-                          src={prod.thumbnail || prod.images?.[0] || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=100&q=80'}
+                          src={prod.thumbnail || prod.images?.[0] || getCategoryFallback(prod.category, prod.categorySlug)}
                           alt=""
                           className="w-12 h-14 object-cover rounded-xl bg-neutral-100 flex-shrink-0 border border-neutral-200"
                           onError={(e) => {
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=100&q=80';
+                            e.currentTarget.src = getCategoryFallback(prod.category, prod.categorySlug);
                           }}
                         />
                         <div className="min-w-0">
@@ -494,6 +594,215 @@ const SellerDashboard = () => {
             </div>
           )}
         </div>
+          </div>
+        )}
+
+        {/* TAB 2: ORDERS & EARNINGS VIEW */}
+        {activeTab === 'orders' && (
+          <div className="space-y-8 animate-fade-in">
+            {/* Financial Metrics Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+              <div className="bg-white p-6 rounded-3xl border border-neutral-200/80 shadow-subtle flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-900">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider">Gross Product Sales</p>
+                  <p className="text-2xl font-black text-neutral-900">₹{sellerMetrics.totalSales.toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-3xl border border-neutral-200/80 shadow-subtle flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-900">
+                  <Store className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider">Platform Fee (10%)</p>
+                  <p className="text-2xl font-black text-neutral-500">₹{sellerMetrics.totalCommission.toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-3xl border border-neutral-200/80 shadow-subtle flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#0D8756] flex items-center justify-center">
+                  <Wallet className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-[#0D8756] font-semibold uppercase tracking-wider">Net Seller Earnings (90%)</p>
+                  <p className="text-2xl font-black text-neutral-900">₹{sellerMetrics.totalEarnings.toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Orders Table */}
+            <div className="bg-white rounded-3xl border border-neutral-200/80 overflow-hidden shadow-subtle">
+              {ordersLoading ? (
+                <div className="p-16 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+                </div>
+              ) : sellerOrders.length === 0 ? (
+                <div className="text-center py-20 px-4 space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-neutral-100 text-neutral-400 flex items-center justify-center mx-auto">
+                    <ShoppingBag className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-base font-bold text-neutral-900">No Orders Received Yet</h3>
+                  <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                    When customers purchase your listed items, orders with full financial calculations will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 font-semibold uppercase tracking-wider">
+                      <tr>
+                        <th className="py-4 px-6">Order ID & Date</th>
+                        <th className="py-4 px-4">Your Product(s)</th>
+                        <th className="py-4 px-4">Gross Total</th>
+                        <th className="py-4 px-4">Platform Fee (10%)</th>
+                        <th className="py-4 px-4">Your Earning (90%)</th>
+                        <th className="py-4 px-4">Order Status</th>
+                        <th className="py-4 px-6 text-right">Payout Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-100">
+                      {sellerOrders.map((ord) => (
+                        <tr key={ord._id} className="hover:bg-neutral-50/60 transition-colors">
+                          <td className="py-4 px-6">
+                            <p className="font-mono font-bold text-neutral-900">{ord.orderNumber}</p>
+                            <span className="text-[10px] text-neutral-400">
+                              {new Date(ord.createdAt).toLocaleDateString('en-IN', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </span>
+                            {ord.shippingAddress?.city && (
+                              <span className="block text-[10px] text-neutral-500">
+                                📍 {ord.shippingAddress.city}, {ord.shippingAddress.state}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="space-y-1">
+                              {ord.items?.map((it, idx) => (
+                                <div key={idx} className="flex items-center space-x-2">
+                                  <span className="font-semibold text-neutral-900 truncate max-w-[180px]">
+                                    {it.name}
+                                  </span>
+                                  <span className="text-[10px] text-neutral-400">
+                                    x{it.quantity} (₹{it.price})
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 font-bold text-neutral-900">
+                            ₹{(ord.sellerSubtotal || 0).toLocaleString('en-IN')}
+                          </td>
+                          <td className="py-4 px-4 text-neutral-500 font-medium">
+                            -₹{(ord.platformFee || 0).toLocaleString('en-IN')}
+                          </td>
+                          <td className="py-4 px-4 font-black text-[#0D8756]">
+                            ₹{(ord.netEarning || 0).toLocaleString('en-IN')}
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              ord.orderStatus === 'delivered'
+                                ? 'bg-emerald-50 text-[#0D8756]'
+                                : ord.orderStatus === 'cancelled'
+                                ? 'bg-red-50 text-[#C4301C]'
+                                : 'bg-blue-50 text-blue-700'
+                            }`}>
+                              {ord.orderStatus}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              ord.payoutStatus === 'eligible'
+                                ? 'bg-emerald-50 text-[#0D8756]'
+                                : ord.payoutStatus === 'cancelled'
+                                ? 'bg-neutral-100 text-neutral-500'
+                                : 'bg-amber-50 text-amber-700'
+                            }`}>
+                              {ord.payoutStatus || 'pending'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: PAYOUTS & BANKING VIEW */}
+        {activeTab === 'payouts' && (
+          <div className="space-y-8 animate-fade-in">
+            {/* Payout Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+              <div className="bg-white p-6 rounded-3xl border border-neutral-200/80 shadow-subtle flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#0D8756] flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider">Eligible Payout (Delivered)</p>
+                  <p className="text-2xl font-black text-[#0D8756]">₹{sellerMetrics.eligiblePayout.toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-3xl border border-neutral-200/80 shadow-subtle flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <Clock className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider">Pending Orders In Transit</p>
+                  <p className="text-2xl font-black text-amber-700">₹{sellerMetrics.pendingPayout.toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-3xl border border-neutral-200/80 shadow-subtle flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-2xl bg-neutral-100 text-neutral-900 flex items-center justify-center">
+                  <Wallet className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider">Lifetime Net Earnings</p>
+                  <p className="text-2xl font-black text-neutral-900">₹{sellerMetrics.totalEarnings.toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Payout Banking Information Card */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200/80 shadow-subtle space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-900 flex items-center space-x-2">
+                  <Wallet className="w-4 h-4 text-neutral-700" />
+                  <span>Configured Payout Bank Account (India NEFT / RTGS)</span>
+                </h3>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#0D8756]">
+                  Verified Account
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs pt-2">
+                <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-100">
+                  <p className="text-neutral-400 font-medium">Bank Name</p>
+                  <p className="font-bold text-neutral-900 mt-1">{user?.sellerProfile?.bankDetails?.bankName || 'HDFC Bank Limited'}</p>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-100">
+                  <p className="text-neutral-400 font-medium">Account Number</p>
+                  <p className="font-mono font-bold text-neutral-900 mt-1">{user?.sellerProfile?.bankDetails?.accountNumber || '•••• •••• 9842'}</p>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-100">
+                  <p className="text-neutral-400 font-medium">IFSC Code</p>
+                  <p className="font-mono font-bold text-neutral-900 mt-1">{user?.sellerProfile?.bankDetails?.ifscCode || 'HDFC0001234'}</p>
+                </div>
+              </div>
+              <p className="text-[11px] text-neutral-400 italic">
+                * Payouts are automatically remitted to this bank account within 3 business days following customer delivery confirmation.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add / Edit Product Modal */}

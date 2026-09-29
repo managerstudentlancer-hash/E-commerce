@@ -4,6 +4,7 @@ import { Heart, ShoppingBag, Check, Eye } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import QuickViewModal from './QuickViewModal';
+import { getCategoryFallback, resolveImageUrl } from '../../utils/imageHelper';
 
 const getCategoryAnimationClass = (category = '', categorySlug = '') => {
   const cat = `${category} ${categorySlug}`.toLowerCase();
@@ -32,19 +33,21 @@ const ProductCard = ({ product, index = 0, dealBadge = 'Big Billion Days Price',
 
   const categoryAnimClass = getCategoryAnimationClass(product.category, product.categorySlug);
 
-  const fallbackImg = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80';
+  const fallbackImg = getCategoryFallback(product.category, product.categorySlug);
 
   const primaryImage =
-    product.thumbnail ||
-    (product.images && product.images[0]) ||
-    product.image ||
+    resolveImageUrl(product.thumbnail || (product.images && product.images[0]) || product.image, product.category, product.categorySlug) ||
     fallbackImg;
 
-  const secondaryImage =
+  const rawSecondary =
     product.hoverImage ||
     (product.images && product.images.length > 1 && product.images[1]) ||
     product.secondaryImage ||
     null;
+
+  const secondaryImage = rawSecondary
+    ? resolveImageUrl(rawSecondary, product.category, product.categorySlug)
+    : null;
 
   const [imgSrc, setImgSrc] = useState(primaryImage);
   const [secondSrc, setSecondSrc] = useState(secondaryImage);

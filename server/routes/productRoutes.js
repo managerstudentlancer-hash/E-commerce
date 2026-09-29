@@ -8,6 +8,7 @@ const {
   deleteProduct,
   getMySellerProducts,
   uploadProductImage,
+  deleteProductImage,
 } = require('../controllers/productController');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
@@ -21,8 +22,10 @@ router.route('/')
   .get(getProducts)
   .post(protect, createProduct);
 
-// Authenticated image upload for products
+// Authenticated image uploads for products (single & multiple)
 router.post('/upload-image', protect, upload.single('image'), uploadProductImage);
+router.post('/upload-images', protect, upload.array('images', 10), uploadProductImage);
+router.delete('/delete-image', protect, deleteProductImage);
 
 // Seller's own products list (must be before /:slug)
 router.get('/seller/my', protect, getMySellerProducts);

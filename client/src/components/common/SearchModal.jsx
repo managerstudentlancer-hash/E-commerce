@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Search, X, TrendingUp, ArrowRight, Loader2 } from 'lucide-react';
 import api from '../../services/api';
+import { getCategoryFallback, resolveImageUrl } from '../../utils/imageHelper';
 
 const SearchModal = ({ isOpen, onClose }) => {
   const [query, setQuery] = useState('');
@@ -204,10 +205,10 @@ const SearchModal = ({ isOpen, onClose }) => {
                     className="flex items-center space-x-3 p-2.5 rounded-xl hover:bg-neutral-50 transition-colors border border-transparent hover:border-neutral-200"
                   >
                     <img
-                      src={product.thumbnail || product.images?.[0] || product.image || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=200&q=80'}
+                      src={resolveImageUrl(product.thumbnail || product.images?.[0] || product.image, product.category, product.categorySlug) || getCategoryFallback(product.category, product.categorySlug)}
                       alt={product.name}
                       onError={(e) => {
-                        e.currentTarget.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=200&q=80';
+                        e.currentTarget.src = getCategoryFallback(product.category, product.categorySlug);
                       }}
                       className="w-14 h-16 object-cover rounded-lg bg-neutral-100 flex-shrink-0"
                     />

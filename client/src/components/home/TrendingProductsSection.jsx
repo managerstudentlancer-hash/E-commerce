@@ -201,8 +201,8 @@ const TrendingProductsSection = ({ products = [] }) => {
             product.image ||
             fallbackTrending[0].image;
 
-          const currentPrice = Number(product.price || 0).toFixed(2);
-          const originalPrice = product.compareAtPrice ? Number(product.compareAtPrice).toFixed(2) : null;
+          const currentPrice = Number(product.price || 0);
+          const originalPrice = product.compareAtPrice ? Number(product.compareAtPrice) : null;
           const hasDiscount = Boolean(originalPrice && Number(originalPrice) > Number(currentPrice));
 
           return (
@@ -306,11 +306,11 @@ const TrendingProductsSection = ({ products = [] }) => {
                 {/* Price Row */}
                 <div className="flex items-center space-x-2 text-xs sm:text-sm">
                   <span className={`font-bold ${hasDiscount ? 'text-[#C4301C]' : 'text-neutral-950'}`}>
-                    ${currentPrice}
+                    ₹{Math.round(currentPrice).toLocaleString('en-IN')}
                   </span>
                   {originalPrice && (
                     <span className="text-neutral-400 line-through text-[11px] font-normal">
-                      ${originalPrice}
+                      ₹{Math.round(originalPrice).toLocaleString('en-IN')}
                     </span>
                   )}
                 </div>

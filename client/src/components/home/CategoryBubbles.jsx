@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCategories } from '../../context/CategoryContext';
+import { getCategoryFallback } from '../../utils/imageHelper';
 
 const topCategoriesList = [
   {
@@ -185,6 +186,9 @@ const CategoryBubbles = () => {
                       alt={cat.name}
                       className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
                       loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.src = getCategoryFallback(cat.name, cat.slug);
+                      }}
                     />
                   </div>
 
