@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Check, Eye, Star } from 'lucide-react';
+import { Heart, ShoppingBag, Check, Eye, Star, Play } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import QuickViewModal from './QuickViewModal';
@@ -62,6 +62,10 @@ const ProductCard = ({ product, index = 0, dealBadge = 'Big Billion Days Price',
 
   const hasSecondImage = Boolean(secondSrc && secondSrc !== imgSrc && !hasSecondError);
   const inWishlist = isInWishlist(product._id || product.id);
+  const hasVideo = Boolean(
+    (product.videos && product.videos.length > 0) ||
+    (product.media && product.media.some((m) => m.type === 'video'))
+  );
 
   const handleQuickAdd = (e) => {
     e.preventDefault();
@@ -168,6 +172,14 @@ const ProductCard = ({ product, index = 0, dealBadge = 'Big Billion Days Price',
           />
         </button>
 
+        {/* Video Badge */}
+        {hasVideo && (
+          <div className="absolute top-2.5 left-2.5 z-20 flex items-center space-x-1 px-1.5 py-0.5 rounded-md bg-black/75 backdrop-blur-xs text-[9px] font-extrabold text-white uppercase tracking-wider pointer-events-none shadow-xs">
+            <Play className="w-2.5 h-2.5 fill-emerald-400 text-emerald-400" />
+            <span>Video</span>
+          </div>
+        )}
+
         {/* Quick View Button (hover action, desktop only) */}
         <button
           onClick={(e) => {
@@ -176,7 +188,7 @@ const ProductCard = ({ product, index = 0, dealBadge = 'Big Billion Days Price',
             setShowQuickView(true);
           }}
           aria-label="Quick View"
-          className="absolute top-2.5 left-2.5 z-20 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs shadow-xs hidden sm:flex items-center justify-center text-neutral-600 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          className={`absolute ${hasVideo ? 'top-8' : 'top-2.5'} left-2.5 z-20 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs shadow-xs hidden sm:flex items-center justify-center text-neutral-600 hover:text-black opacity-0 group-hover:opacity-100 transition-all duration-200`}
         >
           <Eye className="w-3.5 h-3.5" />
         </button>

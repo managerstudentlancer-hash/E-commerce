@@ -27,13 +27,14 @@ const supabaseStorage = require('../services/supabaseStorage');
 // All routes here strictly require authentication + admin role
 router.use(protect, adminOnly);
 
-// Universal Admin Upload to Supabase Storage (banners, categories, logo, etc.)
+// Universal Admin Upload to Supabase Storage (products, banners, categories, videos, logo, etc.)
 router.post('/upload', upload.single('image'), async (req, res, next) => {
   try {
-    if (!req.file) {
+    const file = req.file || req.files?.[0];
+    if (!file) {
       return res.status(400).json({
         success: false,
-        message: 'Please upload an image file (JPEG, PNG, WEBP, GIF up to 5MB)',
+        message: 'Please select an image (JPEG, PNG, WEBP up to 15MB) or video (MP4, WEBM, MOV up to 60MB)',
       });
     }
 
@@ -47,18 +48,19 @@ router.post('/upload', upload.single('image'), async (req, res, next) => {
 
     const entityId =
       req.body.entityId ||
+      req.body.productId ||
       req.body.bannerId ||
       req.body.categoryId ||
-      req.body.productId ||
       req.body.userId ||
       'admin';
 
     const result = await supabaseStorage.uploadToSupabase({
-      buffer: req.file.buffer,
-      mimetype: req.file.mimetype,
-      originalname: req.file.originalname,
+      buffer: file.buffer,
+      mimetype: file.mimetype,
+      originalname: file.originalname,
       folder,
       entityId,
+      mediaType: 'auto',
     });
 
     res.json({
@@ -68,6 +70,9 @@ router.post('/upload', upload.single('image'), async (req, res, next) => {
       path: result.path,
       filename: result.filename,
       bucket: result.bucket,
+      mediaType: result.mediaType,
+      mimeType: result.mimeType,
+      size: result.size,
     });
   } catch (error) {
     console.error('[Admin Upload Error]:', error.message);

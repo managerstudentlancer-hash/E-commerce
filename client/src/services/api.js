@@ -144,6 +144,10 @@ export const api = {
     update: (id, product) => request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(product) }),
     delete: (id) => request(`/products/${id}`, { method: 'DELETE' }),
     uploadImage: (formData) => request('/products/upload-image', { method: 'POST', body: formData }),
+    uploadVideo: (formData) => request('/products/upload-video', { method: 'POST', body: formData }),
+    uploadMedia: (formData) => request('/products/upload-media', { method: 'POST', body: formData }),
+    deleteMedia: (url, productId) => request('/products/delete-media', { method: 'DELETE', body: JSON.stringify({ url, productId }) }),
+    deleteImage: (url, productId) => request('/products/delete-image', { method: 'DELETE', body: JSON.stringify({ url, productId }) }),
   },
 
   // Categories
@@ -289,6 +293,9 @@ export const api = {
     updateUserRole: (id, role) => request(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
     deleteUser: (id) => request(`/admin/users/${id}`, { method: 'DELETE' }),
     uploadImage: (formData) => request('/admin/upload', { method: 'POST', body: formData }),
+    uploadVideo: (formData) => request('/admin/upload', { method: 'POST', body: formData }),
+    uploadMedia: (formData) => request('/admin/upload', { method: 'POST', body: formData }),
+    deleteMedia: (url) => request('/admin/delete-image', { method: 'DELETE', body: JSON.stringify({ url }) }),
   },
 
   // Delivery Partner System

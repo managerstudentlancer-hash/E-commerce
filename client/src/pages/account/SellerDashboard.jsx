@@ -20,6 +20,7 @@ import {
   Clock,
   CheckCircle2,
   TrendingUp,
+  Play,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -182,6 +183,7 @@ const SellerDashboard = () => {
         thumbnail: prod.thumbnail || gallery[0] || '',
         hoverImage: prod.hoverImage || gallery[1] || '',
         images: gallery,
+        videoUrl: prod.videos?.[0] || prod.media?.find((m) => m.type === 'video')?.url || '',
         status: prod.status || 'active',
       });
     } else {
@@ -200,6 +202,7 @@ const SellerDashboard = () => {
         thumbnail: '',
         hoverImage: '',
         images: [],
+        videoUrl: '',
         status: 'active',
       });
     }
@@ -216,13 +219,13 @@ const SellerDashboard = () => {
     }));
   };
 
-  // Image Upload handler
+  // Image & Video Upload handler (Supabase Storage product-media)
   const handleFileUpload = async (e, field) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!isAuthenticated || authLoading) {
-      alert('Authentication required: Seller session is still verifying or expired. Please sign in to upload images.');
+      alert('Authentication required: Seller session is still verifying or expired. Please sign in to upload media.');
       return;
     }
 
@@ -230,7 +233,14 @@ const SellerDashboard = () => {
     try {
       const fd = new FormData();
       fd.append('image', file);
-      const res = await api.products.uploadImage(fd);
+      fd.append('video', file);
+      fd.append('folder', 'products');
+      if (editingProduct?._id) fd.append('productId', editingProduct._id);
+
+      const res = field === 'video'
+        ? await api.products.uploadVideo(fd)
+        : await api.products.uploadImage(fd);
+
       if (res.success && res.url) {
         if (field === 'thumbnail') {
           setFormData((prev) => ({
@@ -242,13 +252,15 @@ const SellerDashboard = () => {
           setFormData((prev) => ({ ...prev, hoverImage: res.url }));
         } else if (field === 'gallery') {
           setFormData((prev) => ({ ...prev, images: [...prev.images, res.url] }));
+        } else if (field === 'video') {
+          setFormData((prev) => ({ ...prev, videoUrl: res.url }));
         }
       }
     } catch (err) {
       if (err.status === 401 || err.message?.toLowerCase().includes('authorized') || err.message?.toLowerCase().includes('token')) {
-        setFormError('Session expired. Please sign in again to upload photos. Your product details are preserved.');
+        setFormError('Session expired. Please sign in again to upload media. Your product details are preserved.');
       } else {
-        alert(err.message || 'Image upload failed. You can also paste an image URL directly.');
+        alert(err.message || 'Media upload failed. You can also paste an URL directly.');
       }
     } finally {
       setUploadingField(null);
@@ -298,6 +310,25 @@ const SellerDashboard = () => {
         )
       );
 
+      const mediaItems = [
+        ...imagesArray.map((img, idx) => ({
+          type: 'image',
+          url: img,
+          displayOrder: idx,
+          isPrimary: idx === 0,
+        })),
+        ...(formData.videoUrl
+          ? [
+              {
+                type: 'video',
+                url: formData.videoUrl,
+                displayOrder: imagesArray.length,
+                isPrimary: false,
+              },
+            ]
+          : []),
+      ];
+
       const payload = {
         ...formData,
         price: Number(formData.price),
@@ -306,6 +337,8 @@ const SellerDashboard = () => {
         thumbnail: formData.thumbnail || imagesArray[0] || '',
         hoverImage: formData.hoverImage || imagesArray[1] || '',
         images: imagesArray,
+        videos: formData.videoUrl ? [formData.videoUrl] : [],
+        media: mediaItems,
       };
 
       if (editingProduct) {
@@ -1130,6 +1163,63 @@ const SellerDashboard = () => {
                           </button>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Product Video (Supabase Storage product-media) */}
+                <div className="space-y-2 pt-2 border-t border-neutral-200">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold uppercase text-neutral-700 text-[11px]">
+                      Product Video (Optional MP4 / WEBM up to 60MB)
+                    </label>
+                    <label className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 cursor-pointer flex items-center space-x-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                      {uploadingField === 'video' ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Play className="w-3 h-3 fill-emerald-600 text-emerald-600" />
+                      )}
+                      <span>Upload Video</span>
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e, 'video')}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={formData.videoUrl}
+                      onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                      placeholder="Paste video URL or upload from device above..."
+                      className="input-pill flex-1 text-xs"
+                    />
+                    {formData.videoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, videoUrl: '' }))}
+                        className="text-[11px] text-rose-600 hover:text-rose-700 font-bold px-3 py-1 rounded-full bg-rose-50 border border-rose-200"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {formData.videoUrl && (
+                    <div className="mt-2 p-2.5 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-1.5">
+                      <div className="flex items-center space-x-1.5 text-white text-[10px] font-bold">
+                        <Play className="w-3 h-3 fill-emerald-400 text-emerald-400" />
+                        <span>Supabase Video Attached</span>
+                      </div>
+                      <video
+                        src={formData.videoUrl}
+                        controls
+                        preload="metadata"
+                        className="w-full max-h-40 rounded-xl bg-black object-contain"
+                      />
                     </div>
                   )}
                 </div>

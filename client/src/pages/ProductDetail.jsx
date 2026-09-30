@@ -22,6 +22,8 @@ import {
   Sparkles,
   CheckCircle2,
   Store,
+  Play,
+  Film,
 } from 'lucide-react';
 import api from '../services/api';
 import { useCart } from '../context/CartContext';
@@ -234,11 +236,56 @@ const ProductDetail = () => {
   }
 
   const fallbackImg = getCategoryFallback(product?.category, product?.categorySlug);
-  const rawImages = (product?.images && product.images.length > 0)
-    ? product.images.filter(Boolean)
-    : [product?.thumbnail || product?.image || fallbackImg];
-  const images = rawImages.map((img) => resolveImageUrl(img, product?.category, product?.categorySlug));
-  const activeImage = images[selectedImageIndex] || resolveImageUrl(product?.thumbnail || product?.image, product?.category, product?.categorySlug) || fallbackImg;
+
+  // Construct unified media list (both photos & videos)
+  const mediaList = useMemo(() => {
+    const list = [];
+
+    // 1. Structured product.media items
+    if (product?.media && Array.isArray(product.media) && product.media.length > 0) {
+      product.media.forEach((item) => {
+        if (item?.url) {
+          list.push({
+            type: item.type === 'video' ? 'video' : 'image',
+            url: item.url,
+            thumbnailUrl: item.thumbnailUrl || (item.type === 'video' ? null : item.url),
+            filename: item.filename || '',
+          });
+        }
+      });
+    }
+
+    // 2. Direct product.videos
+    if (product?.videos && Array.isArray(product.videos)) {
+      product.videos.forEach((vid) => {
+        if (vid && !list.some((m) => m.url === vid)) {
+          list.push({ type: 'video', url: vid, thumbnailUrl: null, filename: '' });
+        }
+      });
+    }
+
+    // 3. Direct product.images
+    if (product?.images && Array.isArray(product.images)) {
+      product.images.forEach((img) => {
+        if (img) {
+          const resolved = resolveImageUrl(img, product?.category, product?.categorySlug);
+          if (!list.some((m) => m.url === resolved || m.url === img)) {
+            list.push({ type: 'image', url: resolved, thumbnailUrl: resolved, filename: '' });
+          }
+        }
+      });
+    }
+
+    // 4. Fallback thumbnail/image
+    if (list.length === 0) {
+      const single = resolveImageUrl(product?.thumbnail || product?.image, product?.category, product?.categorySlug) || fallbackImg;
+      list.push({ type: 'image', url: single, thumbnailUrl: single, filename: '' });
+    }
+
+    return list;
+  }, [product, fallbackImg]);
+
+  const activeMedia = mediaList[selectedImageIndex] || mediaList[0] || { type: 'image', url: fallbackImg };
   const inWishlist = isInWishlist(product?._id);
 
   return (
@@ -265,72 +312,109 @@ const ProductDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14">
           {/* Gallery Column */}
           <div className="space-y-4">
-            {/* Primary Main Image with Interactive Zoom Lens on Hover */}
-            <div 
-              className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-100 group cursor-crosshair select-none"
-              onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-                const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
-                setZoomPos({ x, y, isHovering: true });
-              }}
-              onMouseLeave={() => setZoomPos((prev) => ({ ...prev, isHovering: false }))}
-            >
-              <img
-                src={activeImage}
-                alt={product.name}
-                onError={(e) => {
-                  e.currentTarget.src = fallbackImg;
-                }}
-                style={{
-                  transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                  transform: zoomPos.isHovering ? 'scale(1.9)' : 'scale(1)',
-                }}
-                className="w-full h-full object-cover object-center transition-transform duration-150 ease-out pointer-events-none"
-              />
-              {/* Badges */}
-              <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-10 pointer-events-none">
-                {product.discount > 0 && (
-                  <span className="badge-sale shadow-sm">-{product.discount}% OFF</span>
-                )}
-                {product.newArrival && (
-                  <span className="badge-new shadow-sm">NEW</span>
-                )}
-              </div>
-
-              {/* Action Buttons on Image */}
-              <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-                <button
-                  onClick={() => toggleWishlist(product)}
-                  aria-label="Toggle Wishlist"
-                  className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-neutral-800 hover:text-red-600 transition-all hover:scale-110 active:scale-95"
+            {/* Primary Main Media Viewer: Image Zoom OR High-Res Video Player */}
+            {activeMedia.type === 'video' ? (
+              <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-200 shadow-sm flex items-center justify-center group select-none">
+                <video
+                  key={activeMedia.url}
+                  src={activeMedia.url}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="w-full h-full object-contain"
                 >
-                  <Heart
-                    className={`w-5 h-5 ${
-                      inWishlist ? 'fill-red-500 text-red-500' : 'text-neutral-700'
-                    }`}
-                  />
-                </button>
-                <button
-                  onClick={() => setIsLightboxOpen(true)}
-                  aria-label="View Fullscreen"
-                  className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-neutral-800 hover:text-black transition-all hover:scale-110 active:scale-95"
-                  title="Fullscreen zoom view"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                </button>
-              </div>
+                  <source src={activeMedia.url} type="video/mp4" />
+                  Your browser does not support high-definition video playback.
+                </video>
 
-              {/* Hover Zoom Hint */}
-              <div className="absolute bottom-3 left-3 z-10 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                Roll over image to zoom
-              </div>
-            </div>
+                {/* Video Indicator Badge */}
+                <div className="absolute top-4 left-4 z-10 flex items-center space-x-1.5 px-3 py-1 rounded-full bg-neutral-900/80 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider border border-white/10 pointer-events-none">
+                  <Play className="w-3 h-3 fill-emerald-400 text-emerald-400" />
+                  <span>Product Video</span>
+                </div>
 
-            {/* Thumbnail Row */}
-            {images.length > 1 && (
+                {/* Wishlist Button */}
+                <div className="absolute top-4 right-4 z-10">
+                  <button
+                    onClick={() => toggleWishlist(product)}
+                    aria-label="Toggle Wishlist"
+                    className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-neutral-800 hover:text-red-600 transition-all hover:scale-110 active:scale-95"
+                  >
+                    <Heart
+                      className={`w-5 h-5 ${
+                        inWishlist ? 'fill-red-500 text-red-500' : 'text-neutral-700'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div 
+                className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-100 group cursor-crosshair select-none"
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+                  const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+                  setZoomPos({ x, y, isHovering: true });
+                }}
+                onMouseLeave={() => setZoomPos((prev) => ({ ...prev, isHovering: false }))}
+              >
+                <img
+                  src={activeMedia.url}
+                  alt={product.name}
+                  onError={(e) => {
+                    e.currentTarget.src = fallbackImg;
+                  }}
+                  style={{
+                    transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                    transform: zoomPos.isHovering ? 'scale(1.9)' : 'scale(1)',
+                  }}
+                  className="w-full h-full object-cover object-center transition-transform duration-150 ease-out pointer-events-none"
+                />
+                {/* Badges */}
+                <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-10 pointer-events-none">
+                  {product.discount > 0 && (
+                    <span className="badge-sale shadow-sm">-{product.discount}% OFF</span>
+                  )}
+                  {product.newArrival && (
+                    <span className="badge-new shadow-sm">NEW</span>
+                  )}
+                </div>
+
+                {/* Action Buttons on Image */}
+                <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+                  <button
+                    onClick={() => toggleWishlist(product)}
+                    aria-label="Toggle Wishlist"
+                    className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-neutral-800 hover:text-red-600 transition-all hover:scale-110 active:scale-95"
+                  >
+                    <Heart
+                      className={`w-5 h-5 ${
+                        inWishlist ? 'fill-red-500 text-red-500' : 'text-neutral-700'
+                      }`}
+                    />
+                  </button>
+                  <button
+                    onClick={() => setIsLightboxOpen(true)}
+                    aria-label="View Fullscreen"
+                    className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-neutral-800 hover:text-black transition-all hover:scale-110 active:scale-95"
+                    title="Fullscreen zoom view"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Hover Zoom Hint */}
+                <div className="absolute bottom-3 left-3 z-10 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  Roll over image to zoom
+                </div>
+              </div>
+            )}
+
+            {/* Thumbnail Row (Supports both Images & Videos) */}
+            {mediaList.length > 1 && (
               <div className="flex space-x-3 overflow-x-auto pb-2 no-scrollbar">
-                {images.map((img, idx) => (
+                {mediaList.map((item, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
@@ -340,14 +424,25 @@ const ProductDetail = () => {
                         : 'border-transparent opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <img
-                      src={img}
-                      alt={`${product.name} view ${idx + 1}`}
-                      onError={(e) => {
-                        e.currentTarget.src = fallbackImg;
-                      }}
-                      className="w-full h-full object-cover object-center"
-                    />
+                    {item.type === 'video' ? (
+                      <div className="w-full h-full bg-neutral-900 flex flex-col items-center justify-center text-white relative">
+                        <div className="w-8 h-8 rounded-full bg-emerald-500/90 flex items-center justify-center shadow-lg">
+                          <Play className="w-4 h-4 fill-white text-white translate-x-0.5" />
+                        </div>
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider mt-1.5 text-neutral-300">
+                          Video
+                        </span>
+                      </div>
+                    ) : (
+                      <img
+                        src={item.url}
+                        alt={`${product.name} view ${idx + 1}`}
+                        onError={(e) => {
+                          e.currentTarget.src = fallbackImg;
+                        }}
+                        className="w-full h-full object-cover object-center"
+                      />
+                    )}
                   </button>
                 ))}
               </div>
@@ -929,19 +1024,30 @@ const ProductDetail = () => {
             className="relative max-w-4xl max-h-[80vh] flex items-center justify-center select-none"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={activeImage}
-              alt={product.name}
-              className="max-w-full max-h-[78vh] object-contain rounded-xl shadow-2xl"
-            />
+            {activeMedia.type === 'video' ? (
+              <video
+                key={activeMedia.url}
+                src={activeMedia.url}
+                controls
+                playsInline
+                autoPlay
+                className="max-w-full max-h-[78vh] object-contain rounded-xl shadow-2xl bg-black"
+              />
+            ) : (
+              <img
+                src={activeMedia.url}
+                alt={product.name}
+                className="max-w-full max-h-[78vh] object-contain rounded-xl shadow-2xl"
+              />
+            )}
           </div>
 
-          {images.length > 1 && (
+          {mediaList.length > 1 && (
             <div
               className="flex space-x-3 mt-6 z-50 overflow-x-auto max-w-md no-scrollbar"
               onClick={(e) => e.stopPropagation()}
             >
-              {images.map((img, idx) => (
+              {mediaList.map((item, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSelectedImageIndex(idx)}
@@ -949,7 +1055,13 @@ const ProductDetail = () => {
                     selectedImageIndex === idx ? 'border-white scale-105' : 'border-transparent opacity-60'
                   }`}
                 >
-                  <img src={img} alt="Thumbnail preview" className="w-full h-full object-cover" />
+                  {item.type === 'video' ? (
+                    <div className="w-full h-full bg-neutral-900 flex items-center justify-center">
+                      <Play className="w-4 h-4 fill-white text-white" />
+                    </div>
+                  ) : (
+                    <img src={item.url} alt="Thumbnail preview" className="w-full h-full object-cover" />
+                  )}
                 </button>
               ))}
             </div>
