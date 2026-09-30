@@ -169,6 +169,7 @@ export const AuthProvider = ({ children }) => {
 
   const isAdmin = user && user.role === 'admin';
   const isSeller = user && (user.role === 'seller' || user.role === 'admin');
+  const isDeliveryPartner = user && (user.role === 'delivery_partner' || user.role === 'admin');
 
   return (
     <AuthContext.Provider
@@ -186,6 +187,7 @@ export const AuthProvider = ({ children }) => {
         updateProfile,
         isAdmin,
         isSeller,
+        isDeliveryPartner,
         isAuthenticated: Boolean(user && token),
       }}
     >

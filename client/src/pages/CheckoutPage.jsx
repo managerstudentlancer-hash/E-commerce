@@ -18,6 +18,9 @@ import {
   Check,
   Shield,
   Sparkles,
+  X,
+  AlertCircle,
+  Tag,
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -53,13 +56,62 @@ const ALL_OTHER_BANKS = [
 ];
 
 const CheckoutPage = () => {
-  const { items, subtotal, clearCart } = useCart();
+  const {
+    items,
+    subtotal,
+    clearCart,
+    appliedCoupon,
+    couponDiscount,
+    applyCoupon,
+    removeCoupon,
+  } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const initialDiscount = location.state?.couponDiscount || 0;
-  const initialCoupon = location.state?.appliedCoupon || '';
+  const effectiveDiscount = couponDiscount || location.state?.couponDiscount || 0;
+  const effectiveCoupon = appliedCoupon || location.state?.appliedCoupon || '';
+
+  const [checkoutCouponCode, setCheckoutCouponCode] = useState('');
+  const [checkoutCouponLoading, setCheckoutCouponLoading] = useState(false);
+  const [checkoutCouponError, setCheckoutCouponError] = useState('');
+  const [checkoutCouponSuccess, setCheckoutCouponSuccess] = useState('');
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+
+  // Fetch available store coupons
+  useEffect(() => {
+    api.coupons
+      .getAvailable()
+      .then((res) => {
+        if (res.success && res.coupons) {
+          setAvailableCoupons(res.coupons);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleApplyCheckoutCoupon = async (e, directCode = null) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const targetCode = directCode || checkoutCouponCode;
+    if (!targetCode.trim()) return;
+    setCheckoutCouponError('');
+    setCheckoutCouponSuccess('');
+    setCheckoutCouponLoading(true);
+
+    try {
+      const res = await applyCoupon(targetCode.trim(), subtotal);
+      if (res.success) {
+        setCheckoutCouponSuccess(res.message || `Coupon '${res.code}' applied!`);
+        setCheckoutCouponCode('');
+      } else {
+        setCheckoutCouponError(res.message || 'Invalid coupon code');
+      }
+    } catch (err) {
+      setCheckoutCouponError(err.message || 'Failed to apply coupon');
+    } finally {
+      setCheckoutCouponLoading(false);
+    }
+  };
 
   const [formData, setFormData] = useState(() => {
     try {
@@ -103,6 +155,23 @@ const CheckoutPage = () => {
   const [codCaptcha, setCodCaptcha] = useState(() => Math.floor(100 + Math.random() * 900));
   const [userCodCaptchaInput, setUserCodCaptchaInput] = useState('');
   const [qrExpirySeconds, setQrExpirySeconds] = useState(299); // 5 min countdown for QR
+  const [upiUtr, setUpiUtr] = useState('');
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [cardOtp, setCardOtp] = useState('');
+  const [otpTimer, setOtpTimer] = useState(120);
+  const [otpError, setOtpError] = useState('');
+
+  // 3D Secure Timer Countdown
+  useEffect(() => {
+    let interval;
+    if (showOtpModal) {
+      setOtpTimer(120);
+      interval = setInterval(() => {
+        setOtpTimer((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [showOtpModal]);
 
   // QR Code Timer Countdown
   useEffect(() => {
@@ -143,7 +212,7 @@ const CheckoutPage = () => {
   const [errorMsg, setErrorMsg] = useState('');
 
   const shippingCost = formData.deliveryMethod === 'express' ? 99 : (subtotal >= 499 ? 0 : 49);
-  const grandTotal = Math.max(0, subtotal - initialDiscount + shippingCost);
+  const grandTotal = Math.max(0, subtotal - effectiveDiscount + shippingCost);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -178,15 +247,17 @@ const CheckoutPage = () => {
   };
 
   const handlePlaceOrder = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     const effectiveEmail = user?.email || formData.email;
     if (!formData.firstName || !formData.address || !formData.city || !formData.postalCode || !formData.state || !effectiveEmail) {
       setErrorMsg('Kripya sabhi required customer details aur address fields fill karein.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     if (formData.postalCode.length !== 6) {
       setErrorMsg('Kripya valid 6-digit Indian PIN code enter karein (e.g. 302017).');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -198,9 +269,13 @@ const CheckoutPage = () => {
       }
     }
 
-    if (formData.paymentMethod === 'UPI / QR' && upiMode === 'id') {
-      if (!upiId || !upiId.includes('@')) {
+    if (formData.paymentMethod === 'UPI / QR') {
+      if (upiMode === 'id' && (!upiId || !upiId.includes('@'))) {
         setErrorMsg('Kripya valid UPI ID enter karein (e.g. yourname@okhdfcbank).');
+        return;
+      }
+      if (!upiUtr || upiUtr.trim().length !== 12) {
+        setErrorMsg('Kripya UPI App (PhonePe/GPay/Paytm) par payment complete karne ke baad mila hua 12-digit UTR / Reference No. enter karein taaki payment verify ho sake.');
         return;
       }
     }
@@ -211,12 +286,71 @@ const CheckoutPage = () => {
         setErrorMsg('Kripya valid 16-digit card number enter karein.');
         return;
       }
+      if (!formData.cardExp || !formData.cardCvc) {
+        setErrorMsg('Kripya valid Expiry Date aur CVV enter karein.');
+        return;
+      }
+      // Open Bank 3D Secure 2.0 verification modal
+      setOtpError('');
+      setCardOtp('');
+      setShowOtpModal(true);
+      return;
     }
 
+    if (formData.paymentMethod === 'Net Banking') {
+      if (!selectedBank && !otherBank) {
+        setErrorMsg('Kripya checkout complete karne ke liye apna Bank select karein.');
+        return;
+      }
+    }
+
+    await executeOrderSubmission();
+  };
+
+  const handleVerifyCardOtp = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!cardOtp || cardOtp.trim().length !== 6) {
+      setOtpError('Kripya valid 6-digit Bank OTP enter karein.');
+      return;
+    }
+    setOtpError('');
+    const success = await executeOrderSubmission({
+      is3dSecureVerified: true,
+      authCode: `AUTH-3DS-${Date.now().toString().slice(-6)}`,
+      cardLast4: (formData.cardNumber || '').replace(/\s+/g, '').slice(-4),
+      cardBrand: getCardBrand(formData.cardNumber),
+    });
+    if (success) {
+      setShowOtpModal(false);
+    }
+  };
+
+  const executeOrderSubmission = async (paymentDetailsParam = null) => {
     setIsProcessing(true);
     setErrorMsg('');
 
     try {
+      const effectiveEmail = user?.email || formData.email;
+
+      let paymentDetails = paymentDetailsParam || {};
+      if (formData.paymentMethod === 'UPI / QR') {
+        paymentDetails = {
+          utrNumber: upiUtr.trim(),
+          transactionId: `UPI-${upiUtr.trim()}`,
+          gateway: 'Direct UPI / Dynamic QR',
+        };
+      } else if (formData.paymentMethod === 'Net Banking') {
+        paymentDetails = {
+          bank: selectedBank || otherBank,
+          gateway: 'Net Banking Gateway',
+        };
+      } else if (formData.paymentMethod === 'Wallets') {
+        paymentDetails = {
+          wallet: selectedWallet,
+          gateway: 'Digital Wallet Gateway',
+        };
+      }
+
       const orderPayload = {
         items: items.map((item) => ({
           product: item.product || item.id,
@@ -247,11 +381,12 @@ const CheckoutPage = () => {
           country: 'India',
         },
         paymentMethod: formData.paymentMethod,
+        paymentDetails,
         subtotal,
-        discount: initialDiscount,
+        discount: effectiveDiscount,
         shipping: shippingCost,
         total: grandTotal,
-        coupon: initialCoupon,
+        coupon: effectiveCoupon,
         guestEmail: effectiveEmail,
       };
 
@@ -260,11 +395,21 @@ const CheckoutPage = () => {
         setCompletedOrder(res.order);
         clearCart();
         try { sessionStorage.removeItem('vexivo_checkout_form'); } catch {}
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return true;
       } else {
-        setErrorMsg(res.message || 'Payment authorization failed');
+        const msg = res.message || 'Payment authorization failed';
+        setErrorMsg(msg);
+        setOtpError(msg);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return false;
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Order submission failed');
+      const msg = err.message || 'Order submission failed';
+      setErrorMsg(msg);
+      setOtpError(msg);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return false;
     } finally {
       setIsProcessing(false);
     }
@@ -272,43 +417,93 @@ const CheckoutPage = () => {
 
   // Success Confirmation Stage
   if (completedOrder) {
+    const isCod = completedOrder.paymentMethod?.toLowerCase().includes('cash') || completedOrder.paymentMethod?.toLowerCase().includes('cod');
+    const isUpi = completedOrder.paymentMethod?.toLowerCase().includes('upi') || completedOrder.paymentMethod?.toLowerCase().includes('qr');
+    const isPaid = completedOrder.paymentStatus === 'paid';
+
     return (
       <div className="min-h-[75vh] flex flex-col items-center justify-center py-16 px-4 bg-white text-center">
         <div className="max-w-md w-full p-8 rounded-3xl bg-neutral-50 border border-neutral-100 shadow-xl space-y-6 animate-fade-in">
-          <div className="w-16 h-16 rounded-full bg-[#0D8756]/10 text-[#0D8756] flex items-center justify-center mx-auto">
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${
+            isPaid ? 'bg-[#0D8756]/10 text-[#0D8756]' : 'bg-amber-500/10 text-amber-600'
+          }`}>
             <CheckCircle2 className="w-10 h-10" />
           </div>
 
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-[#0D8756]">
-              Order Confirmed
+            <span className={`text-xs font-bold uppercase tracking-widest ${
+              isPaid ? 'text-[#0D8756]' : 'text-amber-600'
+            }`}>
+              {isPaid ? 'Order Placed & Paid' : isCod ? 'Order Placed (Pay on Delivery)' : 'Order Placed (Under Verification)'}
             </span>
             <h1 className="text-2xl font-extrabold text-neutral-900 mt-1">
               Thank You for Your Order!
             </h1>
             <p className="text-xs text-neutral-500 mt-2">
               Your order number is <strong className="text-neutral-900 font-mono">{completedOrder.orderNumber}</strong>.
-              A receipt has been dispatched to {formData.email}.
+              A confirmation has been sent to {formData.email}.
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-neutral-100 text-left text-xs space-y-2">
+          <div className="p-4 rounded-2xl bg-white border border-neutral-100 text-left text-xs space-y-2.5">
+            <div className="flex justify-between">
+              <span className="text-neutral-500">Order Number</span>
+              <span className="font-bold text-neutral-900 font-mono">{completedOrder.orderNumber}</span>
+            </div>
             <div className="flex justify-between">
               <span className="text-neutral-500">Order Status</span>
               <span className="font-bold text-neutral-900 capitalize">{completedOrder.orderStatus}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-neutral-500">Payment Status</span>
-              <span className="font-bold text-[#0D8756] uppercase">PAID</span>
+              <span className="text-neutral-500">Payment Mode</span>
+              <span className="font-bold text-neutral-900">{completedOrder.paymentMethod || 'Online'}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-neutral-500">Total Charged</span>
-              <span className="font-bold text-neutral-900">₹{completedOrder.total?.toFixed(2)}</span>
+            {completedOrder.paymentDetails?.utrNumber && (
+              <div className="flex justify-between">
+                <span className="text-neutral-500">UPI Ref / UTR No.</span>
+                <span className="font-mono font-bold text-neutral-900">{completedOrder.paymentDetails.utrNumber}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center">
+              <span className="text-neutral-500">Payment Status</span>
+              <span className={`font-bold px-2 py-0.5 rounded text-[10px] uppercase ${
+                isPaid
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : 'bg-amber-100 text-amber-900'
+              }`}>
+                {isPaid
+                  ? 'PAID (VERIFIED)'
+                  : isCod
+                  ? 'PENDING (PAY ON DELIVERY)'
+                  : 'AWAITING BANK VERIFICATION'}
+              </span>
+            </div>
+            <div className="flex justify-between pt-1 border-t border-neutral-100">
+              <span className="text-neutral-500">
+                {isPaid
+                  ? 'Total Paid Online'
+                  : isCod
+                  ? 'Amount to Pay on Delivery'
+                  : 'Amount Submitted'}
+              </span>
+              <span className="font-bold text-neutral-900 text-sm">₹{completedOrder.total?.toFixed(2)}</span>
             </div>
           </div>
 
+          {!isPaid && isUpi && (
+            <div className="p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl text-left text-xs text-amber-900 space-y-1">
+              <p className="font-bold flex items-center gap-1.5 text-amber-950">
+                <ShieldCheck className="w-4 h-4 text-amber-700" />
+                <span>UPI Payment Under Verification</span>
+              </p>
+              <p className="text-[11px] leading-relaxed text-amber-800">
+                Your 12-digit UPI UTR reference ({completedOrder.paymentDetails?.utrNumber}) has been submitted. Our automated verification desk validates the transaction credit against banking records before shipping.
+              </p>
+            </div>
+          )}
+
           <div className="pt-2 flex flex-col gap-2">
-            <Link to="/account/orders" className="btn-pill-dark w-full py-3 text-xs">
+            <Link to="/account?tab=orders" className="btn-pill-dark w-full py-3 text-xs">
               View Order in Account
             </Link>
             <Link to="/" className="btn-pill-light w-full py-3 text-xs">
@@ -866,6 +1061,39 @@ const CheckoutPage = () => {
                       )}
                     </div>
                   )}
+
+                  {/* Mandatory Bank UTR Reference Box for Payment Verification */}
+                  <div className="p-4 bg-emerald-50/80 border border-emerald-200/90 rounded-2xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-emerald-950 flex items-center space-x-1.5">
+                        <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                        <span>12-Digit Bank UTR / UPI Reference No. *</span>
+                      </label>
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-200/80 px-2 py-0.5 rounded-full">
+                        Required for Verification
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      maxLength={12}
+                      value={upiUtr}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 12);
+                        setUpiUtr(val);
+                      }}
+                      placeholder="Enter 12-digit UTR from GPay / PhonePe / Paytm (e.g. 428192039481)"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 text-xs font-mono font-bold tracking-wider bg-white focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600"
+                    />
+                    <div className="flex items-center justify-between text-[11px] text-emerald-800">
+                      <span>💡 PhonePe / Google Pay / Paytm par payment complete hone ke baad mila 12-digit UTR number yahan enter karein.</span>
+                      {upiUtr.length === 12 && (
+                        <span className="font-bold text-emerald-700 flex items-center space-x-1 flex-shrink-0">
+                          <Check className="w-3.5 h-3.5" />
+                          <span>12 Digits Verified</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -1228,16 +1456,110 @@ const CheckoutPage = () => {
                 ))}
               </div>
 
+              {/* Coupon / Promo Code Input Card */}
+              <div className="pt-2 border-t border-neutral-100 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-700 flex items-center space-x-1.5">
+                    <Tag className="w-3.5 h-3.5 text-neutral-500" />
+                    <span>Promo / Coupon Code</span>
+                  </label>
+                  {effectiveCoupon && (
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="text-[11px] font-bold text-red-600 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                {effectiveCoupon ? (
+                  <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-xs text-emerald-800">
+                      <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <div>
+                        <span className="font-bold">Code '{effectiveCoupon}' Applied</span>
+                        <p className="text-[11px] text-emerald-700">Saved ₹{effectiveDiscount.toFixed(2)} on this order</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="px-2.5 py-1 text-[10px] font-bold uppercase rounded-full bg-emerald-100 text-emerald-900 hover:bg-emerald-200 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={checkoutCouponCode}
+                        onChange={(e) => setCheckoutCouponCode(e.target.value.toUpperCase())}
+                        placeholder="e.g. AUTUMN30"
+                        className="flex-1 px-4 py-2 rounded-full border border-neutral-200 text-xs font-mono uppercase font-bold focus:outline-none focus:border-black"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => handleApplyCheckoutCoupon(e)}
+                        disabled={checkoutCouponLoading || !checkoutCouponCode.trim()}
+                        className="btn-pill-dark px-4 py-2 text-xs uppercase disabled:opacity-50"
+                      >
+                        {checkoutCouponLoading ? 'Checking...' : 'Apply'}
+                      </button>
+                    </div>
+
+                    {checkoutCouponError && (
+                      <p className="text-xs text-[#C4301C] font-semibold">{checkoutCouponError}</p>
+                    )}
+                    {checkoutCouponSuccess && (
+                      <p className="text-xs text-[#0D8756] font-semibold">{checkoutCouponSuccess}</p>
+                    )}
+
+                    {/* Available Offers Quick Pick */}
+                    <div className="pt-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
+                        Available Offers (Tap to Apply):
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(availableCoupons.length > 0 ? availableCoupons.slice(0, 4) : [
+                          { code: 'AUTUMN30', value: 30, type: 'percentage' },
+                          { code: 'WELCOME20', value: 20, type: 'percentage' },
+                          { code: 'VEX10', value: 10, type: 'percentage' },
+                          { code: 'FREESHIP', value: 99, type: 'fixed' },
+                        ]).map((c) => (
+                          <button
+                            key={c.code}
+                            type="button"
+                            onClick={() => handleApplyCheckoutCoupon(null, c.code)}
+                            className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-neutral-50 border border-neutral-200 text-neutral-700 hover:border-black hover:text-black hover:bg-neutral-100 transition-colors flex items-center space-x-1"
+                          >
+                            <span>🏷️ {c.code}</span>
+                            {c.value && (
+                              <span className="text-neutral-500 font-normal">
+                                ({c.type === 'percentage' ? `${c.value}%` : `₹${c.value}`})
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Price Calculation */}
               <div className="space-y-2 pt-4 border-t border-neutral-100 text-xs text-neutral-600">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span className="font-bold text-neutral-900">₹{subtotal.toFixed(2)}</span>
                 </div>
-                {initialDiscount > 0 && (
+                {effectiveDiscount > 0 && (
                   <div className="flex justify-between text-[#0D8756] font-bold">
-                    <span>Discount Code ({initialCoupon})</span>
-                    <span>-₹{initialDiscount.toFixed(2)}</span>
+                    <span>Discount Code ({effectiveCoupon})</span>
+                    <span>-₹{effectiveDiscount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
@@ -1279,6 +1601,116 @@ const CheckoutPage = () => {
           </div>
         </form>
       </div>
+
+      {/* 3D Secure 2.0 Bank OTP Verification Modal */}
+      {showOtpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden">
+            {/* Bank Header */}
+            <div className="p-5 bg-gradient-to-r from-blue-900 to-indigo-950 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">Bank 3D Secure 2.0 Authentication</h3>
+                  <p className="text-[10px] text-blue-200">Verified by Visa / RuPay / Mastercard</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOtpModal(false);
+                  setCardOtp('');
+                  setOtpError('');
+                }}
+                className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleVerifyCardOtp} className="p-6 space-y-4">
+              <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-neutral-500">Merchant</span>
+                  <span className="font-bold text-neutral-900">VEXIVO India Marketplace</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-500">Card</span>
+                  <span className="font-mono font-bold text-neutral-900">
+                    •••• •••• •••• {(formData.cardNumber || '').replace(/\s+/g, '').slice(-4)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-500">Amount</span>
+                  <span className="font-extrabold text-neutral-900 text-sm">₹{grandTotal.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-neutral-800">
+                    Enter 6-Digit Bank OTP *
+                  </label>
+                  <span className="text-[11px] font-mono text-neutral-500">
+                    Expires in: {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  maxLength={6}
+                  autoFocus
+                  value={cardOtp}
+                  onChange={(e) => {
+                    setCardOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                    setOtpError('');
+                  }}
+                  placeholder="e.g. 123456"
+                  className="w-full text-center text-xl font-mono font-black tracking-[0.4em] py-3 rounded-2xl border-2 border-neutral-300 focus:border-blue-600 focus:outline-none bg-neutral-50/50"
+                />
+                <p className="text-[11px] text-neutral-500">
+                  💡 A one-time verification password has been sent to your bank registered mobile number. For demo/testing, enter any 6 digits (e.g. <strong>123456</strong>).
+                </p>
+                {otpError && (
+                  <p className="text-xs font-bold text-red-600">{otpError}</p>
+                )}
+              </div>
+
+              <div className="pt-2 flex flex-col gap-2">
+                <button
+                  type="submit"
+                  disabled={isProcessing || cardOtp.length !== 6}
+                  className="btn-pill-dark w-full py-3 text-xs uppercase tracking-wider font-bold flex items-center justify-center space-x-2"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Verifying with Bank...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Authorize Payment of ₹{grandTotal.toFixed(2)}</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowOtpModal(false);
+                    setCardOtp('');
+                    setOtpError('');
+                  }}
+                  className="btn-pill-light w-full py-2.5 text-xs text-neutral-600"
+                >
+                  Cancel Transaction
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

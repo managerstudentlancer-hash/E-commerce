@@ -23,6 +23,8 @@ connectDB().then(async () => {
       console.log(`[VEXIVO] Database count is ${count} (< 60). Running catalog auto-seed...`);
       await seedAll();
     }
+    const initDeliveryPartner = require('./config/initDeliveryPartner');
+    await initDeliveryPartner();
   } catch (err) {
     console.warn('[VEXIVO] Auto-seed check notice:', err.message);
   }
@@ -79,6 +81,8 @@ app.use('/api/newsletter', require('./routes/newsletterRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/delivery', require('./routes/deliveryRoutes'));
+app.use('/api/logistics', require('./routes/logisticsRoutes'));
 
 // Reseed endpoint for instant sync
 app.get('/api/seed', async (req, res) => {

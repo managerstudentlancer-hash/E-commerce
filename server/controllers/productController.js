@@ -417,9 +417,9 @@ const getMySellerProducts = async (req, res, next) => {
   }
 };
 
-// @desc Upload product image to Supabase Storage (products/{productId}/{unique-file-name})
-// @route POST /api/products/upload-image
-const uploadProductImage = async (req, res, next) => {
+// @desc Upload product photo or video to Supabase Storage (products/{productId}/images/ or products/{productId}/videos/)
+// @route POST /api/products/upload-image OR POST /api/products/upload-video OR POST /api/products/upload-media
+const uploadProductMedia = async (req, res, next) => {
   try {
     const hasSingle = Boolean(req.file);
     const hasMultiple = Boolean(req.files && Array.isArray(req.files) && req.files.length > 0);
@@ -427,7 +427,7 @@ const uploadProductImage = async (req, res, next) => {
     if (!hasSingle && !hasMultiple) {
       return res.status(400).json({
         success: false,
-        message: 'Please upload an image file (JPEG, PNG, WEBP, GIF up to 5MB)',
+        message: 'Please upload an image (JPEG, PNG, WEBP, GIF up to 15MB) or video (MP4, WEBM, MOV up to 60MB)',
       });
     }
 
@@ -442,13 +442,41 @@ const uploadProductImage = async (req, res, next) => {
           originalname: file.originalname,
           folder,
           entityId: productId,
+          mediaType: 'auto',
         })
       );
       const results = await Promise.all(uploadPromises);
+
+      // If existing productId provided and valid ObjectId, update product document
+      if (productId && String(productId).match(/^[0-9a-fA-F]{24}$/)) {
+        const mediaItems = results.map((r, idx) => ({
+          type: r.mediaType === 'video' ? 'video' : 'image',
+          url: r.url,
+          storagePath: r.path,
+          filename: r.filename,
+          mimeType: r.mimeType,
+          size: r.size,
+          displayOrder: idx,
+        }));
+
+        const newImages = results.filter((r) => r.mediaType !== 'video').map((r) => r.url);
+        const newVideos = results.filter((r) => r.mediaType === 'video').map((r) => r.url);
+
+        await Product.findByIdAndUpdate(productId, {
+          $push: {
+            media: { $each: mediaItems },
+            ...(newImages.length > 0 ? { images: { $each: newImages } } : {}),
+            ...(newVideos.length > 0 ? { videos: { $each: newVideos } } : {}),
+          },
+        });
+      }
+
       return res.json({
         success: true,
         urls: results.map((r) => r.url),
-        images: results,
+        media: results,
+        images: results.filter((r) => r.mediaType !== 'video'),
+        videos: results.filter((r) => r.mediaType === 'video'),
       });
     }
 
@@ -458,7 +486,30 @@ const uploadProductImage = async (req, res, next) => {
       originalname: req.file.originalname,
       folder,
       entityId: productId,
+      mediaType: 'auto',
     });
+
+    // If existing productId provided, update product
+    if (productId && String(productId).match(/^[0-9a-fA-F]{24}$/)) {
+      const mediaItem = {
+        type: result.mediaType === 'video' ? 'video' : 'image',
+        url: result.url,
+        storagePath: result.path,
+        filename: result.filename,
+        mimeType: result.mimeType,
+        size: result.size,
+        displayOrder: 0,
+      };
+
+      const updateOp = {
+        $push: {
+          media: mediaItem,
+          ...(result.mediaType === 'video' ? { videos: result.url } : { images: result.url }),
+        },
+      };
+
+      await Product.findByIdAndUpdate(productId, updateOp);
+    }
 
     res.json({
       success: true,
@@ -466,9 +517,12 @@ const uploadProductImage = async (req, res, next) => {
       path: result.path,
       filename: result.filename,
       bucket: result.bucket,
+      mediaType: result.mediaType,
+      mimeType: result.mimeType,
+      size: result.size,
     });
   } catch (error) {
-    console.error('[Product Image Upload Error]:', error.message);
+    console.error('[Product Media Upload Error]:', error.message);
     const isConfigError = error.message.includes('configured');
     res.status(isConfigError ? 503 : 400).json({
       success: false,
@@ -477,28 +531,36 @@ const uploadProductImage = async (req, res, next) => {
   }
 };
 
-// @desc Delete an image from product & Supabase Storage
-// @route DELETE /api/products/delete-image
-const deleteProductImage = async (req, res, next) => {
+// @desc Delete an image or video from product & Supabase Storage
+// @route DELETE /api/products/delete-image OR DELETE /api/products/delete-media
+const deleteProductMedia = async (req, res, next) => {
   try {
     const { url, productId } = req.body;
     if (!url) {
-      return res.status(400).json({ success: false, message: 'Image URL is required' });
+      return res.status(400).json({ success: false, message: 'Media URL is required' });
     }
 
     await supabaseStorage.deleteFromSupabase(url);
 
-    if (productId) {
+    if (productId && String(productId).match(/^[0-9a-fA-F]{24}$/)) {
       await Product.findByIdAndUpdate(productId, {
-        $pull: { images: url },
+        $pull: {
+          images: url,
+          videos: url,
+          media: { url: url },
+        },
       });
     }
 
-    res.json({ success: true, message: 'Image deleted successfully from Supabase Storage' });
+    res.json({ success: true, message: 'Media deleted successfully from Supabase Storage' });
   } catch (error) {
     next(error);
   }
 };
+
+// Aliases for backward compatibility
+const uploadProductImage = uploadProductMedia;
+const deleteProductImage = deleteProductMedia;
 
 module.exports = {
   getProducts,
@@ -507,6 +569,8 @@ module.exports = {
   updateProduct,
   deleteProduct,
   getMySellerProducts,
+  uploadProductMedia,
   uploadProductImage,
+  deleteProductMedia,
   deleteProductImage,
 };

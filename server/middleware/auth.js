@@ -57,6 +57,50 @@ const adminOnly = (req, res, next) => {
   }
 };
 
+const deliveryOnly = (req, res, next) => {
+  if (req.user && (req.user.role === 'delivery_partner' || req.user.role === 'admin')) {
+    next();
+  } else {
+    res.status(403).json({ success: false, message: 'Access denied: Delivery partner privileges required' });
+  }
+};
+
+const activeDeliveryOnly = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'Authentication required' });
+  }
+  if (req.user.role === 'admin') {
+    return next();
+  }
+  if (req.user.role === 'delivery_partner') {
+    const status = req.user.deliveryProfile?.status || (req.user.deliveryProfile?.isApproved ? 'ACTIVE' : 'PENDING_VERIFICATION');
+    if (status === 'ACTIVE' || status === 'APPROVED') {
+      return next();
+    }
+    return res.status(403).json({
+      success: false,
+      accountStatus: status,
+      message:
+        status === 'PENDING_VERIFICATION'
+          ? 'Your Delivery Partner account is currently under verification. You will be able to start deliveries after your account is approved.'
+          : status === 'REJECTED'
+          ? 'Your Delivery Partner application was rejected. Please contact support.'
+          : status === 'SUSPENDED'
+          ? 'Your Delivery Partner account has been suspended. Please contact dispatch management.'
+          : 'Delivery Partner account is not active.',
+    });
+  }
+  res.status(403).json({ success: false, message: 'Access denied: Delivery partner privileges required' });
+};
+
+const sellerOnly = (req, res, next) => {
+  if (req.user && (req.user.role === 'seller' || req.user.isSeller || req.user.role === 'admin')) {
+    next();
+  } else {
+    res.status(403).json({ success: false, message: 'Access denied: Seller privileges required' });
+  }
+};
+
 const optionalAuth = async (req, res, next) => {
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -90,4 +134,4 @@ const optionalAuth = async (req, res, next) => {
   next();
 };
 
-module.exports = { protect, adminOnly, optionalAuth };
+module.exports = { protect, adminOnly, optionalAuth, deliveryOnly, activeDeliveryOnly, sellerOnly };

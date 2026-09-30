@@ -2,8 +2,9 @@ import React from 'react';
 import { Star } from 'lucide-react';
 
 const RatingStars = ({ rating = 5, numReviews, size = 'w-3.5 h-3.5', showText = true }) => {
-  const fullStars = Math.floor(rating);
-  const hasHalf = rating % 1 >= 0.4;
+  const safeRating = Number(rating != null && !isNaN(rating) ? rating : 5);
+  const fullStars = Math.floor(safeRating);
+  const hasHalf = safeRating % 1 >= 0.4;
 
   return (
     <div className="flex items-center space-x-1.5">
@@ -23,7 +24,7 @@ const RatingStars = ({ rating = 5, numReviews, size = 'w-3.5 h-3.5', showText = 
       </div>
       {showText && (
         <span className="text-xs text-neutral-500 font-medium">
-          {rating.toFixed(1)} {numReviews !== undefined && `(${numReviews})`}
+          {safeRating.toFixed(1)} {numReviews !== undefined && numReviews !== null && `(${numReviews})`}
         </span>
       )}
     </div>

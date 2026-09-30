@@ -10,7 +10,7 @@ import { CategoryProvider } from './context/CategoryContext';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import CartDrawer from './components/common/CartDrawer';
-import { ProtectedRoute, AdminRoute } from './components/common/ProtectedRoute';
+import { ProtectedRoute, AdminRoute, DeliveryRoute } from './components/common/ProtectedRoute';
 
 // Store Pages
 import Home from './pages/Home';
@@ -42,6 +42,10 @@ import PrivacyPolicy from './pages/static/PrivacyPolicy';
 import Terms from './pages/static/Terms';
 import NotFound from './pages/static/NotFound';
 
+// Delivery Fleet Pages
+import DeliveryLogin from './pages/delivery/DeliveryLogin';
+import DeliveryDashboard from './pages/delivery/DeliveryDashboard';
+
 // Admin Pages
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './pages/admin/AdminLayout';
@@ -58,8 +62,11 @@ import AdminReviews from './pages/admin/AdminReviews';
 import AdminBanners from './pages/admin/AdminBanners';
 import AdminLogo from './pages/admin/AdminLogo';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminDeliveryApplications from './pages/admin/AdminDeliveryApplications';
+import AdminLogistics from './pages/admin/AdminLogistics';
 
 import MobileStickyBar from './components/common/MobileStickyBar';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Public Layout Wrapper
 const PublicLayout = () => {
@@ -67,7 +74,9 @@ const PublicLayout = () => {
     <div className="flex flex-col min-h-screen pb-14 lg:pb-0">
       <Header />
       <main className="flex-1">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
       <Footer />
       <CartDrawer />
@@ -119,6 +128,18 @@ const App = () => {
                   <Route path="/terms" element={<Terms />} />
                 </Route>
 
+                {/* Delivery Fleet Routes */}
+                <Route path="/delivery/login" element={<DeliveryLogin />} />
+                <Route path="/delivery-login" element={<Navigate to="/delivery/login" replace />} />
+                <Route
+                  path="/delivery"
+                  element={
+                    <DeliveryRoute>
+                      <DeliveryDashboard />
+                    </DeliveryRoute>
+                  }
+                />
+
                 {/* Dedicated Admin Portal Login (Public/Guest) and URL aliases */}
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin login" element={<Navigate to="/admin/login" replace />} />
@@ -140,6 +161,8 @@ const App = () => {
                   <Route path="products" element={<AdminProducts />} />
                   <Route path="categories" element={<AdminCategories />} />
                   <Route path="orders" element={<AdminOrders />} />
+                  <Route path="logistics" element={<AdminLogistics />} />
+                  <Route path="delivery-applications" element={<AdminDeliveryApplications />} />
                   <Route path="customers" element={<AdminCustomers />} />
                   <Route path="inventory" element={<AdminInventory />} />
                   <Route path="collections" element={<AdminCollections />} />

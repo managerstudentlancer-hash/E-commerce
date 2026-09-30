@@ -45,4 +45,27 @@ export const AdminRoute = ({ children }) => {
   return children ? children : <Outlet />;
 };
 
+export const DeliveryRoute = ({ children }) => {
+  const { user, isDeliveryPartner, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/delivery/login" state={{ from: location }} replace />;
+  }
+
+  if (!isDeliveryPartner) {
+    return <Navigate to="/delivery/login" state={{ from: location, error: 'unauthorized' }} replace />;
+  }
+
+  return children ? children : <Outlet />;
+};
+
 export default ProtectedRoute;

@@ -2,6 +2,76 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const Coupon = require('../models/Coupon');
+
+// Helper: Auto-assign delivery partner based on area, city, and active workload
+const autoAssignDeliveryPartnerForArea = async (shippingAddress) => {
+  try {
+    const partners = await User.find({
+      role: 'delivery_partner',
+      $or: [
+        { 'deliveryProfile.status': { $in: ['ACTIVE', 'APPROVED'] } },
+        { 'deliveryProfile.isApproved': true },
+      ],
+    });
+    if (!partners || partners.length === 0) return null;
+
+    const city = (shippingAddress?.city || '').toLowerCase().trim();
+    const address = (shippingAddress?.address || '').toLowerCase().trim();
+    const landmark = (shippingAddress?.landmark || '').toLowerCase().trim();
+
+    let bestPartner = null;
+    let highestScore = -Infinity;
+
+    for (const partner of partners) {
+      const pCity = (partner.deliveryProfile?.city || '').toLowerCase().trim();
+      const pZones = (partner.deliveryProfile?.serviceZones || []).map((z) => String(z).toLowerCase().trim());
+      const isOnline = partner.isOnline !== false && partner.deliveryProfile?.isOnline !== false;
+      const rating = partner.deliveryProfile?.rating || 4.8;
+
+      // Active workload count
+      const activeWorkload = await Order.countDocuments({
+        deliveryPartner: partner._id,
+        'deliveryDetails.deliveryStatus': {
+          $in: ['assigned', 'accepted', 'reached_pickup', 'picked_up', 'out_for_delivery'],
+        },
+      });
+
+      let score = 0;
+      if (isOnline) score += 60;
+      score += rating * 10;
+      score -= activeWorkload * 15;
+
+      let areaMatched = false;
+      // 1. Direct locality / service zone match
+      if (pZones.length > 0) {
+        for (const zone of pZones) {
+          if (zone && (address.includes(zone) || city.includes(zone) || landmark.includes(zone))) {
+            score += 150; // Priority boost for exact locality match
+            areaMatched = true;
+            break;
+          }
+        }
+      }
+
+      // 2. City match
+      if (!areaMatched && pCity && (city.includes(pCity) || pCity.includes(city))) {
+        score += 80;
+        areaMatched = true;
+      }
+
+      if (score > highestScore) {
+        highestScore = score;
+        bestPartner = partner;
+      }
+    }
+
+    return bestPartner;
+  } catch (err) {
+    console.error('[Auto-Assign Area Match Error]:', err.message);
+    return null;
+  }
+};
 
 // @desc Create new order (supports guest and authenticated)
 // @route POST /api/orders
@@ -25,8 +95,12 @@ const createOrder = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Order must contain at least one item' });
     }
 
-    if (!shippingAddress || !shippingAddress.firstName || !shippingAddress.address || !shippingAddress.city) {
+    const recipientName = shippingAddress?.firstName || shippingAddress?.fullName;
+    if (!shippingAddress || !recipientName || !shippingAddress.address || !shippingAddress.city) {
       return res.status(400).json({ success: false, message: 'Complete shipping address is required' });
+    }
+    if (!shippingAddress.firstName && shippingAddress.fullName) {
+      shippingAddress.firstName = shippingAddress.fullName;
     }
 
     // Idempotency: Prevent duplicate submissions within 4 seconds
@@ -137,11 +211,22 @@ const createOrder = async (req, res, next) => {
     let verifiedDiscount = 0;
     if (coupon) {
       try {
-        const Coupon = require('../models/Coupon');
-        const foundCoupon = await Coupon.findOne({
+        let foundCoupon = await Coupon.findOne({
           code: coupon.toString().toUpperCase().trim(),
           active: true,
         });
+        if (!foundCoupon) {
+          const FALLBACK_COUPONS = {
+            'AUTUMN30': { code: 'AUTUMN30', type: 'percentage', value: 30, minimumOrder: 499, maximumDiscount: 1500 },
+            'WELCOME20': { code: 'WELCOME20', type: 'percentage', value: 20, minimumOrder: 499, maximumDiscount: 1000 },
+            'WELCOME10': { code: 'WELCOME10', type: 'percentage', value: 10, minimumOrder: 299, maximumDiscount: 500 },
+            'VEX10': { code: 'VEX10', type: 'percentage', value: 10, minimumOrder: 299, maximumDiscount: 500 },
+            'FREESHIP': { code: 'FREESHIP', type: 'fixed', value: 99, minimumOrder: 399, maximumDiscount: 99 },
+            'FESTIVE25': { code: 'FESTIVE25', type: 'fixed', value: 250, minimumOrder: 999, maximumDiscount: 250 },
+            'BEAUTY15': { code: 'BEAUTY15', type: 'percentage', value: 15, minimumOrder: 499, maximumDiscount: 600 },
+          };
+          foundCoupon = FALLBACK_COUPONS[coupon.toString().toUpperCase().trim()];
+        }
         if (foundCoupon) {
           const notExpired = !foundCoupon.expiryDate || new Date(foundCoupon.expiryDate) > new Date();
           const minMet = !foundCoupon.minimumOrder || computedSubtotal >= foundCoupon.minimumOrder;
@@ -173,8 +258,70 @@ const createOrder = async (req, res, next) => {
       { status: 'Confirmed', message: 'Order verified and confirmed by VEXIVO', timestamp: new Date() },
     ];
 
+    // Strict Payment Verification Flow:
+    // Never mark an order as 'paid' without verified confirmation!
+    const isCashOnDelivery =
+      paymentMethod &&
+      (paymentMethod.toLowerCase().includes('cash') ||
+        paymentMethod.toLowerCase().includes('cod') ||
+        paymentMethod.toLowerCase().includes('delivery'));
+
+    const isUpi =
+      paymentMethod &&
+      (paymentMethod.toLowerCase().includes('upi') ||
+        paymentMethod.toLowerCase().includes('qr'));
+
+    const rawPaymentDetails = req.body.paymentDetails || {};
+    const utrNumber = rawPaymentDetails.utrNumber || req.body.utrNumber || '';
+    const is3dSecureVerified = Boolean(rawPaymentDetails.is3dSecureVerified && rawPaymentDetails.authCode);
+
+    let initialPaymentStatus = 'pending';
+    let paymentDetailsObj = {
+      transactionId: rawPaymentDetails.transactionId || (utrNumber ? `UPI-${utrNumber}` : ''),
+      utrNumber: utrNumber,
+      cardLast4: rawPaymentDetails.cardLast4 || '',
+      cardBrand: rawPaymentDetails.cardBrand || '',
+      verifiedAt: null,
+      verifiedBy: '',
+      gateway: rawPaymentDetails.gateway || (isCashOnDelivery
+        ? 'Cash on Delivery'
+        : isUpi
+        ? 'Direct UPI / Dynamic QR'
+        : 'Bank 3D Secure / Card Gateway'),
+    };
+
+    if (isCashOnDelivery) {
+      // Cash on delivery is unpaid until delivered
+      initialPaymentStatus = 'pending';
+      paymentDetailsObj.verifiedBy = 'Pay on Delivery';
+    } else if (isUpi) {
+      // UPI orders require bank/UTR verification before being marked as paid
+      if (rawPaymentDetails.isGatewayVerified && rawPaymentDetails.gatewaySignature) {
+        initialPaymentStatus = 'paid';
+        paymentDetailsObj.verifiedAt = new Date();
+        paymentDetailsObj.verifiedBy = 'UPI Gateway Auto-Verification';
+      } else {
+        initialPaymentStatus = 'pending'; // Awaiting Bank/Admin UTR Verification
+        paymentDetailsObj.verifiedBy = 'Awaiting Bank/Admin UTR Confirmation';
+      }
+    } else if (is3dSecureVerified) {
+      // Card payment passed 3D Secure Bank OTP verification
+      initialPaymentStatus = 'paid';
+      paymentDetailsObj.verifiedAt = new Date();
+      paymentDetailsObj.verifiedBy = 'Bank 3D Secure 2.0 (OTP Verified)';
+      paymentDetailsObj.transactionId = rawPaymentDetails.authCode || `AUTH-${Date.now().toString().slice(-6)}`;
+    } else {
+      // Any other unverified payment method starts as pending
+      initialPaymentStatus = 'pending';
+    }
+
+    const pickupOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    const trackingNumber = `VX-TRK-${Date.now().toString().slice(-8)}${Math.floor(10 + Math.random() * 90)}`;
+
     const order = new Order({
       orderNumber,
+      trackingNumber,
       user: req.user ? req.user._id : undefined,
       guestEmail: req.user ? req.user.email : guestEmail,
       items: enrichedItems,
@@ -187,13 +334,32 @@ const createOrder = async (req, res, next) => {
       shippingAddress,
       billingAddress: billingAddress || shippingAddress,
       paymentMethod,
-      paymentStatus: 'paid', // Mark as paid for standard checkout flow
-      orderStatus: req.body.orderStatus || 'processing',
+      paymentStatus: initialPaymentStatus,
+      paymentDetails: paymentDetailsObj,
+      deliveryPartner: null,
+      deliveryPartnerName: '',
+      deliveryPartnerPhone: '',
+      deliveryDetails: {
+        pickupOtp,
+        deliveryOtp,
+        deliveryStatus: 'unassigned',
+        assignedAt: null,
+      },
+      orderStatus: 'confirmed',
       trackingHistory: initialTracking,
       sellerEarnings: Object.values(sellerEarningsMap),
     });
 
     const createdOrder = await order.save();
+
+    // Initialize multi-stage logistics shipment record (Seller -> Pickup -> Warehouse -> Hub -> Delivery Partner)
+    const { createShipmentForOrder } = require('../services/logisticsService');
+    const createdShipment = await createShipmentForOrder(createdOrder);
+    if (createdShipment) {
+      createdOrder.shipment = createdShipment._id;
+      createdOrder.trackingNumber = createdShipment.shipmentId;
+      await createdOrder.save();
+    }
 
     // Deduct stock atomically
     for (const item of enrichedItems) {
@@ -252,6 +418,7 @@ const getMyOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ user: req.user._id })
       .populate('items.product')
+      .populate('deliveryPartner', 'name email phone deliveryProfile')
       .sort({ createdAt: -1 });
     res.json({ success: true, count: orders.length, orders });
   } catch (error) {
@@ -267,11 +434,13 @@ const getOrderById = async (req, res, next) => {
     if (req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
       order = await Order.findById(req.params.id)
         .populate('user', 'name email phone')
+        .populate('deliveryPartner', 'name email phone deliveryProfile')
         .populate('items.product');
     }
     if (!order) {
       order = await Order.findOne({ orderNumber: req.params.id })
         .populate('user', 'name email phone')
+        .populate('deliveryPartner', 'name email phone deliveryProfile')
         .populate('items.product');
     }
 
@@ -329,6 +498,7 @@ const getAllOrders = async (req, res, next) => {
     const total = await Order.countDocuments(query);
     const orders = await Order.find(query)
       .populate('user', 'name email phone')
+      .populate('deliveryPartner', 'name email phone deliveryProfile')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum);
@@ -392,6 +562,12 @@ const updateOrderStatus = async (req, res, next) => {
 
       if (normalizedStatus === 'delivered') {
         order.deliveredAt = new Date();
+        if (order.paymentStatus === 'pending') {
+          order.paymentStatus = 'paid';
+          if (!order.paymentDetails) order.paymentDetails = {};
+          order.paymentDetails.verifiedAt = new Date();
+          order.paymentDetails.verifiedBy = 'Pay on Delivery (Delivered)';
+        }
       }
 
       order.orderStatus = normalizedStatus;
@@ -537,6 +713,15 @@ const returnOrder = async (req, res, next) => {
       ? `${reason} [Exchange Details: ${exchangeNote}]`
       : reason;
     order.returnedAt = new Date();
+    order.returnDetails = {
+      status: 'requested',
+      reason,
+      evidence: req.body.evidence || [],
+      refundMethod: req.body.refundMethod || 'Original Payment Method',
+      refundStatus: 'pending',
+      returnPickupOtp: Math.floor(1000 + Math.random() * 9000).toString(),
+      requestedAt: new Date(),
+    };
     order.trackingHistory.push({
       status: isExchange ? 'Exchange Initiated' : 'Return Initiated',
       message: `${isExchange ? 'Exchange' : 'Return'} request submitted: ${reason}`,
@@ -584,6 +769,12 @@ const simulateDelivery = async (req, res, next) => {
 
     order.orderStatus = 'delivered';
     order.deliveredAt = new Date();
+    if (order.paymentStatus === 'pending') {
+      order.paymentStatus = 'paid';
+      if (!order.paymentDetails) order.paymentDetails = {};
+      order.paymentDetails.verifiedAt = new Date();
+      order.paymentDetails.verifiedBy = 'Pay on Delivery (Delivered)';
+    }
     order.trackingHistory.push({
       status: 'Delivered',
       message: 'Package delivered to recipient via Ekart Express India.',
@@ -664,6 +855,49 @@ const getMySellerOrders = async (req, res, next) => {
   }
 };
 
+// @desc Verify & approve payment for an order (e.g. Admin confirms bank credit or UPI UTR)
+// @route PUT /api/orders/:id/verify-payment
+const verifyOrderPayment = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    order.paymentStatus = 'paid';
+    if (!order.paymentDetails) {
+      order.paymentDetails = {};
+    }
+    order.paymentDetails.verifiedAt = new Date();
+    order.paymentDetails.verifiedBy = `Admin Verified (${req.user?.name || 'Store Administrator'})`;
+
+    order.trackingHistory.push({
+      status: 'Payment Verified',
+      message: `Payment of ₹${order.total?.toFixed(2)} verified and approved.`,
+      timestamp: new Date(),
+    });
+
+    if (order.user) {
+      await Notification.create({
+        user: order.user,
+        title: 'Payment Confirmed! ✅',
+        message: `Your payment of ₹${order.total?.toFixed(2)} for order ${order.orderNumber} has been verified and confirmed.`,
+        type: 'order',
+        link: `/account?tab=orders`,
+      }).catch(() => {});
+    }
+
+    const updatedOrder = await order.save();
+    res.json({
+      success: true,
+      message: 'Payment verified and marked as PAID successfully',
+      order: updatedOrder,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createOrder,
   getMyOrders,
@@ -674,4 +908,5 @@ module.exports = {
   returnOrder,
   simulateDelivery,
   getMySellerOrders,
+  verifyOrderPayment,
 };

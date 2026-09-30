@@ -37,6 +37,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import api from '../../services/api';
+import CustomerShipmentTracker from '../../components/logistics/CustomerShipmentTracker';
 
 const INDIAN_STATES = [
   'Andhra Pradesh',
@@ -871,8 +872,8 @@ const AccountDashboard = () => {
                               </span>
                             </div>
 
-                            {/* Status Pill */}
-                            <div className="flex items-center space-x-2">
+                            {/* Status Pills */}
+                            <div className="flex items-center space-x-2 flex-wrap gap-1.5">
                               <span
                                 className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
                                   isDelivered
@@ -896,6 +897,27 @@ const AccountDashboard = () => {
                                   }`}
                                 />
                                 <span>{order.orderStatus?.replace('_', ' ')}</span>
+                              </span>
+
+                              {/* Payment Status Pill */}
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                  order.paymentStatus === 'paid'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                    : order.paymentStatus === 'refunded'
+                                    ? 'bg-purple-50 text-purple-700 border border-purple-200/60'
+                                    : 'bg-amber-50 text-amber-800 border border-amber-200/60'
+                                }`}
+                              >
+                                {order.paymentStatus === 'paid'
+                                  ? 'Paid'
+                                  : order.paymentStatus === 'refunded'
+                                  ? 'Refunded'
+                                  : (order.paymentMethod?.toLowerCase().includes('cash') || order.paymentMethod?.toLowerCase().includes('cod'))
+                                  ? 'Cash on Delivery (Pending)'
+                                  : order.paymentDetails?.utrNumber
+                                  ? 'UPI (Under Verification)'
+                                  : 'Payment Pending'}
                               </span>
                             </div>
                           </div>
@@ -954,60 +976,57 @@ const AccountDashboard = () => {
                             ))}
                           </div>
 
-                          {/* Order Stepper (Flipkart Timeline) */}
+                          {/* Real-time Multi-Stage Logistics Stepper & Location */}
                           <div className="pt-4 border-t border-neutral-100">
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-3">
-                              Order Delivery Progress:
-                            </p>
-                            <div className="grid grid-cols-4 gap-2 text-center text-[10px] relative">
-                              {[
-                                {
-                                  label: 'Ordered',
-                                  completed: true,
-                                  date: new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                                },
-                                {
-                                  label: 'Confirmed',
-                                  completed: !isCancelled,
-                                  date: !isCancelled ? 'Verified' : 'Cancelled',
-                                },
-                                {
-                                  label: 'Shipped',
-                                  completed: ['shipped', 'out_for_delivery', 'delivered'].includes(order.orderStatus),
-                                  date: order.trackingNumber || 'Ekart Express India',
-                                },
-                                {
-                                  label: 'Delivered',
-                                  completed: isDelivered,
-                                  date: isDelivered ? 'Received' : 'Estimated 2-3 Days',
-                                },
-                              ].map((step, sIdx) => (
-                                <div key={sIdx} className="space-y-1">
-                                  <div
-                                    className={`w-6 h-6 rounded-full mx-auto flex items-center justify-center text-xs font-bold ${
-                                      isCancelled
-                                        ? 'bg-neutral-200 text-neutral-500'
-                                        : step.completed
-                                        ? 'bg-emerald-500 text-white ring-4 ring-emerald-50'
-                                        : 'bg-neutral-100 text-neutral-400'
-                                    }`}
-                                  >
-                                    {step.completed && !isCancelled ? <Check className="w-3.5 h-3.5" /> : sIdx + 1}
+                            <CustomerShipmentTracker order={order} />
+
+                            {/* Return & Refund Status Card */}
+                            {order.returnDetails?.status && order.returnDetails.status !== 'none' && (
+                              <div className="mt-3.5 p-3.5 bg-purple-50 border border-purple-200 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs text-purple-950">
+                                <div className="flex items-center space-x-2.5">
+                                  <RotateCcw className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                                  <div>
+                                    <p className="font-bold">
+                                      Return Status: <span className="uppercase">{order.returnDetails.status.replace('_', ' ')}</span>
+                                    </p>
+                                    <p className="text-[11px] text-purple-700">
+                                      Refund Mode: {order.returnDetails.refundMethod || 'Original Payment Method'} • Refund: <strong className="capitalize">{order.returnDetails.refundStatus || 'Processing'}</strong>
+                                    </p>
                                   </div>
-                                  <p className="font-bold text-neutral-800">{step.label}</p>
-                                  <p className="text-[9px] text-neutral-400">{step.date}</p>
                                 </div>
-                              ))}
-                            </div>
+                                {order.returnDetails.returnPickupOtp && order.returnDetails.status !== 'completed' && order.returnDetails.status !== 'refunded' && (
+                                  <div className="bg-white px-3 py-1 rounded-xl border border-purple-200 text-center">
+                                    <span className="text-[9px] uppercase font-bold text-purple-700 block">Return Pickup OTP</span>
+                                    <span className="font-mono font-black text-purple-900 text-sm tracking-widest">
+                                      {order.returnDetails.returnPickupOtp}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           {/* Order Actions Toolbar */}
                           <div className="pt-4 mt-4 border-t border-neutral-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-neutral-500">Total Order Amount:</span>
+                            <div className="flex items-center space-x-2 flex-wrap gap-1.5">
+                              <span className="text-neutral-500">
+                                {order.paymentStatus === 'paid'
+                                  ? 'Total Paid:'
+                                  : (order.paymentMethod?.toLowerCase().includes('cash') || order.paymentMethod?.toLowerCase().includes('cod'))
+                                  ? 'To Pay on Delivery:'
+                                  : 'Amount (Pending Verification):'}
+                              </span>
                               <span className="text-base font-extrabold text-neutral-900">
                                 ₹{order.total?.toFixed(2)}
                               </span>
+                              <span className="text-[11px] font-semibold text-neutral-400">
+                                ({order.paymentMethod || 'Online'})
+                              </span>
+                              {order.paymentDetails?.utrNumber && (
+                                <span className="font-mono text-[10px] font-bold text-cyan-800 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded">
+                                  UTR: {order.paymentDetails.utrNumber}
+                                </span>
+                              )}
                             </div>
 
                             <div className="flex items-center space-x-2 flex-wrap gap-2">

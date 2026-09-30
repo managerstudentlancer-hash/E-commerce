@@ -144,6 +144,10 @@ export const api = {
     update: (id, product) => request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(product) }),
     delete: (id) => request(`/products/${id}`, { method: 'DELETE' }),
     uploadImage: (formData) => request('/products/upload-image', { method: 'POST', body: formData }),
+    uploadVideo: (formData) => request('/products/upload-video', { method: 'POST', body: formData }),
+    uploadMedia: (formData) => request('/products/upload-media', { method: 'POST', body: formData }),
+    deleteMedia: (url, productId) => request('/products/delete-media', { method: 'DELETE', body: JSON.stringify({ url, productId }) }),
+    deleteImage: (url, productId) => request('/products/delete-image', { method: 'DELETE', body: JSON.stringify({ url, productId }) }),
   },
 
   // Categories
@@ -205,6 +209,7 @@ export const api = {
     },
     updateStatus: (id, statusData) =>
       request(`/orders/${id}/status`, { method: 'PUT', body: JSON.stringify(statusData) }),
+    verifyPayment: (id) => request(`/orders/${id}/verify-payment`, { method: 'PUT' }),
   },
 
   // Customers (Admin)
@@ -288,6 +293,53 @@ export const api = {
     updateUserRole: (id, role) => request(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
     deleteUser: (id) => request(`/admin/users/${id}`, { method: 'DELETE' }),
     uploadImage: (formData) => request('/admin/upload', { method: 'POST', body: formData }),
+    uploadVideo: (formData) => request('/admin/upload', { method: 'POST', body: formData }),
+    uploadMedia: (formData) => request('/admin/upload', { method: 'POST', body: formData }),
+    deleteMedia: (url) => request('/admin/delete-image', { method: 'DELETE', body: JSON.stringify({ url }) }),
+  },
+
+  // Delivery Partner System
+  // Delivery Fleet Partner Operations
+  delivery: {
+    register: (partnerData) => request('/delivery/register', { method: 'POST', body: JSON.stringify(partnerData) }),
+    getProfile: () => request('/delivery/profile'),
+    me: () => request('/delivery/me'),
+    getAssignments: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/delivery/assignments${q ? `?${q}` : ''}`);
+    },
+    updateProfile: (profileData) => request('/delivery/profile', { method: 'PUT', body: JSON.stringify(profileData) }),
+    toggleOnline: () => request('/delivery/toggle-online', { method: 'PUT' }),
+    getOrders: (tab = 'active') => request(`/delivery/orders?tab=${tab}`),
+    accept: (id) => request(`/delivery/orders/${id}/accept`, { method: 'PUT' }),
+    decline: (id, reason) => request(`/delivery/orders/${id}/decline`, { method: 'PUT', body: JSON.stringify({ reason }) }),
+    reachedPickup: (id) => request(`/delivery/orders/${id}/reached-pickup`, { method: 'PUT' }),
+    confirmPickup: (id, pickupOtp) => request(`/delivery/orders/${id}/pickup`, { method: 'PUT', body: JSON.stringify({ pickupOtp }) }),
+    outForDelivery: (id) => request(`/delivery/orders/${id}/out-for-delivery`, { method: 'PUT' }),
+    reachedCustomer: (id) => request(`/delivery/orders/${id}/reached-customer`, { method: 'PUT' }),
+    completeDelivery: (id, deliveryOtp) => request(`/delivery/orders/${id}/complete`, { method: 'PUT', body: JSON.stringify({ deliveryOtp }) }),
+    failDelivery: (id, reason) => request(`/delivery/orders/${id}/fail`, { method: 'PUT', body: JSON.stringify({ reason }) }),
+    reschedule: (id, rescheduledDate, reason) => request(`/delivery/orders/${id}/reschedule`, { method: 'PUT', body: JSON.stringify({ rescheduledDate, reason }) }),
+    returnToSeller: (id, reason) => request(`/delivery/orders/${id}/return-to-seller`, { method: 'PUT', body: JSON.stringify({ reason }) }),
+    pickupReturn: (id, returnPickupOtp) => request(`/delivery/returns/${id}/pickup`, { method: 'PUT', body: JSON.stringify({ returnPickupOtp }) }),
+    submitSupport: (supportData) => request('/delivery/support', { method: 'POST', body: JSON.stringify(supportData) }),
+  },
+
+  // Admin Logistics & Returns
+  adminLogistics: {
+    getDeliveryPartners: () => request('/admin/delivery-partners'),
+    getApplications: (params = {}) => {
+      const query = new URLSearchParams(params).toString();
+      return request(`/admin/delivery/applications${query ? `?${query}` : ''}`);
+    },
+    updateApplicationStatus: (id, data) =>
+      request(`/admin/delivery/applications/${id}/status`, { method: 'PUT', body: JSON.stringify(data) }),
+    assignDeliveryPartner: (orderId, partnerId) => request(`/admin/orders/${orderId}/assign-delivery`, { method: 'PUT', body: JSON.stringify({ partnerId }) }),
+    autoAssign: (orderId) => request(`/admin/orders/${orderId}/auto-assign`, { method: 'POST' }),
+    getCodReconciliation: () => request('/admin/delivery/cod-reconciliation'),
+    settleCod: (partnerId) => request('/admin/delivery/cod-settle', { method: 'POST', body: JSON.stringify({ partnerId }) }),
+    getReturns: () => request('/admin/returns'),
+    processReturnRefund: (orderId) => request(`/admin/returns/${orderId}/refund`, { method: 'PUT' }),
   },
 
   // Support / Customer Care
@@ -304,6 +356,36 @@ export const api = {
     getAll: () => request('/notifications'),
     markRead: (id) => request(`/notifications/${id}/read`, { method: 'PUT' }),
     markAllRead: () => request('/notifications/read-all', { method: 'PUT' }),
+  },
+
+  // Multi-Stage Logistics & Fulfillment Workflow
+  logistics: {
+    getWarehouses: () => request('/logistics/warehouses'),
+    createWarehouse: (data) => request('/logistics/warehouses', { method: 'POST', body: JSON.stringify(data) }),
+    getHubs: (warehouseId) => request(`/logistics/hubs${warehouseId ? `?warehouseId=${warehouseId}` : ''}`),
+    createHub: (data) => request('/logistics/hubs', { method: 'POST', body: JSON.stringify(data) }),
+    getShipments: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/logistics/shipments${q ? `?${q}` : ''}`);
+    },
+    getShipmentById: (id) => request(`/logistics/shipments/${id}`),
+    track: (identifier) => request(`/logistics/track/${encodeURIComponent(identifier)}`),
+    sellerReady: (id, data = {}) => request(`/logistics/shipments/${id}/seller-ready`, { method: 'PUT', body: JSON.stringify(data) }),
+    confirmPickup: (id, data = {}) => request(`/logistics/shipments/${id}/pickup-confirm`, { method: 'PUT', body: JSON.stringify(data) }),
+    warehouseReceive: (id, data = {}) => request(`/logistics/shipments/${id}/warehouse-receive`, { method: 'PUT', body: JSON.stringify(data) }),
+    scan: (data) => request('/logistics/shipments/scan', { method: 'POST', body: JSON.stringify(data) }),
+    sort: (id, data = {}) => request(`/logistics/shipments/${id}/sort`, { method: 'PUT', body: JSON.stringify(data) }),
+    dispatchWarehouse: (id, data = {}) => request(`/logistics/shipments/${id}/dispatch-warehouse`, { method: 'PUT', body: JSON.stringify(data) }),
+    hubReceive: (id, data = {}) => request(`/logistics/shipments/${id}/hub-receive`, { method: 'PUT', body: JSON.stringify(data) }),
+    readyForDelivery: (id) => request(`/logistics/shipments/${id}/ready-for-delivery`, { method: 'PUT' }),
+    assignPartner: (id, partnerId) => request(`/logistics/shipments/${id}/assign-delivery-partner`, { method: 'PUT', body: JSON.stringify({ partnerId }) }),
+    outForDelivery: (id) => request(`/logistics/shipments/${id}/out-for-delivery`, { method: 'PUT' }),
+    deliveryAttempt: (id, data) => request(`/logistics/shipments/${id}/delivery-attempt`, { method: 'PUT', body: JSON.stringify(data) }),
+    reschedule: (id, data) => request(`/logistics/shipments/${id}/reschedule`, { method: 'PUT', body: JSON.stringify(data) }),
+    deliver: (id, data) => request(`/logistics/shipments/${id}/deliver`, { method: 'PUT', body: JSON.stringify(data) }),
+    initiateReturn: (id, data) => request(`/logistics/shipments/${id}/return-initiate`, { method: 'PUT', body: JSON.stringify(data) }),
+    updateReturn: (id, data) => request(`/logistics/shipments/${id}/return-update`, { method: 'PUT', body: JSON.stringify(data) }),
+    adminOverride: (id, data) => request(`/logistics/shipments/${id}/admin-override`, { method: 'PUT', body: JSON.stringify(data) }),
   },
 };
 

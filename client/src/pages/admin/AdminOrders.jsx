@@ -43,8 +43,18 @@ const AdminOrders = () => {
   const [trackingNumberInput, setTrackingNumberInput] = useState('');
   const [toastMessage, setToastMessage] = useState('');
 
+  // Delivery Partner Assignment State
+  const [deliveryPartners, setDeliveryPartners] = useState([]);
+  const [selectedPartnerId, setSelectedPartnerId] = useState('');
+  const [assigningPartner, setAssigningPartner] = useState(false);
+
   useEffect(() => {
     fetchOrders();
+    api.adminLogistics.getDeliveryPartners()
+      .then((res) => {
+        if (res.success) setDeliveryPartners(res.partners || []);
+      })
+      .catch(() => {});
   }, [statusFilter]);
 
   const showToast = (msg) => {
@@ -112,6 +122,102 @@ const AdminOrders = () => {
     await handleUpdateStatus('returned', 'refunded');
   };
 
+  const handleVerifyPayment = async () => {
+    if (!selectedOrder) return;
+    try {
+      const res = await api.orders.verifyPayment(selectedOrder._id);
+      if (res.success) {
+        showToast('Payment verified & approved as PAID successfully!');
+        setSelectedOrder(res.order);
+        setOrders((prev) =>
+          prev.map((o) => (o._id === selectedOrder._id ? res.order : o))
+        );
+        fetchOrders();
+      }
+    } catch (err) {
+      showToast(err.message || 'Payment verification failed');
+    }
+  };
+
+  const handleAssignDeliveryPartner = async () => {
+    if (!selectedOrder || !selectedPartnerId) {
+      showToast('Please select a delivery partner from the dropdown');
+      return;
+    }
+    try {
+      setAssigningPartner(true);
+      const res = await api.adminLogistics.assignDeliveryPartner(selectedOrder._id, selectedPartnerId);
+      if (res.success) {
+        showToast(res.message);
+        setSelectedOrder(res.order);
+        setOrders((prev) =>
+          prev.map((o) => (o._id === selectedOrder._id ? res.order : o))
+        );
+        fetchOrders();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to assign delivery partner');
+    } finally {
+      setAssigningPartner(false);
+    }
+  };
+
+  const handleAutoAssignDeliveryPartner = async () => {
+    if (!selectedOrder) return;
+    try {
+      setAssigningPartner(true);
+      const res = await api.adminLogistics.autoAssign(selectedOrder._id);
+      if (res.success) {
+        showToast(res.message);
+        setSelectedOrder(res.order);
+        setOrders((prev) =>
+          prev.map((o) => (o._id === selectedOrder._id ? res.order : o))
+        );
+        fetchOrders();
+      }
+    } catch (err) {
+      showToast(err.message || 'Auto-assignment failed');
+    } finally {
+      setAssigningPartner(false);
+    }
+  };
+
+  // COD Reconciliation State & Operations
+  const [showCodModal, setShowCodModal] = useState(false);
+  const [codData, setCodData] = useState(null);
+  const [loadingCod, setLoadingCod] = useState(false);
+  const [settlingPartnerId, setSettlingPartnerId] = useState(null);
+
+  const fetchCodReconciliation = async () => {
+    try {
+      setLoadingCod(true);
+      const res = await api.adminLogistics.getCodReconciliation();
+      if (res.success) {
+        setCodData(res);
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to fetch COD reconciliation');
+    } finally {
+      setLoadingCod(false);
+    }
+  };
+
+  const handleSettleCod = async (partnerId) => {
+    try {
+      setSettlingPartnerId(partnerId);
+      const res = await api.adminLogistics.settleCod(partnerId);
+      if (res.success) {
+        showToast(res.message);
+        fetchCodReconciliation();
+        fetchOrders();
+      }
+    } catch (err) {
+      showToast(err.message || 'Settlement failed');
+    } finally {
+      setSettlingPartnerId(null);
+    }
+  };
+
   const filteredOrders = orders.filter((o) => {
     const term = searchTerm.toLowerCase();
     return (
@@ -167,13 +273,27 @@ const AdminOrders = () => {
           </p>
         </div>
 
-        <button
-          onClick={fetchOrders}
-          className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold border border-white/10 flex items-center space-x-2 self-start sm:self-auto transition-all"
-        >
-          <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Refresh Orders</span>
-        </button>
+        <div className="flex items-center space-x-2.5 self-start sm:self-auto">
+          <button
+            onClick={() => {
+              setShowCodModal(true);
+              fetchCodReconciliation();
+            }}
+            className="px-4 py-2.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/30 flex items-center space-x-1.5 transition-all shadow-md active:scale-95"
+            title="View fleet Cash on Delivery (COD) cash in hand and settle deposits"
+          >
+            <IndianRupee className="w-3.5 h-3.5 text-amber-400" />
+            <span>COD Settlement</span>
+          </button>
+
+          <button
+            onClick={fetchOrders}
+            className="px-4 py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold border border-white/10 flex items-center space-x-2 transition-all"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Refresh Orders</span>
+          </button>
+        </div>
       </div>
 
       {/* Status Filter Tabs Bar */}
@@ -251,13 +371,14 @@ const AdminOrders = () => {
                   <th className="py-4 px-4">Amount (₹)</th>
                   <th className="py-4 px-4">Payment</th>
                   <th className="py-4 px-4">Fulfillment Status</th>
+                  <th className="py-4 px-4">Assigned Partner</th>
                   <th className="py-4 px-6 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 font-medium text-slate-300">
                 {filteredOrders.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="py-16 text-center text-slate-400 text-xs">
+                    <td colSpan="9" className="py-16 text-center text-slate-400 text-xs">
                       No customer orders found matching this filter criteria.
                     </td>
                   </tr>
@@ -265,7 +386,14 @@ const AdminOrders = () => {
                   filteredOrders.map((ord) => (
                     <tr key={ord._id} className="hover:bg-white/[0.02] transition-colors group">
                       <td className="py-4 px-6 font-mono font-bold text-cyan-300">
-                        {ord.orderNumber}
+                        <div className="flex items-center space-x-1.5">
+                          <span>{ord.orderNumber}</span>
+                          {((ord.orderStatus === 'pending' || ord.orderStatus === 'processing') && (new Date() - new Date(ord.createdAt) > 24 * 3600 * 1000)) && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-sans font-bold uppercase" title="SLA Alert: Pending fulfillment >24h">
+                              SLA Alert
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="py-4 px-4 text-slate-400 font-mono">
@@ -319,6 +447,24 @@ const AdminOrders = () => {
                         >
                           {ord.orderStatus?.replace('_', ' ')}
                         </span>
+                      </td>
+
+                      <td className="py-4 px-4">
+                        {ord.deliveryPartnerName ? (
+                          <div className="flex flex-col space-y-0.5">
+                            <span className="font-bold text-white flex items-center space-x-1.5">
+                              <Truck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                              <span className="truncate max-w-[130px] font-sans">{ord.deliveryPartnerName}</span>
+                            </span>
+                            <span className="text-[10px] text-emerald-400 font-mono capitalize">
+                              {ord.deliveryDetails?.deliveryStatus?.replace('_', ' ') || 'Assigned'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            Unassigned
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-4 px-6 text-right">
@@ -497,8 +643,97 @@ const AdminOrders = () => {
                   {selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.postalCode}
                 </p>
                 <p className="text-slate-400">
-                  {selectedOrder.shippingAddress?.country || 'United Kingdom'}
+                  {selectedOrder.shippingAddress?.country || 'India'}
                 </p>
+              </div>
+            </div>
+
+            {/* Logistics & Delivery Partner Assignment */}
+            <div className="p-4 bg-slate-900/80 rounded-2xl border border-emerald-500/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Truck className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs font-black uppercase tracking-wider text-white">
+                    Fleet Dispatch & Logistics
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase">
+                  {selectedOrder.deliveryDetails?.deliveryStatus || 'Unassigned'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="space-y-1.5">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Assigned Delivery Partner:</span>
+                    {selectedOrder.deliveryPartnerName && (
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        Area Assigned ✓
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-black text-white text-sm flex items-center space-x-2">
+                    <Truck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <span>{selectedOrder.deliveryPartnerName || 'No Rider Assigned Yet'}</span>
+                  </p>
+                  {selectedOrder.deliveryPartnerPhone && (
+                    <p className="text-[11px] font-mono text-emerald-300">
+                      Rider Phone: +91 {selectedOrder.deliveryPartnerPhone}
+                    </p>
+                  )}
+                  {selectedOrder.shippingAddress?.city && (
+                    <p className="text-[10px] text-slate-400">
+                      Target Delivery Zone: {selectedOrder.shippingAddress?.city} ({selectedOrder.shippingAddress?.postalCode || 'Jaipur'})
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1 sm:text-right">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Verification OTPs</span>
+                  <div className="flex sm:justify-end gap-2 text-[11px] font-mono">
+                    <span className="bg-amber-950/40 border border-amber-500/30 text-amber-300 px-2 py-0.5 rounded">
+                      Pickup: <strong>{selectedOrder.deliveryDetails?.pickupOtp || '4921'}</strong>
+                    </span>
+                    <span className="bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded">
+                      Delivery: <strong>{selectedOrder.deliveryDetails?.deliveryOtp || '8842'}</strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assign Partner Form */}
+              <div className="pt-2 border-t border-white/5 flex flex-wrap items-center gap-2">
+                <select
+                  value={selectedPartnerId}
+                  onChange={(e) => setSelectedPartnerId(e.target.value)}
+                  className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-white/10 text-xs font-medium text-white focus:border-emerald-500 focus:outline-none"
+                >
+                  <option value="">-- Choose Delivery Partner from Fleet --</option>
+                  {deliveryPartners.map((partner) => (
+                    <option key={partner._id} value={partner._id}>
+                      {partner.name} ({partner.deliveryProfile?.city || 'Jaipur'}) - {partner.deliveryProfile?.vehicleType || 'Bike'}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleAssignDeliveryPartner}
+                  disabled={assigningPartner || !selectedPartnerId}
+                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all disabled:opacity-50"
+                >
+                  {assigningPartner ? 'Assigning...' : 'Assign Rider'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleAutoAssignDeliveryPartner}
+                  disabled={assigningPartner}
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider transition-all disabled:opacity-50 flex items-center space-x-1.5 shadow-md shadow-purple-600/30"
+                  title="Auto-Assign best rider based on active duty status, rating, and workload"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Auto-Assign</span>
+                </button>
               </div>
             </div>
 
@@ -538,6 +773,24 @@ const AdminOrders = () => {
             {/* Financial Summary */}
             <div className="p-4 bg-slate-900/60 rounded-2xl border border-white/10 space-y-1.5 text-xs font-medium">
               <div className="flex justify-between text-slate-400">
+                <span>Payment Mode</span>
+                <span className="font-bold text-white font-mono">{selectedOrder.paymentMethod || 'Online'}</span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>Payment Status</span>
+                <span className={`font-bold font-mono uppercase ${
+                  selectedOrder.paymentStatus === 'paid' ? 'text-emerald-400' : 'text-amber-400'
+                }`}>
+                  {selectedOrder.paymentStatus}
+                </span>
+              </div>
+              {selectedOrder.paymentDetails?.utrNumber && (
+                <div className="flex justify-between text-cyan-300 font-mono bg-cyan-950/40 p-2 rounded-xl border border-cyan-500/30 my-1">
+                  <span>Bank UTR / UPI Ref:</span>
+                  <span className="font-bold">{selectedOrder.paymentDetails.utrNumber}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-slate-400 pt-1 border-t border-white/5">
                 <span>Subtotal</span>
                 <span className="font-bold text-white font-mono">
                   ₹{selectedOrder.subtotal?.toFixed(2)}
@@ -556,7 +809,13 @@ const AdminOrders = () => {
                 </span>
               </div>
               <div className="flex justify-between text-base font-black text-white pt-2 border-t border-white/10">
-                <span>Total Charged</span>
+                <span>
+                  {selectedOrder.paymentStatus === 'paid'
+                    ? 'Total Collected'
+                    : (selectedOrder.paymentMethod?.toLowerCase().includes('cash') || selectedOrder.paymentMethod?.toLowerCase().includes('cod'))
+                    ? 'To Collect on Delivery'
+                    : 'Awaiting Bank Credit'}
+                </span>
                 <span className="text-emerald-400 font-mono">₹{selectedOrder.total?.toFixed(2)}</span>
               </div>
             </div>
@@ -583,6 +842,16 @@ const AdminOrders = () => {
                     <span>Process Refund</span>
                   </button>
                 )}
+
+                {selectedOrder.paymentStatus !== 'paid' && selectedOrder.paymentStatus !== 'refunded' && (
+                  <button
+                    onClick={handleVerifyPayment}
+                    className="px-4 py-2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 text-xs font-bold flex items-center space-x-1.5 shadow-sm active:scale-95 transition-all"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Approve & Mark Paid</span>
+                  </button>
+                )}
               </div>
 
               <button
@@ -590,6 +859,144 @@ const AdminOrders = () => {
                 className="px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs"
               >
                 Close Window
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* COD Cash Settlement & Reconciliation Modal */}
+      {showCodModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-4xl bg-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-6 text-white max-h-[90vh] overflow-y-auto custom-scrollbar">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                  <IndianRupee className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight text-white">
+                    Fleet Cash on Delivery (COD) Settlement
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Track cash in hand held by active delivery partners and record Hub cashier deposits.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCodModal(false)}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {loadingCod ? (
+              <div className="py-16 flex flex-col items-center justify-center space-y-3">
+                <Loader2 className="w-7 h-7 animate-spin text-amber-400" />
+                <p className="text-xs text-slate-400">Loading fleet cash balances...</p>
+              </div>
+            ) : (
+              <>
+                {/* 3 Metric Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-4 rounded-2xl bg-slate-950/70 border border-white/10 space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Total COD Collected</span>
+                    <p className="text-xl font-black font-mono text-white">
+                      ₹{codData?.summary?.totalCodCollected?.toFixed(2) || '0.00'}
+                    </p>
+                    <p className="text-[10px] text-slate-500">Across all fulfilled COD runs</p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-950/70 border border-emerald-500/20 space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-emerald-400">Settled & Deposited</span>
+                    <p className="text-xl font-black font-mono text-emerald-400">
+                      ₹{codData?.summary?.totalCodSettled?.toFixed(2) || '0.00'}
+                    </p>
+                    <p className="text-[10px] text-emerald-500/80">Received at Logistics Hub</p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-amber-400">Outstanding in Field</span>
+                    <p className="text-xl font-black font-mono text-amber-400">
+                      ₹{codData?.summary?.totalCodOutstanding?.toFixed(2) || '0.00'}
+                    </p>
+                    <p className="text-[10px] text-amber-500/80">Pending cashier deposit</p>
+                  </div>
+                </div>
+
+                {/* Partners Cash In Hand Table */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-300">
+                    Delivery Partners Cash In Hand ({codData?.partners?.length || 0})
+                  </h4>
+
+                  <div className="rounded-2xl border border-white/10 overflow-hidden">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-white/5 uppercase text-[10px] font-bold tracking-wider text-slate-400 border-b border-white/10">
+                        <tr>
+                          <th className="py-3 px-4">Rider</th>
+                          <th className="py-3 px-4">Vehicle & Zone</th>
+                          <th className="py-3 px-4">Pending Orders</th>
+                          <th className="py-3 px-4">Cash in Hand</th>
+                          <th className="py-3 px-4 text-right">Settlement Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 font-medium text-slate-300">
+                        {!codData?.partners || codData.partners.length === 0 ? (
+                          <tr>
+                            <td colSpan="5" className="py-8 text-center text-slate-400 text-xs">
+                              No active delivery partners registered in fleet.
+                            </td>
+                          </tr>
+                        ) : (
+                          codData.partners.map((p) => {
+                            const hasCash = (p.codInHand || 0) > 0 || (p.pendingReconciliationCount || 0) > 0;
+                            return (
+                              <tr key={p._id} className="hover:bg-white/[0.02] transition-colors">
+                                <td className="py-3.5 px-4 font-bold text-white">
+                                  <p>{p.name}</p>
+                                  <p className="text-[10px] font-mono text-slate-400">Ph: +91 {p.phone || 'N/A'}</p>
+                                </td>
+                                <td className="py-3.5 px-4 text-slate-300">
+                                  <p>{p.vehicleType || 'Bike'}</p>
+                                  <p className="text-[10px] text-slate-400">{p.city || 'Jaipur'}</p>
+                                </td>
+                                <td className="py-3.5 px-4">
+                                  <span className="px-2 py-0.5 rounded-full bg-white/10 text-slate-200 font-mono text-[11px]">
+                                    {p.pendingReconciliationCount || 0} orders
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 font-black font-mono text-sm text-amber-400">
+                                  ₹{(p.codInHand || 0).toFixed(2)}
+                                </td>
+                                <td className="py-3.5 px-4 text-right">
+                                  <button
+                                    onClick={() => handleSettleCod(p._id)}
+                                    disabled={!hasCash || settlingPartnerId === p._id}
+                                    className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[11px] uppercase tracking-wider transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-md shadow-emerald-500/20 active:scale-95"
+                                  >
+                                    {settlingPartnerId === p._id ? 'Settling...' : 'Settle Cash'}
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setShowCodModal(false)}
+                className="px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs"
+              >
+                Close
               </button>
             </div>
           </div>

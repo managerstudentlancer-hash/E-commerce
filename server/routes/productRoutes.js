@@ -7,7 +7,9 @@ const {
   updateProduct,
   deleteProduct,
   getMySellerProducts,
+  uploadProductMedia,
   uploadProductImage,
+  deleteProductMedia,
   deleteProductImage,
 } = require('../controllers/productController');
 const { protect } = require('../middleware/auth');
@@ -22,10 +24,13 @@ router.route('/')
   .get(getProducts)
   .post(protect, createProduct);
 
-// Authenticated image uploads for products (single & multiple)
-router.post('/upload-image', protect, upload.single('image'), uploadProductImage);
-router.post('/upload-images', protect, upload.array('images', 10), uploadProductImage);
+// Authenticated image & video uploads for products (single & multiple)
+router.post('/upload-image', protect, upload.single('image'), uploadProductMedia);
+router.post('/upload-images', protect, upload.array('images', 10), uploadProductMedia);
+router.post('/upload-video', protect, upload.single('video'), uploadProductMedia);
+router.post('/upload-media', protect, upload.single('media'), uploadProductMedia);
 router.delete('/delete-image', protect, deleteProductImage);
+router.delete('/delete-media', protect, deleteProductMedia);
 
 // Seller's own products list (must be before /:slug)
 router.get('/seller/my', protect, getMySellerProducts);

@@ -24,6 +24,8 @@ import {
   Radio,
   HelpCircle,
   Loader2,
+  Truck,
+  MapPin,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -33,6 +35,8 @@ const adminNavItems = [
   { name: 'Categories', path: '/admin/categories', icon: FolderTree, badge: null },
   { name: 'Collections', path: '/admin/collections', icon: Layers, badge: null },
   { name: 'Orders', path: '/admin/orders', icon: ShoppingCart, badge: 'Live' },
+  { name: 'Logistics & Hubs', path: '/admin/logistics', icon: MapPin, badge: 'Hubs' },
+  { name: 'Fleet Applications', path: '/admin/delivery-applications', icon: Truck, badge: 'Fleet' },
   { name: 'Customers', path: '/admin/customers', icon: Users, badge: null },
   { name: 'Users & Roles', path: '/admin/users', icon: Users, badge: null },
   { name: 'Inventory', path: '/admin/inventory', icon: Boxes, badge: 'Stock' },

@@ -16,9 +16,9 @@ import {
   Filter,
   Sparkles,
   Eye,
-  Layers,
   Star,
   Upload,
+  Play,
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -154,6 +154,44 @@ const AdminProducts = () => {
     }
   };
 
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!isAuthenticated || authLoading) {
+      setFormError('Authentication required: Administrator session is still verifying or expired.');
+      return;
+    }
+
+    const data = new FormData();
+    data.append('image', file);
+    data.append('video', file);
+    data.append('folder', 'products');
+    if (editingProduct?._id) data.append('productId', editingProduct._id);
+    setIsUploadingVideo(true);
+    setFormError('');
+    try {
+      const res = await api.admin.uploadVideo(data);
+      if (res.success && res.url) {
+        setFormData((prev) => ({
+          ...prev,
+          videoUrl: res.url,
+        }));
+        showToast('Product video uploaded to Supabase Storage (product-media)!');
+      }
+    } catch (err) {
+      if (err.status === 401 || err.message?.toLowerCase().includes('authorized') || err.message?.toLowerCase().includes('token')) {
+        setFormError('Session expired. Please re-login to upload video. Your form data is saved.');
+      } else {
+        setFormError(err.message || 'Video upload failed');
+      }
+    } finally {
+      setIsUploadingVideo(false);
+    }
+  };
+
   const fetchCategories = async () => {
     try {
       const res = await api.categories.getAll();
@@ -217,6 +255,7 @@ const AdminProducts = () => {
         shortDescription: prod.shortDescription || '',
         thumbnail: prod.thumbnail || prod.images?.[0] || '',
         imagesText: (prod.images || []).join('\n'),
+        videoUrl: prod.videos?.[0] || prod.media?.find((m) => m.type === 'video')?.url || '',
         sizesText: sizes,
         colorsText: colors,
         bestseller: !!prod.bestseller,
@@ -238,6 +277,7 @@ const AdminProducts = () => {
         shortDescription: '',
         thumbnail: '',
         imagesText: '',
+        videoUrl: '',
         sizesText: 'S, M, L, XL',
         colorsText: 'Black, White',
         bestseller: false,
@@ -298,6 +338,25 @@ const AdminProducts = () => {
         }
       }
 
+      const mediaItems = [
+        ...images.map((img, idx) => ({
+          type: 'image',
+          url: img,
+          displayOrder: idx,
+          isPrimary: idx === 0,
+        })),
+        ...(formData.videoUrl
+          ? [
+              {
+                type: 'video',
+                url: formData.videoUrl,
+                displayOrder: images.length,
+                isPrimary: false,
+              },
+            ]
+          : []),
+      ];
+
       const payload = {
         name: formData.name,
         price: Number(formData.price),
@@ -310,6 +369,8 @@ const AdminProducts = () => {
         shortDescription: formData.shortDescription,
         thumbnail: formData.thumbnail || images[0] || '',
         images: images.length > 0 ? images : [formData.thumbnail].filter(Boolean),
+        videos: formData.videoUrl ? [formData.videoUrl] : [],
+        media: mediaItems,
         options,
         bestseller: formData.bestseller,
         newArrival: formData.newArrival,
@@ -886,6 +947,65 @@ const AdminProducts = () => {
                     placeholder="https://images.unsplash.com/...&#10;https://...supabase.co/..."
                     className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
                   />
+                </div>
+
+                {/* Product Video (Supabase Storage product-media) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block font-bold uppercase text-slate-300">
+                      Product Video (Optional MP4, WEBM, MOV)
+                    </label>
+                    <label className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 cursor-pointer flex items-center space-x-1 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                      {isUploadingVideo ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Uploading to Supabase...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-3.5 h-3.5 fill-emerald-400" />
+                          <span>Upload Video File</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                        disabled={isUploadingVideo}
+                        onChange={handleVideoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <input
+                    type="url"
+                    value={formData.videoUrl}
+                    onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                    placeholder="https://...supabase.co/.../videos/...mp4 (or upload file above)"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
+                  />
+                  {formData.videoUrl && (
+                    <div className="mt-2.5 bg-white/5 p-3 rounded-xl border border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Play className="w-4 h-4 fill-emerald-400 text-emerald-400" />
+                          <span className="text-[11px] text-white font-bold">Supabase Product Video Ready</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, videoUrl: '' }))}
+                          className="text-[10px] text-rose-400 hover:text-rose-300 font-bold px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20"
+                        >
+                          Remove Video
+                        </button>
+                      </div>
+                      <video
+                        src={formData.videoUrl}
+                        controls
+                        preload="metadata"
+                        className="w-full max-h-48 rounded-lg bg-black object-contain border border-white/10"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

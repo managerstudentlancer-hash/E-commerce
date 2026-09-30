@@ -20,6 +20,7 @@ import {
   Clock,
   CheckCircle2,
   TrendingUp,
+  Play,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -141,6 +142,27 @@ const SellerDashboard = () => {
     }
   };
 
+  const [markingPickupId, setMarkingPickupId] = useState(null);
+
+  const handleMarkReadyForPickup = async (order) => {
+    try {
+      setMarkingPickupId(order._id);
+      const targetId = order.shipment?._id || order.shipment || order._id;
+      const res = await api.logistics.sellerReady(targetId, {
+        weight: '1.2 kg',
+        dimensions: '28 x 20 x 12 cm',
+        boxType: 'Standard Express Carton',
+      });
+      if (res.success) {
+        await fetchSellerOrders();
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to mark ready for pickup');
+    } finally {
+      setMarkingPickupId(null);
+    }
+  };
+
   const handleOpenModal = (prod = null) => {
     setFormError('');
     setNewGalleryUrl('');
@@ -161,6 +183,7 @@ const SellerDashboard = () => {
         thumbnail: prod.thumbnail || gallery[0] || '',
         hoverImage: prod.hoverImage || gallery[1] || '',
         images: gallery,
+        videoUrl: prod.videos?.[0] || prod.media?.find((m) => m.type === 'video')?.url || '',
         status: prod.status || 'active',
       });
     } else {
@@ -179,6 +202,7 @@ const SellerDashboard = () => {
         thumbnail: '',
         hoverImage: '',
         images: [],
+        videoUrl: '',
         status: 'active',
       });
     }
@@ -195,13 +219,13 @@ const SellerDashboard = () => {
     }));
   };
 
-  // Image Upload handler
+  // Image & Video Upload handler (Supabase Storage product-media)
   const handleFileUpload = async (e, field) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!isAuthenticated || authLoading) {
-      alert('Authentication required: Seller session is still verifying or expired. Please sign in to upload images.');
+      alert('Authentication required: Seller session is still verifying or expired. Please sign in to upload media.');
       return;
     }
 
@@ -209,7 +233,14 @@ const SellerDashboard = () => {
     try {
       const fd = new FormData();
       fd.append('image', file);
-      const res = await api.products.uploadImage(fd);
+      fd.append('video', file);
+      fd.append('folder', 'products');
+      if (editingProduct?._id) fd.append('productId', editingProduct._id);
+
+      const res = field === 'video'
+        ? await api.products.uploadVideo(fd)
+        : await api.products.uploadImage(fd);
+
       if (res.success && res.url) {
         if (field === 'thumbnail') {
           setFormData((prev) => ({
@@ -221,13 +252,15 @@ const SellerDashboard = () => {
           setFormData((prev) => ({ ...prev, hoverImage: res.url }));
         } else if (field === 'gallery') {
           setFormData((prev) => ({ ...prev, images: [...prev.images, res.url] }));
+        } else if (field === 'video') {
+          setFormData((prev) => ({ ...prev, videoUrl: res.url }));
         }
       }
     } catch (err) {
       if (err.status === 401 || err.message?.toLowerCase().includes('authorized') || err.message?.toLowerCase().includes('token')) {
-        setFormError('Session expired. Please sign in again to upload photos. Your product details are preserved.');
+        setFormError('Session expired. Please sign in again to upload media. Your product details are preserved.');
       } else {
-        alert(err.message || 'Image upload failed. You can also paste an image URL directly.');
+        alert(err.message || 'Media upload failed. You can also paste an URL directly.');
       }
     } finally {
       setUploadingField(null);
@@ -277,6 +310,25 @@ const SellerDashboard = () => {
         )
       );
 
+      const mediaItems = [
+        ...imagesArray.map((img, idx) => ({
+          type: 'image',
+          url: img,
+          displayOrder: idx,
+          isPrimary: idx === 0,
+        })),
+        ...(formData.videoUrl
+          ? [
+              {
+                type: 'video',
+                url: formData.videoUrl,
+                displayOrder: imagesArray.length,
+                isPrimary: false,
+              },
+            ]
+          : []),
+      ];
+
       const payload = {
         ...formData,
         price: Number(formData.price),
@@ -285,6 +337,8 @@ const SellerDashboard = () => {
         thumbnail: formData.thumbnail || imagesArray[0] || '',
         hoverImage: formData.hoverImage || imagesArray[1] || '',
         images: imagesArray,
+        videos: formData.videoUrl ? [formData.videoUrl] : [],
+        media: mediaItems,
       };
 
       if (editingProduct) {
@@ -660,74 +714,120 @@ const SellerDashboard = () => {
                         <th className="py-4 px-4">Platform Fee (10%)</th>
                         <th className="py-4 px-4">Your Earning (90%)</th>
                         <th className="py-4 px-4">Order Status</th>
+                        <th className="py-4 px-4 text-center">Logistics / Pickup</th>
                         <th className="py-4 px-6 text-right">Payout Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-100">
-                      {sellerOrders.map((ord) => (
-                        <tr key={ord._id} className="hover:bg-neutral-50/60 transition-colors">
-                          <td className="py-4 px-6">
-                            <p className="font-mono font-bold text-neutral-900">{ord.orderNumber}</p>
-                            <span className="text-[10px] text-neutral-400">
-                              {new Date(ord.createdAt).toLocaleDateString('en-IN', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                              })}
-                            </span>
-                            {ord.shippingAddress?.city && (
-                              <span className="block text-[10px] text-neutral-500">
-                                📍 {ord.shippingAddress.city}, {ord.shippingAddress.state}
+                      {sellerOrders.map((ord) => {
+                        const canMarkPickup = ['confirmed', 'processing'].includes(ord.orderStatus);
+                        const isReadyForPickup = ord.orderStatus === 'ready_for_pickup';
+                        const isPickedUp = ['picked_up', 'warehouse_received', 'scanned', 'sorted', 'dispatched_from_warehouse', 'shipped', 'hub_received', 'ready_for_delivery', 'delivery_partner_assigned', 'out_for_delivery', 'delivered'].includes(ord.orderStatus);
+
+                        return (
+                          <tr key={ord._id} className="hover:bg-neutral-50/60 transition-colors">
+                            <td className="py-4 px-6">
+                              <p className="font-mono font-bold text-neutral-900">{ord.orderNumber}</p>
+                              <span className="text-[10px] text-neutral-400">
+                                {new Date(ord.createdAt).toLocaleDateString('en-IN', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
                               </span>
-                            )}
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="space-y-1">
-                              {ord.items?.map((it, idx) => (
-                                <div key={idx} className="flex items-center space-x-2">
-                                  <span className="font-semibold text-neutral-900 truncate max-w-[180px]">
-                                    {it.name}
+                              {ord.shippingAddress?.city && (
+                                <span className="block text-[10px] text-neutral-500">
+                                  📍 {ord.shippingAddress.city}, {ord.shippingAddress.state}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="space-y-1">
+                                {ord.items?.map((it, idx) => (
+                                  <div key={idx} className="flex items-center space-x-2">
+                                    <span className="font-semibold text-neutral-900 truncate max-w-[180px]">
+                                      {it.name}
+                                    </span>
+                                    <span className="text-[10px] text-neutral-400">
+                                      x{it.quantity} (₹{it.price})
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="py-4 px-4 font-bold text-neutral-900">
+                              ₹{(ord.sellerSubtotal || 0).toLocaleString('en-IN')}
+                            </td>
+                            <td className="py-4 px-4 text-neutral-500 font-medium">
+                              -₹{(ord.platformFee || 0).toLocaleString('en-IN')}
+                            </td>
+                            <td className="py-4 px-4 font-black text-[#0D8756]">
+                              ₹{(ord.netEarning || 0).toLocaleString('en-IN')}
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                ord.orderStatus === 'delivered'
+                                  ? 'bg-emerald-50 text-[#0D8756]'
+                                  : ord.orderStatus === 'cancelled'
+                                  ? 'bg-red-50 text-[#C4301C]'
+                                  : 'bg-blue-50 text-blue-700'
+                              }`}>
+                                {ord.orderStatus?.replace(/_/g, ' ')}
+                              </span>
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              {canMarkPickup ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkReadyForPickup(ord)}
+                                  disabled={markingPickupId === ord._id}
+                                  className="px-3 py-1.5 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[11px] uppercase tracking-wider flex items-center justify-center space-x-1 mx-auto transition-all shadow-xs active:scale-95 disabled:opacity-50"
+                                >
+                                  {markingPickupId === ord._id ? (
+                                    <>
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      <span>Dispatching...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Package className="w-3 h-3" />
+                                      <span>Ready For Pickup</span>
+                                    </>
+                                  )}
+                                </button>
+                              ) : isReadyForPickup ? (
+                                <div className="inline-flex flex-col items-center">
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 text-amber-900">
+                                    Pickup Scheduled
                                   </span>
-                                  <span className="text-[10px] text-neutral-400">
-                                    x{it.quantity} (₹{it.price})
-                                  </span>
+                                  {ord.deliveryDetails?.pickupOtp && (
+                                    <span className="text-[9px] font-mono text-neutral-500 mt-0.5">
+                                      OTP: {ord.deliveryDetails.pickupOtp}
+                                    </span>
+                                  )}
                                 </div>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 font-bold text-neutral-900">
-                            ₹{(ord.sellerSubtotal || 0).toLocaleString('en-IN')}
-                          </td>
-                          <td className="py-4 px-4 text-neutral-500 font-medium">
-                            -₹{(ord.platformFee || 0).toLocaleString('en-IN')}
-                          </td>
-                          <td className="py-4 px-4 font-black text-[#0D8756]">
-                            ₹{(ord.netEarning || 0).toLocaleString('en-IN')}
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              ord.orderStatus === 'delivered'
-                                ? 'bg-emerald-50 text-[#0D8756]'
-                                : ord.orderStatus === 'cancelled'
-                                ? 'bg-red-50 text-[#C4301C]'
-                                : 'bg-blue-50 text-blue-700'
-                            }`}>
-                              {ord.orderStatus}
-                            </span>
-                          </td>
-                          <td className="py-4 px-6 text-right">
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              ord.payoutStatus === 'eligible'
-                                ? 'bg-emerald-50 text-[#0D8756]'
-                                : ord.payoutStatus === 'cancelled'
-                                ? 'bg-neutral-100 text-neutral-500'
-                                : 'bg-amber-50 text-amber-700'
-                            }`}>
-                              {ord.payoutStatus || 'pending'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                              ) : isPickedUp ? (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">
+                                  Handed to Logistics
+                                </span>
+                              ) : (
+                                <span className="text-neutral-400 text-[10px]">—</span>
+                              )}
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                ord.payoutStatus === 'eligible'
+                                  ? 'bg-emerald-50 text-[#0D8756]'
+                                  : ord.payoutStatus === 'cancelled'
+                                  ? 'bg-neutral-100 text-neutral-500'
+                                  : 'bg-amber-50 text-amber-700'
+                              }`}>
+                                {ord.payoutStatus || 'pending'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1063,6 +1163,63 @@ const SellerDashboard = () => {
                           </button>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Product Video (Supabase Storage product-media) */}
+                <div className="space-y-2 pt-2 border-t border-neutral-200">
+                  <div className="flex items-center justify-between">
+                    <label className="block font-bold uppercase text-neutral-700 text-[11px]">
+                      Product Video (Optional MP4 / WEBM up to 60MB)
+                    </label>
+                    <label className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 cursor-pointer flex items-center space-x-1 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                      {uploadingField === 'video' ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Play className="w-3 h-3 fill-emerald-600 text-emerald-600" />
+                      )}
+                      <span>Upload Video</span>
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e, 'video')}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={formData.videoUrl}
+                      onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                      placeholder="Paste video URL or upload from device above..."
+                      className="input-pill flex-1 text-xs"
+                    />
+                    {formData.videoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, videoUrl: '' }))}
+                        className="text-[11px] text-rose-600 hover:text-rose-700 font-bold px-3 py-1 rounded-full bg-rose-50 border border-rose-200"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {formData.videoUrl && (
+                    <div className="mt-2 p-2.5 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-1.5">
+                      <div className="flex items-center space-x-1.5 text-white text-[10px] font-bold">
+                        <Play className="w-3 h-3 fill-emerald-400 text-emerald-400" />
+                        <span>Supabase Video Attached</span>
+                      </div>
+                      <video
+                        src={formData.videoUrl}
+                        controls
+                        preload="metadata"
+                        className="w-full max-h-40 rounded-xl bg-black object-contain"
+                      />
                     </div>
                   )}
                 </div>

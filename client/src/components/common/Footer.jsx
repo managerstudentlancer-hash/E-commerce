@@ -170,6 +170,9 @@ const Footer = () => {
                 <Link to="/become-a-seller" className="text-amber-400 font-semibold hover:underline">Sell on VEXIVO</Link>
               </li>
               <li>
+                <Link to="/delivery/login" className="text-emerald-400 font-semibold hover:underline">Delivery Fleet Partner</Link>
+              </li>
+              <li>
                 <Link to="/about" className="hover:text-white transition-colors">About {settings?.siteName || 'VEXIVO'}</Link>
               </li>
             </ul>
@@ -207,6 +210,7 @@ const Footer = () => {
             <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
             <Link to="/become-a-seller" className="hover:text-amber-400 text-neutral-400 transition-colors">Seller Registration</Link>
+            <Link to="/delivery/login" className="hover:text-emerald-400 text-neutral-400 transition-colors">Fleet Rider</Link>
             <Link to="/admin/login" className="hover:text-neutral-300 text-neutral-600 transition-colors">Admin Portal</Link>
           </div>
 
