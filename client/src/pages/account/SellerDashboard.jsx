@@ -141,6 +141,27 @@ const SellerDashboard = () => {
     }
   };
 
+  const [markingPickupId, setMarkingPickupId] = useState(null);
+
+  const handleMarkReadyForPickup = async (order) => {
+    try {
+      setMarkingPickupId(order._id);
+      const targetId = order.shipment?._id || order.shipment || order._id;
+      const res = await api.logistics.sellerReady(targetId, {
+        weight: '1.2 kg',
+        dimensions: '28 x 20 x 12 cm',
+        boxType: 'Standard Express Carton',
+      });
+      if (res.success) {
+        await fetchSellerOrders();
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to mark ready for pickup');
+    } finally {
+      setMarkingPickupId(null);
+    }
+  };
+
   const handleOpenModal = (prod = null) => {
     setFormError('');
     setNewGalleryUrl('');
@@ -660,74 +681,120 @@ const SellerDashboard = () => {
                         <th className="py-4 px-4">Platform Fee (10%)</th>
                         <th className="py-4 px-4">Your Earning (90%)</th>
                         <th className="py-4 px-4">Order Status</th>
+                        <th className="py-4 px-4 text-center">Logistics / Pickup</th>
                         <th className="py-4 px-6 text-right">Payout Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-100">
-                      {sellerOrders.map((ord) => (
-                        <tr key={ord._id} className="hover:bg-neutral-50/60 transition-colors">
-                          <td className="py-4 px-6">
-                            <p className="font-mono font-bold text-neutral-900">{ord.orderNumber}</p>
-                            <span className="text-[10px] text-neutral-400">
-                              {new Date(ord.createdAt).toLocaleDateString('en-IN', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                              })}
-                            </span>
-                            {ord.shippingAddress?.city && (
-                              <span className="block text-[10px] text-neutral-500">
-                                📍 {ord.shippingAddress.city}, {ord.shippingAddress.state}
+                      {sellerOrders.map((ord) => {
+                        const canMarkPickup = ['confirmed', 'processing'].includes(ord.orderStatus);
+                        const isReadyForPickup = ord.orderStatus === 'ready_for_pickup';
+                        const isPickedUp = ['picked_up', 'warehouse_received', 'scanned', 'sorted', 'dispatched_from_warehouse', 'shipped', 'hub_received', 'ready_for_delivery', 'delivery_partner_assigned', 'out_for_delivery', 'delivered'].includes(ord.orderStatus);
+
+                        return (
+                          <tr key={ord._id} className="hover:bg-neutral-50/60 transition-colors">
+                            <td className="py-4 px-6">
+                              <p className="font-mono font-bold text-neutral-900">{ord.orderNumber}</p>
+                              <span className="text-[10px] text-neutral-400">
+                                {new Date(ord.createdAt).toLocaleDateString('en-IN', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
                               </span>
-                            )}
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="space-y-1">
-                              {ord.items?.map((it, idx) => (
-                                <div key={idx} className="flex items-center space-x-2">
-                                  <span className="font-semibold text-neutral-900 truncate max-w-[180px]">
-                                    {it.name}
+                              {ord.shippingAddress?.city && (
+                                <span className="block text-[10px] text-neutral-500">
+                                  📍 {ord.shippingAddress.city}, {ord.shippingAddress.state}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="space-y-1">
+                                {ord.items?.map((it, idx) => (
+                                  <div key={idx} className="flex items-center space-x-2">
+                                    <span className="font-semibold text-neutral-900 truncate max-w-[180px]">
+                                      {it.name}
+                                    </span>
+                                    <span className="text-[10px] text-neutral-400">
+                                      x{it.quantity} (₹{it.price})
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="py-4 px-4 font-bold text-neutral-900">
+                              ₹{(ord.sellerSubtotal || 0).toLocaleString('en-IN')}
+                            </td>
+                            <td className="py-4 px-4 text-neutral-500 font-medium">
+                              -₹{(ord.platformFee || 0).toLocaleString('en-IN')}
+                            </td>
+                            <td className="py-4 px-4 font-black text-[#0D8756]">
+                              ₹{(ord.netEarning || 0).toLocaleString('en-IN')}
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                ord.orderStatus === 'delivered'
+                                  ? 'bg-emerald-50 text-[#0D8756]'
+                                  : ord.orderStatus === 'cancelled'
+                                  ? 'bg-red-50 text-[#C4301C]'
+                                  : 'bg-blue-50 text-blue-700'
+                              }`}>
+                                {ord.orderStatus?.replace(/_/g, ' ')}
+                              </span>
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              {canMarkPickup ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkReadyForPickup(ord)}
+                                  disabled={markingPickupId === ord._id}
+                                  className="px-3 py-1.5 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-[11px] uppercase tracking-wider flex items-center justify-center space-x-1 mx-auto transition-all shadow-xs active:scale-95 disabled:opacity-50"
+                                >
+                                  {markingPickupId === ord._id ? (
+                                    <>
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      <span>Dispatching...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Package className="w-3 h-3" />
+                                      <span>Ready For Pickup</span>
+                                    </>
+                                  )}
+                                </button>
+                              ) : isReadyForPickup ? (
+                                <div className="inline-flex flex-col items-center">
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 text-amber-900">
+                                    Pickup Scheduled
                                   </span>
-                                  <span className="text-[10px] text-neutral-400">
-                                    x{it.quantity} (₹{it.price})
-                                  </span>
+                                  {ord.deliveryDetails?.pickupOtp && (
+                                    <span className="text-[9px] font-mono text-neutral-500 mt-0.5">
+                                      OTP: {ord.deliveryDetails.pickupOtp}
+                                    </span>
+                                  )}
                                 </div>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 font-bold text-neutral-900">
-                            ₹{(ord.sellerSubtotal || 0).toLocaleString('en-IN')}
-                          </td>
-                          <td className="py-4 px-4 text-neutral-500 font-medium">
-                            -₹{(ord.platformFee || 0).toLocaleString('en-IN')}
-                          </td>
-                          <td className="py-4 px-4 font-black text-[#0D8756]">
-                            ₹{(ord.netEarning || 0).toLocaleString('en-IN')}
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              ord.orderStatus === 'delivered'
-                                ? 'bg-emerald-50 text-[#0D8756]'
-                                : ord.orderStatus === 'cancelled'
-                                ? 'bg-red-50 text-[#C4301C]'
-                                : 'bg-blue-50 text-blue-700'
-                            }`}>
-                              {ord.orderStatus}
-                            </span>
-                          </td>
-                          <td className="py-4 px-6 text-right">
-                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              ord.payoutStatus === 'eligible'
-                                ? 'bg-emerald-50 text-[#0D8756]'
-                                : ord.payoutStatus === 'cancelled'
-                                ? 'bg-neutral-100 text-neutral-500'
-                                : 'bg-amber-50 text-amber-700'
-                            }`}>
-                              {ord.payoutStatus || 'pending'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                              ) : isPickedUp ? (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">
+                                  Handed to Logistics
+                                </span>
+                              ) : (
+                                <span className="text-neutral-400 text-[10px]">—</span>
+                              )}
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                ord.payoutStatus === 'eligible'
+                                  ? 'bg-emerald-50 text-[#0D8756]'
+                                  : ord.payoutStatus === 'cancelled'
+                                  ? 'bg-neutral-100 text-neutral-500'
+                                  : 'bg-amber-50 text-amber-700'
+                              }`}>
+                                {ord.payoutStatus || 'pending'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

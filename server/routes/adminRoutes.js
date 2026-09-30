@@ -10,6 +10,15 @@ const {
   updateCustomerStatus,
   getInventoryList,
   updateProductStock,
+  getDeliveryPartners,
+  assignDeliveryPartner,
+  autoAssignDeliveryPartner,
+  getCodReconciliation,
+  settleCod,
+  getReturns,
+  processReturnRefund,
+  getDeliveryApplications,
+  updateDeliveryApplicationStatus,
 } = require('../controllers/adminController');
 const { protect, adminOnly } = require('../middleware/auth');
 const upload = require('../middleware/upload');
@@ -103,5 +112,18 @@ router.patch('/customers/:id/status', updateCustomerStatus);
 // Inventory
 router.get('/inventory', getInventoryList);
 router.patch('/inventory/:id/stock', updateProductStock);
+
+// Logistics & Delivery Partner Operations
+router.get('/delivery-partners', getDeliveryPartners);
+router.get('/delivery/applications', getDeliveryApplications);
+router.put('/delivery/applications/:id/status', updateDeliveryApplicationStatus);
+router.put('/orders/:id/assign-delivery', assignDeliveryPartner);
+router.post('/orders/:id/auto-assign', autoAssignDeliveryPartner);
+router.get('/delivery/cod-reconciliation', getCodReconciliation);
+router.post('/delivery/cod-settle', settleCod);
+
+// Returns & Dispute Management
+router.get('/returns', getReturns);
+router.put('/returns/:id/refund', processReturnRefund);
 
 module.exports = router;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Check, Eye } from 'lucide-react';
+import { Heart, ShoppingBag, Check, Eye, Star } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import QuickViewModal from './QuickViewModal';
@@ -153,14 +153,14 @@ const ProductCard = ({ product, index = 0, dealBadge = 'Big Billion Days Price',
           )}
         </Link>
 
-        {/* Wishlist Heart Icon (Flipkart style solid grey heart in top right) */}
+        {/* Wishlist Heart Icon (Flipkart style solid grey heart in top right with touch-friendly hit area) */}
         <button
           onClick={handleWishlistToggle}
           aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-          className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-20 p-1.5 transition-transform duration-200 hover:scale-115 active:scale-90"
+          className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-20 w-8 h-8 sm:w-8 sm:h-8 rounded-full bg-white/80 sm:bg-transparent backdrop-blur-xs sm:backdrop-blur-none flex items-center justify-center transition-transform duration-200 hover:scale-110 active:scale-90 shadow-xs sm:shadow-none"
         >
           <Heart
-            className={`w-5 h-5 transition-colors drop-shadow-xs ${
+            className={`w-4.5 h-4.5 sm:w-5 sm:h-5 transition-colors drop-shadow-xs ${
               inWishlist
                 ? 'fill-red-500 text-red-500'
                 : 'fill-[#c2c2c2] text-[#c2c2c2] hover:fill-[#9e9e9e]'
@@ -168,7 +168,7 @@ const ProductCard = ({ product, index = 0, dealBadge = 'Big Billion Days Price',
           />
         </button>
 
-        {/* Quick View Button (hover action) */}
+        {/* Quick View Button (hover action, desktop only) */}
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -176,12 +176,12 @@ const ProductCard = ({ product, index = 0, dealBadge = 'Big Billion Days Price',
             setShowQuickView(true);
           }}
           aria-label="Quick View"
-          className="absolute top-2.5 left-2.5 z-20 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs shadow-xs flex items-center justify-center text-neutral-600 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          className="absolute top-2.5 left-2.5 z-20 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs shadow-xs hidden sm:flex items-center justify-center text-neutral-600 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity duration-200"
         >
           <Eye className="w-3.5 h-3.5" />
         </button>
 
-        {/* Quick Add Bar (slides up on hover) */}
+        {/* Quick Add Bar (slides up on hover, desktop only) */}
         <div className="absolute inset-x-2 bottom-2 z-20 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hidden md:block">
           <button
             onClick={handleQuickAdd}
@@ -207,58 +207,104 @@ const ProductCard = ({ product, index = 0, dealBadge = 'Big Billion Days Price',
       </div>
 
       {/* Flipkart Style Product Details Section */}
-      <div className="p-2.5 sm:p-3 flex flex-col flex-1 bg-white">
-        {/* Sponsored Label */}
-        {isSponsored && (
-          <span className="text-[11px] text-neutral-400 font-medium leading-none mb-1">
-            Sponsored
-          </span>
-        )}
-
-        {/* Brand Name */}
-        <div className="text-[12px] font-bold text-neutral-600 uppercase tracking-wide truncate mb-0.5">
-          {brandName}
-        </div>
-
-        {/* Product Title */}
-        <Link to={`/product/${product.slug}`} className="block">
-          <h3 className="text-[13px] text-neutral-900 font-normal leading-snug line-clamp-1 hover:text-blue-600 transition-colors">
-            {product.name}
-          </h3>
-        </Link>
-
-        {/* Price & Discount Row */}
-        <div className="flex items-baseline space-x-2 mt-1.5 flex-wrap">
-          <span className="text-base font-bold text-neutral-950">
-            ₹{displayPrice.toLocaleString('en-IN')}
-          </span>
-          {displayMrp > displayPrice && (
-            <span className="text-xs text-neutral-400 line-through font-normal">
-              ₹{displayMrp.toLocaleString('en-IN')}
+      <div className="p-2.5 sm:p-3 flex flex-col flex-1 bg-white justify-between">
+        <div>
+          {/* Sponsored Label */}
+          {isSponsored && (
+            <span className="text-[10px] sm:text-[11px] text-neutral-400 font-medium leading-none mb-1 block">
+              Sponsored
             </span>
           )}
-          {discountPercent > 0 && (
-            <span className="text-xs font-bold text-[#388e3c]">
-              {discountPercent}% off
+
+          {/* Brand Name */}
+          <div className="text-[11px] sm:text-[12px] font-bold text-neutral-500 sm:text-neutral-600 uppercase tracking-wide truncate mb-0.5">
+            {brandName}
+          </div>
+
+          {/* Product Title (2-line clamp on mobile for readability, line-clamp-1 on desktop) */}
+          <Link to={`/product/${product.slug}`} className="block">
+            <h3 className="text-xs sm:text-[13px] text-neutral-900 font-medium sm:font-normal leading-snug line-clamp-2 hover:text-blue-600 transition-colors">
+              {product.name}
+            </h3>
+          </Link>
+
+          {/* Rating Badge (if rating exists) */}
+          {product.rating > 0 && (
+            <div className="flex items-center space-x-1 mt-1">
+              <span className="inline-flex items-center space-x-0.5 bg-[#388e3c] text-white text-[10px] sm:text-[11px] font-bold px-1.5 py-0.2 rounded leading-tight">
+                <span>{Number(product.rating).toFixed(1)}</span>
+                <Star className="w-2.5 h-2.5 fill-current" />
+              </span>
+              {(product.numReviews > 0 || product.reviewsCount > 0) && (
+                <span className="text-[10px] text-neutral-400 font-medium">
+                  ({product.numReviews || product.reviewsCount})
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Price & Discount Row (flex-wrap with no clipping) */}
+          <div className="flex items-baseline gap-1 sm:gap-2 mt-1 sm:mt-1.5 flex-wrap">
+            <span className="text-sm sm:text-base font-extrabold text-neutral-950 whitespace-nowrap">
+              ₹{displayPrice.toLocaleString('en-IN')}
             </span>
+            {displayMrp > displayPrice && (
+              <span className="text-[11px] sm:text-xs text-neutral-400 line-through font-normal whitespace-nowrap">
+                ₹{displayMrp.toLocaleString('en-IN')}
+              </span>
+            )}
+            {discountPercent > 0 && (
+              <span className="text-[11px] sm:text-xs font-bold text-[#388e3c] whitespace-nowrap">
+                {discountPercent}% off
+              </span>
+            )}
+          </div>
+
+          {/* Deal Badge (Flipkart Lavender Badge) */}
+          {dealBadge && (
+            <div className="mt-1">
+              <span className="inline-block bg-[#F4E8FF] text-[#6B21A8] font-bold text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded-xs leading-tight truncate max-w-full">
+                {dealBadge}
+              </span>
+            </div>
+          )}
+
+          {/* Available Sizes Row */}
+          {showSizes && (
+            <div className="text-[11px] sm:text-[12px] font-medium text-neutral-500 mt-1 truncate">
+              Size {sizesText}
+            </div>
           )}
         </div>
 
-        {/* Deal Badge (Flipkart Lavender Badge) */}
-        {dealBadge && (
-          <div className="mt-1.5">
-            <span className="inline-block bg-[#F4E8FF] text-[#6B21A8] font-bold text-[11px] px-1.5 py-0.5 rounded-xs leading-tight">
-              {dealBadge}
-            </span>
-          </div>
-        )}
-
-        {/* Available Sizes Row */}
-        {showSizes && (
-          <div className="text-[12px] font-medium text-neutral-500 mt-1 truncate">
-            Size {sizesText}
-          </div>
-        )}
+        {/* Mobile Quick Add / Free Delivery Row (Mobile-only action strip, hidden on desktop md:hidden) */}
+        <div className="mt-2 pt-1.5 border-t border-neutral-100 flex items-center justify-between md:hidden">
+          <span className="text-[10px] font-semibold text-neutral-500">
+            Free Delivery
+          </span>
+          <button
+            onClick={handleQuickAdd}
+            disabled={added}
+            aria-label="Quick Add to Bag"
+            className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1 transition-all active:scale-95 ${
+              added
+                ? 'bg-[#0D8756] text-white'
+                : 'bg-neutral-900 text-white hover:bg-black'
+            }`}
+          >
+            {added ? (
+              <>
+                <Check className="w-3 h-3 text-white" />
+                <span>Added</span>
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="w-3 h-3 text-white" />
+                <span>Add</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Quick View Modal Overlay */}

@@ -20,6 +20,24 @@ export const CartProvider = ({ children }) => {
 
   const freeShippingThreshold = settings?.freeShippingThreshold !== undefined ? Number(settings.freeShippingThreshold) : 50;
 
+  // Coupon State & Persistence
+  const [appliedCoupon, setAppliedCoupon] = useState(() => {
+    try {
+      return localStorage.getItem('vexivo_applied_coupon') || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const [couponDiscount, setCouponDiscount] = useState(() => {
+    try {
+      const val = localStorage.getItem('vexivo_coupon_discount');
+      return val ? Number(val) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
   // Persist cart to localStorage
   useEffect(() => {
     localStorage.setItem('vexivo_cart', JSON.stringify(items));
@@ -170,8 +188,41 @@ export const CartProvider = ({ children }) => {
     setItems((prevItems) => prevItems.filter((item) => item.id !== itemId && item._id !== itemId));
   };
 
+  const applyCoupon = async (code, currentSubtotal = subtotal) => {
+    const cleanCode = (code || '').trim().toUpperCase();
+    if (!cleanCode) {
+      return { success: false, message: 'Please enter a coupon code' };
+    }
+    try {
+      const res = await api.coupons.validate(cleanCode, currentSubtotal);
+      if (res.success && res.valid) {
+        setAppliedCoupon(res.code);
+        setCouponDiscount(res.discount);
+        try {
+          localStorage.setItem('vexivo_applied_coupon', res.code);
+          localStorage.setItem('vexivo_coupon_discount', String(res.discount));
+        } catch {}
+        return { success: true, message: res.message, discount: res.discount, code: res.code };
+      } else {
+        return { success: false, message: res.message || 'Invalid coupon code' };
+      }
+    } catch (err) {
+      return { success: false, message: err.message || 'Failed to apply coupon' };
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon('');
+    setCouponDiscount(0);
+    try {
+      localStorage.removeItem('vexivo_applied_coupon');
+      localStorage.removeItem('vexivo_coupon_discount');
+    } catch {}
+  };
+
   const clearCart = () => {
     setItems([]);
+    removeCoupon();
     localStorage.removeItem('vexivo_cart');
     if (isAuthenticated) {
       api.cart.clear().catch(() => {});
@@ -185,6 +236,26 @@ export const CartProvider = ({ children }) => {
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const freeShippingRemaining = Math.max(0, freeShippingThreshold - subtotal);
   const freeShippingProgress = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
+
+  // Dynamic re-validation of coupon discount when subtotal changes
+  useEffect(() => {
+    if (appliedCoupon && subtotal > 0) {
+      api.coupons.validate(appliedCoupon, subtotal)
+        .then((res) => {
+          if (res.success && res.valid) {
+            setCouponDiscount(res.discount);
+            try {
+              localStorage.setItem('vexivo_coupon_discount', String(res.discount));
+            } catch {}
+          } else {
+            removeCoupon();
+          }
+        })
+        .catch(() => {});
+    } else if (subtotal === 0 && appliedCoupon) {
+      removeCoupon();
+    }
+  }, [subtotal, appliedCoupon]);
 
   return (
     <CartContext.Provider
@@ -203,6 +274,10 @@ export const CartProvider = ({ children }) => {
         freeShippingThreshold,
         freeShippingRemaining,
         freeShippingProgress,
+        appliedCoupon,
+        couponDiscount,
+        applyCoupon,
+        removeCoupon,
       }}
     >
       {children}

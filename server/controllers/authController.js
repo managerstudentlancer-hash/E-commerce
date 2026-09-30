@@ -139,9 +139,23 @@ const login = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please provide email and password' });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const identifier = (email || '').trim();
 
-    const user = await User.findOne({ email: normalizedEmail });
+    let user;
+    if (identifier.includes('@')) {
+      user = await User.findOne({ email: identifier.toLowerCase() });
+    } else {
+      const cleanPhone = identifier.replace(/[\s\-\(\)]/g, '');
+      const raw10 = cleanPhone.replace(/^\+?91|^0/, '');
+      user = await User.findOne({
+        $or: [
+          { email: identifier.toLowerCase() },
+          { phone: identifier },
+          { phone: `+91${raw10}` },
+          { phone: raw10 },
+        ],
+      });
+    }
     if (!user) {
       await performDummyPasswordVerification(password);
       const fail = recordFailedLogin(req);
@@ -286,6 +300,7 @@ const formatUserResponse = (user) => {
     role: user.role,
     isSeller: Boolean(user.isSeller || user.role === 'seller'),
     sellerProfile: user.sellerProfile || {},
+    deliveryProfile: user.deliveryProfile || {},
     rewardPoints: user.rewardPoints !== undefined ? user.rewardPoints : 100,
     rewardsHistory: user.rewardsHistory || [],
     addresses: user.addresses || [],
