@@ -107,6 +107,59 @@ const ProductDetail = () => {
   // Intelligent Size Configuration Analysis for current product
   const sizeConfig = useMemo(() => analyzeProductSizes(product), [product]);
 
+  const fallbackImg = useMemo(() => {
+    return getCategoryFallback(product?.category, product?.categorySlug);
+  }, [product?.category, product?.categorySlug]);
+
+  // Construct unified media list (both photos & videos)
+  const mediaList = useMemo(() => {
+    const list = [];
+    if (!product) return list;
+
+    // 1. Structured product.media items
+    if (product.media && Array.isArray(product.media) && product.media.length > 0) {
+      product.media.forEach((item) => {
+        if (item?.url) {
+          list.push({
+            type: item.type === 'video' ? 'video' : 'image',
+            url: item.url,
+            thumbnailUrl: item.thumbnailUrl || (item.type === 'video' ? null : item.url),
+            filename: item.filename || '',
+          });
+        }
+      });
+    }
+
+    // 2. Direct product.videos
+    if (product.videos && Array.isArray(product.videos)) {
+      product.videos.forEach((vid) => {
+        if (vid && !list.some((m) => m.url === vid)) {
+          list.push({ type: 'video', url: vid, thumbnailUrl: null, filename: '' });
+        }
+      });
+    }
+
+    // 3. Direct product.images
+    if (product.images && Array.isArray(product.images)) {
+      product.images.forEach((img) => {
+        if (img) {
+          const resolved = resolveImageUrl(img, product.category, product.categorySlug);
+          if (!list.some((m) => m.url === resolved || m.url === img)) {
+            list.push({ type: 'image', url: resolved, thumbnailUrl: resolved, filename: '' });
+          }
+        }
+      });
+    }
+
+    // 4. Fallback thumbnail/image
+    if (list.length === 0) {
+      const single = resolveImageUrl(product.thumbnail || product.image, product.category, product.categorySlug) || fallbackImg;
+      list.push({ type: 'image', url: single, thumbnailUrl: single, filename: '' });
+    }
+
+    return list;
+  }, [product, fallbackImg]);
+
   useEffect(() => {
     fetchProductDetails();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -116,7 +169,7 @@ const ProductDetail = () => {
   useEffect(() => {
     if (sizeConfig?.defaultSize) {
       setSelectedVariant((prev) => {
-        if (prev && sizeConfig.sizes.includes(prev)) return prev;
+        if (prev && sizeConfig.sizes?.includes(prev)) return prev;
         return sizeConfig.defaultSize;
       });
     }
@@ -235,57 +288,9 @@ const ProductDetail = () => {
     );
   }
 
-  const fallbackImg = getCategoryFallback(product?.category, product?.categorySlug);
-
-  // Construct unified media list (both photos & videos)
-  const mediaList = useMemo(() => {
-    const list = [];
-
-    // 1. Structured product.media items
-    if (product?.media && Array.isArray(product.media) && product.media.length > 0) {
-      product.media.forEach((item) => {
-        if (item?.url) {
-          list.push({
-            type: item.type === 'video' ? 'video' : 'image',
-            url: item.url,
-            thumbnailUrl: item.thumbnailUrl || (item.type === 'video' ? null : item.url),
-            filename: item.filename || '',
-          });
-        }
-      });
-    }
-
-    // 2. Direct product.videos
-    if (product?.videos && Array.isArray(product.videos)) {
-      product.videos.forEach((vid) => {
-        if (vid && !list.some((m) => m.url === vid)) {
-          list.push({ type: 'video', url: vid, thumbnailUrl: null, filename: '' });
-        }
-      });
-    }
-
-    // 3. Direct product.images
-    if (product?.images && Array.isArray(product.images)) {
-      product.images.forEach((img) => {
-        if (img) {
-          const resolved = resolveImageUrl(img, product?.category, product?.categorySlug);
-          if (!list.some((m) => m.url === resolved || m.url === img)) {
-            list.push({ type: 'image', url: resolved, thumbnailUrl: resolved, filename: '' });
-          }
-        }
-      });
-    }
-
-    // 4. Fallback thumbnail/image
-    if (list.length === 0) {
-      const single = resolveImageUrl(product?.thumbnail || product?.image, product?.category, product?.categorySlug) || fallbackImg;
-      list.push({ type: 'image', url: single, thumbnailUrl: single, filename: '' });
-    }
-
-    return list;
-  }, [product, fallbackImg]);
-
   const activeMedia = mediaList[selectedImageIndex] || mediaList[0] || { type: 'image', url: fallbackImg };
+  const activeImage =
+    (activeMedia.type === 'video' ? activeMedia.thumbnailUrl || fallbackImg : activeMedia.url) || fallbackImg;
   const inWishlist = isInWishlist(product?._id);
 
   return (
@@ -298,8 +303,8 @@ const ProductDetail = () => {
             <span>/</span>
             <Link to="/shop" className="hover:text-black">Shop</Link>
             <span>/</span>
-            <Link to={`/category/${product.categorySlug || product.category.toLowerCase()}`} className="hover:text-black">
-              {product.category}
+            <Link to={`/category/${product.categorySlug || (product.category ? product.category.toLowerCase().replace(/\s+/g, '-') : 'all')}`} className="hover:text-black">
+              {product.category || 'Category'}
             </Link>
             <span>/</span>
             <span className="text-black font-semibold truncate">{product.name}</span>
@@ -473,16 +478,16 @@ const ProductDetail = () => {
             {/* Pricing */}
             <div className="flex items-baseline space-x-3 py-2 border-y border-neutral-100">
               <span className="text-3xl font-extrabold text-neutral-900">
-                ₹{product.price.toFixed(2)}
+                ₹{Number(product.price || 0).toFixed(2)}
               </span>
-              {product.compareAtPrice > product.price && (
+              {Number(product.compareAtPrice || 0) > Number(product.price || 0) && (
                 <span className="text-base text-neutral-600 line-through">
-                  ₹{product.compareAtPrice.toFixed(2)}
+                  ₹{Number(product.compareAtPrice || 0).toFixed(2)}
                 </span>
               )}
-              {product.discount > 0 && (
+              {Number(product.discount || 0) > 0 && (
                 <span className="text-xs font-bold text-[#C4301C] bg-red-50 px-2.5 py-1 rounded-full">
-                  Save ₹{(product.compareAtPrice - product.price).toFixed(2)} ({product.discount}%)
+                  Save ₹{(Number(product.compareAtPrice || 0) - Number(product.price || 0)).toFixed(2)} ({product.discount}%)
                 </span>
               )}
             </div>
@@ -585,23 +590,26 @@ const ProductDetail = () => {
               {/* Extra Custom Variants if present (e.g. Color) */}
               {product.variants &&
                 product.variants
-                  .filter((v) => !v.name?.toLowerCase().includes('size') && !v.name?.toLowerCase().includes('fit'))
-                  .map((v) => (
-                    <div key={v.name} className="space-y-1.5 pt-2 border-t border-neutral-200/60">
+                  .filter((v) => v && v.name && !v.name.toLowerCase().includes('size') && !v.name.toLowerCase().includes('fit'))
+                  .map((v, vIdx) => (
+                    <div key={v.name || vIdx} className="space-y-1.5 pt-2 border-t border-neutral-200/60">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-                          {v.name}: <strong className="text-black">{v.options?.[0]}</strong>
+                          {v.name}: <strong className="text-black">{typeof v.options?.[0] === 'object' ? (v.options[0]?.name || v.options[0]?.value || '') : (v.options?.[0] || '')}</strong>
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {v.options?.map((opt) => (
-                          <span
-                            key={opt}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-neutral-200 text-neutral-700"
-                          >
-                            {opt}
-                          </span>
-                        ))}
+                        {v.options?.map((opt, oIdx) => {
+                          const optLabel = typeof opt === 'object' ? (opt?.name || opt?.value || opt?.color || '') : String(opt);
+                          return (
+                            <span
+                              key={oIdx}
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-neutral-200 text-neutral-700"
+                            >
+                              {optLabel}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
                   ))}
@@ -979,10 +987,10 @@ const ProductDetail = () => {
                 {product.name}
               </h4>
               <div className="flex items-center space-x-2 text-xs">
-                <span className="font-extrabold text-neutral-950">₹{product.price.toFixed(2)}</span>
-                {product.compareAtPrice > product.price && (
+                <span className="font-extrabold text-neutral-950">₹{Number(product.price || 0).toFixed(2)}</span>
+                {Number(product.compareAtPrice || 0) > Number(product.price || 0) && (
                   <span className="text-neutral-600 line-through text-[11px]">
-                    ₹{product.compareAtPrice.toFixed(2)}
+                    ₹{Number(product.compareAtPrice || 0).toFixed(2)}
                   </span>
                 )}
                 {(selectedVariant || sizeConfig.defaultSize) && (

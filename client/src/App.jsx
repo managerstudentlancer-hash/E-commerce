@@ -66,6 +66,7 @@ import AdminDeliveryApplications from './pages/admin/AdminDeliveryApplications';
 import AdminLogistics from './pages/admin/AdminLogistics';
 
 import MobileStickyBar from './components/common/MobileStickyBar';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Public Layout Wrapper
 const PublicLayout = () => {
@@ -73,7 +74,9 @@ const PublicLayout = () => {
     <div className="flex flex-col min-h-screen pb-14 lg:pb-0">
       <Header />
       <main className="flex-1">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
       <Footer />
       <CartDrawer />
