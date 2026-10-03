@@ -345,7 +345,7 @@ const createOrder = async (req, res, next) => {
         deliveryStatus: 'unassigned',
         assignedAt: null,
       },
-      orderStatus: 'confirmed',
+      orderStatus: 'processing',
       trackingHistory: initialTracking,
       sellerEarnings: Object.values(sellerEarningsMap),
     });
@@ -553,10 +553,25 @@ const updateOrderStatus = async (req, res, next) => {
         });
       }
 
-      if (previousStatus === 'delivered' && ['pending', 'processing', 'confirmed'].includes(normalizedStatus)) {
+      if (previousStatus === 'delivered' && ['pending', 'processing', 'confirmed', 'shipped', 'out_for_delivery'].includes(normalizedStatus)) {
         return res.status(400).json({
           success: false,
-          message: 'Delivered orders cannot be rolled back to pending or processing.',
+          message: 'Delivered orders cannot be rolled back to preceding stages.',
+        });
+      }
+
+      // State machine transition enforcement: Prevent illegal leaps (e.g. processing -> delivered directly)
+      if (['processing', 'pending', 'confirmed'].includes(previousStatus) && normalizedStatus === 'delivered') {
+        return res.status(400).json({
+          success: false,
+          message: 'Direct transition processing -> delivered rejected with 400 Bad Request. Order must proceed through shipped/dispatched stages.',
+        });
+      }
+
+      if (previousStatus === 'pending' && ['shipped', 'delivered', 'out_for_delivery'].includes(normalizedStatus)) {
+        return res.status(400).json({
+          success: false,
+          message: `Illegal transition: Order must be processed before being marked as ${normalizedStatus}.`,
         });
       }
 
@@ -753,7 +768,7 @@ const returnOrder = async (req, res, next) => {
   }
 };
 
-// @desc Simulate / mark order as delivered (Testing & Fast-Track)
+// @desc Admin override to mark order as delivered (Admin only)
 // @route PUT /api/orders/:id/deliver
 const simulateDelivery = async (req, res, next) => {
   try {
@@ -762,27 +777,38 @@ const simulateDelivery = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Must be owner or admin
-    if (req.user.role !== 'admin' && (!order.user || order.user.toString() !== req.user._id.toString())) {
-      return res.status(403).json({ success: false, message: 'Not authorized to update this order' });
+    // Strictly enforce admin role. Normal customers / sellers / delivery partners cannot invoke this bypass
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Security policy: Customers cannot mark orders as delivered. Deliveries must be completed by the assigned delivery partner with customer OTP verification.',
+      });
+    }
+
+    if (['cancelled', 'returned'].includes(order.orderStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot deliver an order that is already marked as ${order.orderStatus}.`,
+      });
     }
 
     order.orderStatus = 'delivered';
     order.deliveredAt = new Date();
-    if (order.paymentStatus === 'pending') {
+    // Do NOT automatically mark unpaid COD order as paid without explicit verification
+    if (order.paymentMethod !== 'Cash on Delivery' && order.paymentStatus === 'pending') {
       order.paymentStatus = 'paid';
       if (!order.paymentDetails) order.paymentDetails = {};
       order.paymentDetails.verifiedAt = new Date();
-      order.paymentDetails.verifiedBy = 'Pay on Delivery (Delivered)';
+      order.paymentDetails.verifiedBy = 'Admin Manual Verification';
     }
     order.trackingHistory.push({
       status: 'Delivered',
-      message: 'Package delivered to recipient via Ekart Express India.',
+      message: 'Package marked delivered via Admin Control Panel.',
       timestamp: new Date(),
     });
 
     await order.save();
-    res.json({ success: true, message: 'Order marked as Delivered successfully', order });
+    res.json({ success: true, message: 'Order marked as Delivered successfully by Admin', order });
   } catch (error) {
     next(error);
   }

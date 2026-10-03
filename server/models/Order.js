@@ -84,7 +84,7 @@ const orderSchema = new mongoose.Schema(
         'return_to_seller',
         'exchange_requested',
       ],
-      default: 'confirmed',
+      default: 'processing',
     },
     cancellationReason: { type: String, default: '' },
     cancelledAt: { type: Date, default: null },

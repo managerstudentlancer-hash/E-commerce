@@ -26,7 +26,7 @@ const initDeliveryPartner = async () => {
         },
       });
       console.log('🛵 [VEXIVO Delivery] Seeded default Delivery Partner: delivery@vexivo.com | DeliveryPass123!');
-    } else if (!existing.deliveryProfile?.status || existing.deliveryProfile?.status !== 'ACTIVE') {
+    } else {
       if (!existing.deliveryProfile) existing.deliveryProfile = {};
       existing.deliveryProfile.status = 'ACTIVE';
       existing.deliveryProfile.isApproved = true;

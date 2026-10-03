@@ -63,6 +63,8 @@ app.use(hppProtection);
 // Static directory for uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+const { protect, adminOnly } = require('./middleware/auth');
+
 // API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
@@ -78,16 +80,23 @@ app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/banners', require('./routes/bannerRoutes'));
 app.use('/api/site-settings', require('./routes/settingsRoutes'));
 app.use('/api/newsletter', require('./routes/newsletterRoutes'));
-app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/delivery', require('./routes/deliveryRoutes'));
 app.use('/api/logistics', require('./routes/logisticsRoutes'));
 
-// Reseed endpoint for instant sync
-app.get('/api/seed', async (req, res) => {
+// Administrative Reseed endpoints (Strictly Admin Protected — completely restricted from public / guest / customer / seller access)
+app.all(['/api/seed', '/api/admin/seed'], protect, adminOnly, async (req, res) => {
   try {
+    if (process.env.NODE_ENV === 'production' && req.headers['x-confirm-reseed'] !== 'CONFIRM_SEED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Destructive reseed in production requires explicit x-confirm-reseed: CONFIRM_SEED header.',
+      });
+    }
     await seedAll();
+    const initDeliveryPartner = require('./config/initDeliveryPartner');
+    await initDeliveryPartner();
     const total = await Product.countDocuments();
     res.json({ success: true, message: `Catalog seeded! Total products: ${total}` });
   } catch (err) {
@@ -95,13 +104,21 @@ app.get('/api/seed', async (req, res) => {
   }
 });
 
-app.get('/api/seed-catalog', async (req, res) => {
+app.all(['/api/seed-catalog', '/api/admin/seed-catalog'], protect, adminOnly, async (req, res) => {
   try {
+    if (process.env.NODE_ENV === 'production' && req.headers['x-confirm-reseed'] !== 'CONFIRM_SEED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Destructive reseed in production requires explicit x-confirm-reseed: CONFIRM_SEED header.',
+      });
+    }
     delete require.cache[require.resolve('./seed/seedData')];
     delete require.cache[require.resolve('./seed/bagsData')];
     delete require.cache[require.resolve('./seed/shoesData')];
     const { seedAll: freshSeedAll } = require('./seed/seedData');
     await freshSeedAll();
+    const initDeliveryPartner = require('./config/initDeliveryPartner');
+    await initDeliveryPartner();
     const total = await Product.countDocuments();
     const bagCount = await Product.countDocuments({ categorySlug: 'bags' });
     const shoeCount = await Product.countDocuments({ categorySlug: 'shoes' });

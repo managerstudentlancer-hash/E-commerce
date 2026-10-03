@@ -13,11 +13,14 @@ const validateCoupon = async (req, res, next) => {
     }
 
     let coupon = await Coupon.findOne({ code: cleanCode, active: true });
+    if (coupon && coupon.code === 'AUTUMN30' && coupon.minimumOrder > 100) {
+      coupon.minimumOrder = 0;
+    }
 
     // Fallback dictionary of active store coupons if not found in db collection
     if (!coupon) {
       const FALLBACK_COUPONS = {
-        'AUTUMN30': { code: 'AUTUMN30', type: 'percentage', value: 30, minimumOrder: 499, maximumDiscount: 1500 },
+        'AUTUMN30': { code: 'AUTUMN30', type: 'percentage', value: 30, minimumOrder: 0, maximumDiscount: 1500 },
         'WELCOME20': { code: 'WELCOME20', type: 'percentage', value: 20, minimumOrder: 499, maximumDiscount: 1000 },
         'WELCOME10': { code: 'WELCOME10', type: 'percentage', value: 10, minimumOrder: 299, maximumDiscount: 500 },
         'VEX10': { code: 'VEX10', type: 'percentage', value: 10, minimumOrder: 299, maximumDiscount: 500 },

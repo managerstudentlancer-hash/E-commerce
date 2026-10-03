@@ -20903,7 +20903,7 @@ const couponsData = [
     "code": "AUTUMN30",
     "type": "percentage",
     "value": 30,
-    "minimumOrder": 1999,
+    "minimumOrder": 0,
     "maximumDiscount": 1500,
     "usageLimit": 2000,
     "active": true

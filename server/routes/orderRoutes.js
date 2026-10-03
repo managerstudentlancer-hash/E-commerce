@@ -23,7 +23,7 @@ router.get('/seller/my', protect, getMySellerOrders);
 
 router.put('/:id/cancel', protect, cancelOrder);
 router.put('/:id/return', protect, returnOrder);
-router.put('/:id/deliver', protect, simulateDelivery);
+router.put('/:id/deliver', protect, adminOnly, simulateDelivery);
 router.put('/:id/verify-payment', protect, adminOnly, verifyOrderPayment);
 
 router.route('/:id')

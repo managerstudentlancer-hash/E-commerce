@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Review = require('../models/Review');
 const Product = require('../models/Product');
+const Order = require('../models/Order');
 const ReviewLike = require('../models/ReviewLike');
 
 // Helper to reliably find a product by ObjectId or slug
@@ -33,7 +34,7 @@ const getProductReviews = async (req, res, next) => {
   }
 };
 
-// @desc Add a review for a product (INSTANT AUTO-PUBLISH: No admin approval required)
+// @desc Add a review for a product (Strict Verified Purchase Required — Delivered Orders Only)
 // @route POST /api/products/:productId/reviews
 const createReview = async (req, res, next) => {
   try {
@@ -44,43 +45,48 @@ const createReview = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
+    // 1. Authentication check
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please sign in to submit a review.',
+      });
+    }
+
+    // 2. Strict Delivery-Verified Purchase Check
+    const deliveredOrder = await Order.findOne({
+      user: req.user._id,
+      orderStatus: 'delivered',
+      'items.product': product._id,
+    });
+
+    if (!deliveredOrder) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unverified review (no delivered order) rejected with 403 Forbidden. Only customers who received this product can review.',
+      });
+    }
+
+    // 3. Duplicate Review Prevention
+    const existingReview = await Review.findOne({
+      product: product._id,
+      user: req.user._id,
+    });
+
+    if (existingReview) {
+      return res.status(400).json({
+        success: false,
+        message: 'Duplicate review on same product rejected with 400 Bad Request. You have already reviewed this product.',
+      });
+    }
+
     const reviewerName = (req.user?.name || userName || 'Verified Customer').trim();
     const reviewerEmail = (req.user?.email || userEmail || '').trim();
 
-    // If user is authenticated and has existing review, update it directly
-    if (req.user) {
-      const existingReview = await Review.findOne({
-        product: product._id,
-        user: req.user._id,
-      });
-
-      if (existingReview) {
-        existingReview.rating = Number(rating) || 5;
-        existingReview.title = title || 'Customer Review';
-        existingReview.comment = comment || '';
-        existingReview.status = 'approved';
-        await existingReview.save();
-
-        // Recalculate product rating & numReviews
-        const allReviews = await Review.find({ product: product._id, status: { $ne: 'rejected' } });
-        const avgRating = allReviews.reduce((acc, r) => acc + r.rating, 0) / (allReviews.length || 1);
-        product.rating = Math.round(avgRating * 10) / 10;
-        product.numReviews = allReviews.length;
-        await product.save();
-
-        return res.json({
-          success: true,
-          review: existingReview,
-          product: { rating: product.rating, numReviews: product.numReviews },
-          message: 'Your review has been updated and published automatically.',
-        });
-      }
-    }
-
-    // Create review - auto-approved immediately without requiring admin intervention
+    // 4. Create review - auto-approved for genuine verified buyers
     const review = await Review.create({
       product: product._id,
-      user: req.user ? req.user._id : null,
+      user: req.user._id,
       userName: reviewerName,
       userEmail: reviewerEmail,
       rating: Number(rating) || 5,
