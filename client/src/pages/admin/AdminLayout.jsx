@@ -315,10 +315,73 @@ const AdminLayout = () => {
         </header>
 
         {/* Dynamic Nested Route View */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar pb-24 lg:pb-8">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile App-Style Bottom Navigation for Admin (Only on Mobile Screens) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#0C111D]/95 backdrop-blur-xl border-t border-white/10 px-2 py-1 flex items-center justify-around shadow-2xl">
+        <Link
+          to="/admin"
+          className={`flex flex-col items-center justify-center py-1.5 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all ${
+            isNavActive('/admin')
+              ? 'text-cyan-400 font-black'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <LayoutDashboard className="w-4 h-4 mb-0.5" />
+          <span>Dashboard</span>
+        </Link>
+
+        <Link
+          to="/admin/products"
+          className={`flex flex-col items-center justify-center py-1.5 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all ${
+            isNavActive('/admin/products')
+              ? 'text-cyan-400 font-black'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Package className="w-4 h-4 mb-0.5" />
+          <span>Products</span>
+        </Link>
+
+        <Link
+          to="/admin/orders"
+          className={`flex flex-col items-center justify-center py-1.5 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all relative ${
+            isNavActive('/admin/orders')
+              ? 'text-cyan-400 font-black'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <div className="relative">
+            <ShoppingCart className="w-4 h-4 mb-0.5" />
+            <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          </div>
+          <span>Orders</span>
+        </Link>
+
+        <Link
+          to="/admin/logistics"
+          className={`flex flex-col items-center justify-center py-1.5 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all ${
+            isNavActive('/admin/logistics')
+              ? 'text-cyan-400 font-black'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <MapPin className="w-4 h-4 mb-0.5" />
+          <span>Hubs</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="flex flex-col items-center justify-center py-1.5 px-2 flex-1 rounded-xl text-[10px] font-bold text-slate-400 hover:text-white active:scale-95 transition-all"
+        >
+          <Menu className="w-4 h-4 mb-0.5" />
+          <span>More</span>
+        </button>
+      </nav>
 
       {/* Mobile Drawer */}
       {sidebarOpen && (

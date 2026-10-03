@@ -18,17 +18,48 @@ import {
   IndianRupee,
   CreditCard,
   Sparkles,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Boxes,
+  Navigation,
+  ExternalLink,
 } from 'lucide-react';
 import api from '../../services/api';
 
-const ORDER_STATUS_ORDER = [
-  'pending',
-  'confirmed',
-  'processing',
-  'shipped',
-  'out_for_delivery',
-  'delivered',
+const LOGISTICS_MILESTONES = [
+  { key: 'pending', label: 'Order Placed', shortLabel: 'Placed' },
+  { key: 'confirmed', label: 'Confirmed', shortLabel: 'Confirmed' },
+  { key: 'processing', label: 'Seller Processing', shortLabel: 'Packed' },
+  { key: 'picked_up', label: 'Parcel Picked Up', shortLabel: 'Picked Up' },
+  { key: 'warehouse_received', label: 'Warehouse Inbound', shortLabel: 'Warehouse' },
+  { key: 'scanned', label: 'Scanned & Verified', shortLabel: 'Scanned' },
+  { key: 'sorted', label: 'Sorted by Hub', shortLabel: 'Sorted' },
+  { key: 'dispatched_from_warehouse', label: 'Dispatched to Hub', shortLabel: 'Dispatched' },
+  { key: 'hub_received', label: 'Delivery Hub Inbound', shortLabel: 'Hub' },
+  { key: 'ready_for_delivery', label: 'Ready For Delivery', shortLabel: 'Staged' },
+  { key: 'delivery_partner_assigned', label: 'Agent Assigned', shortLabel: 'Assigned' },
+  { key: 'out_for_delivery', label: 'Out For Delivery', shortLabel: 'Out for Deliv' },
+  { key: 'delivered', label: 'Delivered', shortLabel: 'Delivered' },
 ];
+
+const getMilestoneIndex = (status) => {
+  const norm = (status || '').toLowerCase().trim();
+  if (norm === 'pending') return 0;
+  if (norm === 'confirmed') return 1;
+  if (norm === 'processing') return 2;
+  if (norm === 'ready_for_pickup' || norm === 'picked_up') return 3;
+  if (norm === 'warehouse_received') return 4;
+  if (norm === 'scanned') return 5;
+  if (norm === 'sorted') return 6;
+  if (norm === 'dispatched_from_warehouse' || norm === 'shipped') return 7;
+  if (norm === 'hub_received') return 8;
+  if (norm === 'ready_for_delivery') return 9;
+  if (norm === 'delivery_partner_assigned') return 10;
+  if (norm === 'out_for_delivery') return 11;
+  if (norm === 'delivered') return 12;
+  return 1;
+};
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -42,6 +73,7 @@ const AdminOrders = () => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [trackingNumberInput, setTrackingNumberInput] = useState('');
   const [toastMessage, setToastMessage] = useState('');
+  const [showAuditTrail, setShowAuditTrail] = useState(false);
 
   // Delivery Partner Assignment State
   const [deliveryPartners, setDeliveryPartners] = useState([]);
@@ -236,8 +268,17 @@ const AdminOrders = () => {
     switch (status) {
       case 'delivered':
         return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-      case 'shipped':
       case 'out_for_delivery':
+      case 'delivery_partner_assigned':
+      case 'ready_for_delivery':
+        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 animate-pulse';
+      case 'dispatched_from_warehouse':
+      case 'shipped':
+      case 'hub_received':
+      case 'sorted':
+      case 'scanned':
+      case 'warehouse_received':
+      case 'picked_up':
         return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
       case 'processing':
       case 'confirmed':
@@ -360,9 +401,88 @@ const AdminOrders = () => {
             <p className="text-xs text-slate-400 font-bold">Querying order fulfillment...</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-white/[0.03] border-b border-white/10 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+          <div>
+            {/* Mobile Orders Card View (Screens < md) */}
+            <div className="md:hidden divide-y divide-white/5">
+              {filteredOrders.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 text-xs">
+                  No customer orders found matching this filter criteria.
+                </div>
+              ) : (
+                filteredOrders.map((ord) => (
+                  <div key={ord._id} className="p-4 space-y-3 hover:bg-white/[0.02] transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-mono font-bold text-cyan-300 text-xs">{ord.orderNumber}</span>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${getStatusBadge(ord.orderStatus)}`}>
+                          {ord.orderStatus?.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <span className="font-black text-emerald-400 font-mono text-sm">
+                        ₹{ord.total?.toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <div>
+                        <p className="font-bold text-white text-xs">
+                          {ord.shippingAddress?.firstName
+                            ? `${ord.shippingAddress.firstName} ${ord.shippingAddress.lastName || ''}`
+                            : ord.user?.name || 'Direct Buyer'}
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                          {new Date(ord.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-[11px] text-slate-300 font-medium">
+                          {ord.items?.length || 0} item(s)
+                        </span>
+                        <div className="mt-0.5">
+                          <span className={`inline-flex items-center px-2 py-0.2 rounded-full text-[9px] font-black uppercase ${
+                            ord.paymentStatus === 'paid'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          }`}>
+                            {ord.paymentStatus}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Partner Assignment & Action */}
+                    <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs">
+                      <div className="flex items-center space-x-1.5 text-[11px]">
+                        {ord.deliveryPartnerName ? (
+                          <span className="text-emerald-400 font-bold flex items-center space-x-1">
+                            <Truck className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span className="truncate max-w-[130px]">{ord.deliveryPartnerName}</span>
+                          </span>
+                        ) : (
+                          <span className="text-amber-400 font-semibold text-[10px] bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                            Unassigned
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => handleOpenOrder(ord)}
+                        className="px-3.5 py-1.5 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs inline-flex items-center space-x-1 shadow-md shadow-cyan-500/20 active:scale-95 transition-all"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Manage</span>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop Table View (Screens >= md) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-white/[0.03] border-b border-white/10 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="py-4 px-6">Order ID</th>
                   <th className="py-4 px-4">Date</th>
@@ -482,8 +602,9 @@ const AdminOrders = () => {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
 
       {/* Order Details Modal with Live Progression Timeline */}
       {selectedOrder && (
@@ -528,40 +649,141 @@ const AdminOrders = () => {
               </button>
             </div>
 
-            {/* Clean Order Timeline (6 Stages) */}
+            {/* COMPLETE SHIPMENT LIFECYCLE (13 Stages + View Audit Trail) */}
             {selectedOrder.orderStatus !== 'cancelled' && selectedOrder.orderStatus !== 'returned' ? (
-              <div className="bg-slate-900/80 p-5 sm:p-6 rounded-2xl border border-white/10 space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Fulfillment Progression Timeline
-                </p>
-                <div className="grid grid-cols-6 gap-1 sm:gap-2 text-center pt-2">
-                  {ORDER_STATUS_ORDER.map((stage, idx) => {
-                    const currentIdx = ORDER_STATUS_ORDER.indexOf(selectedOrder.orderStatus);
-                    const isPassed = idx <= currentIdx;
-                    const isCurrent = idx === currentIdx;
+              <div className="bg-white text-neutral-900 p-4 sm:p-6 rounded-2xl border border-neutral-200/90 shadow-md space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-neutral-100">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-7 h-7 rounded-xl bg-neutral-900 text-white flex items-center justify-center">
+                      <Boxes className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-wider text-neutral-900 flex items-center space-x-1.5">
+                        <span>COMPLETE SHIPMENT LIFECYCLE</span>
+                      </p>
+                      <p className="text-[10px] text-neutral-500">
+                        Click any stage card to advance or update order status
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Stage {getMilestoneIndex(selectedOrder.orderStatus) + 1} of 13
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowAuditTrail(!showAuditTrail)}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center space-x-1 transition-colors"
+                    >
+                      <span>{showAuditTrail ? 'Hide History' : 'View Audit Trail'}</span>
+                      {showAuditTrail ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 13-Stage Responsive Stepper Cards Grid (Matching User Reference Image) */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 text-xs">
+                  {LOGISTICS_MILESTONES.map((step, idx) => {
+                    const currentStageIdx = getMilestoneIndex(selectedOrder.orderStatus);
+                    const isCompleted = currentStageIdx > idx;
+                    const isCurrent = currentStageIdx === idx;
 
                     return (
-                      <div key={stage} className="flex flex-col items-center">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all ${
-                            isPassed
-                              ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
-                              : 'bg-white/10 text-slate-500'
-                          } ${isCurrent ? 'ring-4 ring-cyan-500/20' : ''}`}
-                        >
-                          {idx + 1}
+                      <button
+                        key={step.key}
+                        type="button"
+                        onClick={() => handleUpdateStatus(step.key)}
+                        disabled={updatingStatus}
+                        title={`Click to update order status to ${step.label}`}
+                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                          isCurrent
+                            ? 'border-emerald-500 bg-emerald-50/90 shadow-sm ring-2 ring-emerald-500/20'
+                            : isCompleted
+                            ? 'border-neutral-200 bg-neutral-50/70 hover:bg-neutral-100/60'
+                            : 'border-dashed border-neutral-200 bg-white opacity-60 hover:opacity-100 hover:border-neutral-400'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div
+                            className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                              isCurrent
+                                ? 'bg-emerald-600 text-white animate-pulse'
+                                : isCompleted
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-neutral-200 text-neutral-500'
+                            }`}
+                          >
+                            {isCompleted || isCurrent ? <Check className="w-3 h-3 stroke-[3]" /> : idx + 1}
+                          </div>
+                          {isCurrent && (
+                            <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-200 text-emerald-900">
+                              CURRENT
+                            </span>
+                          )}
                         </div>
-                        <span
-                          className={`text-[9px] sm:text-[10px] font-bold mt-2 capitalize ${
-                            isPassed ? 'text-white' : 'text-slate-500'
-                          }`}
-                        >
-                          {stage.replace('_', ' ')}
-                        </span>
-                      </div>
+                        <p className={`font-bold text-[11px] leading-tight ${isCurrent ? 'text-emerald-950 font-extrabold' : 'text-neutral-800'}`}>
+                          {step.label}
+                        </p>
+                        <p className="text-[10px] text-neutral-400 mt-0.5">
+                          {isCurrent ? 'In progress' : isCompleted ? 'Passed' : 'Upcoming'}
+                        </p>
+                      </button>
                     );
                   })}
                 </div>
+
+                {/* Expandable Audit Trail Logs */}
+                {showAuditTrail && (
+                  <div className="pt-3 border-t border-neutral-100 space-y-2.5 animate-fade-in">
+                    <h5 className="text-[11px] font-black uppercase tracking-wider text-neutral-800">
+                      Verified Logistics Checkpoint Logs:
+                    </h5>
+                    <div className="relative pl-6 space-y-3 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-neutral-200">
+                      {((selectedOrder.trackingHistory && selectedOrder.trackingHistory.length > 0)
+                        ? selectedOrder.trackingHistory
+                        : [
+                            {
+                              status: 'ORDER_PLACED',
+                              message: 'Order created and payment mode confirmed.',
+                              timestamp: selectedOrder.createdAt,
+                              location: `${selectedOrder.shippingAddress?.city || 'Jaipur'}, Regional Logistics Hub`,
+                              actor: 'Customer / Checkout System',
+                            },
+                            ...(selectedOrder.orderStatus !== 'pending' ? [{
+                              status: 'ORDER_CONFIRMED',
+                              message: 'Order verified and confirmed for warehouse fulfillment.',
+                              timestamp: selectedOrder.createdAt,
+                              location: `${selectedOrder.shippingAddress?.city || 'Jaipur'}, Regional Logistics Hub`,
+                              actor: 'Admin / Order Automation',
+                            }] : []),
+                          ]
+                      ).map((ev, i) => (
+                        <div key={i} className="relative text-xs">
+                          <div className="absolute -left-[19px] top-1 w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-white" />
+                          <div className="bg-neutral-50 p-2.5 rounded-xl border border-neutral-200/70">
+                            <div className="flex flex-wrap items-center justify-between gap-1 mb-0.5">
+                              <span className="font-extrabold text-neutral-900">{ev.status || 'CHECKPOINT'}</span>
+                              <span className="text-[10px] font-mono text-neutral-400">
+                                {new Date(ev.timestamp || Date.now()).toLocaleString('en-IN', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </div>
+                            <p className="text-neutral-600 text-[11px]">{ev.message}</p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-neutral-400">
+                              <span>📍 Location: {ev.facility || ev.location || `${selectedOrder.shippingAddress?.city || 'Jaipur'} Logistics Facility`}</span>
+                              <span>•</span>
+                              <span>Actor: {ev.actor || 'Logistics Admin'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="bg-rose-500/10 p-4 rounded-2xl border border-rose-500/30 flex items-center space-x-3 text-rose-300 text-xs font-bold">
@@ -582,12 +804,19 @@ const AdminOrders = () => {
                   disabled={updatingStatus}
                   className="px-3.5 py-2 rounded-xl bg-slate-900 border border-white/10 font-bold text-xs text-white focus:border-cyan-400 uppercase"
                 >
-                  <option value="pending">PENDING</option>
-                  <option value="confirmed">CONFIRMED</option>
-                  <option value="processing">PROCESSING</option>
-                  <option value="shipped">SHIPPED</option>
-                  <option value="out_for_delivery">OUT FOR DELIVERY</option>
-                  <option value="delivered">DELIVERED</option>
+                  <option value="pending">1. PENDING (ORDER PLACED)</option>
+                  <option value="confirmed">2. CONFIRMED</option>
+                  <option value="processing">3. SELLER PROCESSING</option>
+                  <option value="picked_up">4. PARCEL PICKED UP</option>
+                  <option value="warehouse_received">5. WAREHOUSE INBOUND</option>
+                  <option value="scanned">6. SCANNED & VERIFIED</option>
+                  <option value="sorted">7. SORTED BY HUB</option>
+                  <option value="dispatched_from_warehouse">8. DISPATCHED TO HUB (SHIPPED)</option>
+                  <option value="hub_received">9. DELIVERY HUB INBOUND</option>
+                  <option value="ready_for_delivery">10. READY FOR DELIVERY</option>
+                  <option value="delivery_partner_assigned">11. AGENT ASSIGNED</option>
+                  <option value="out_for_delivery">12. OUT FOR DELIVERY</option>
+                  <option value="delivered">13. DELIVERED</option>
                   <option value="cancelled">CANCELLED</option>
                   <option value="returned">RETURNED</option>
                 </select>

@@ -8,7 +8,7 @@ const DualPromoBanners = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
         
         {/* Banner 1 (Left): Summer Sale / Handbag */}
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#EFE8DF] via-[#ECE4DA] to-[#E3D7CB] p-7 sm:p-9 lg:p-10 min-h-[260px] sm:min-h-[290px] lg:min-h-[310px] flex items-center justify-between shadow-[0_4px_25px_rgba(0,0,0,0.03)] border border-[#E4DACF] hover:shadow-[0_12px_35px_rgba(0,0,0,0.06)] hover:border-[#DACCC0] transition-all duration-500 group">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#EFE8DF] via-[#ECE4DA] to-[#E3D7CB] p-5 sm:p-9 lg:p-10 min-h-[220px] sm:min-h-[290px] lg:min-h-[310px] flex items-center justify-between shadow-[0_4px_25px_rgba(0,0,0,0.03)] border border-[#E4DACF] hover:shadow-[0_12px_35px_rgba(0,0,0,0.06)] hover:border-[#DACCC0] transition-all duration-500 group">
           
           {/* Subtle Ambient Light Spot */}
           <div className="absolute top-0 right-1/3 w-64 h-64 rounded-full bg-white/40 blur-2xl pointer-events-none" />
@@ -62,7 +62,7 @@ const DualPromoBanners = () => {
         </div>
 
         {/* Banner 2 (Right): New Arrivals / Sunglasses */}
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#EAE2D7] via-[#E6DDD1] to-[#DED3C4] p-7 sm:p-9 lg:p-10 min-h-[260px] sm:min-h-[290px] lg:min-h-[310px] flex items-center justify-between shadow-[0_4px_25px_rgba(0,0,0,0.03)] border border-[#E4DACF] hover:shadow-[0_12px_35px_rgba(0,0,0,0.06)] hover:border-[#DACCC0] transition-all duration-500 group">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#EAE2D7] via-[#E6DDD1] to-[#DED3C4] p-5 sm:p-9 lg:p-10 min-h-[220px] sm:min-h-[290px] lg:min-h-[310px] flex items-center justify-between shadow-[0_4px_25px_rgba(0,0,0,0.03)] border border-[#E4DACF] hover:shadow-[0_12px_35px_rgba(0,0,0,0.06)] hover:border-[#DACCC0] transition-all duration-500 group">
           
           {/* Subtle Ambient Light Spot */}
           <div className="absolute top-0 right-1/3 w-64 h-64 rounded-full bg-white/40 blur-2xl pointer-events-none" />
