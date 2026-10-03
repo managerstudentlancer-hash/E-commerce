@@ -64,7 +64,7 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="w-full bg-white font-sans antialiased overflow-x-hidden">
+    <div className="w-full bg-white font-sans antialiased overflow-x-hidden pb-16 lg:pb-0">
       {/* ============================================================ */}
       {/* 1. REFERENCE SCREENSHOT SECTIONS (EXACT VISUAL MATCH)       */}
       {/* ============================================================ */}

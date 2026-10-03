@@ -294,32 +294,32 @@ const ProductDetail = () => {
   const inWishlist = isInWishlist(product?._id);
 
   return (
-    <div className="bg-white min-h-screen pb-20">
+    <div className="bg-white min-h-screen pb-20 sm:pb-24">
       {/* Breadcrumbs */}
-      <div className="border-b border-neutral-100 py-3.5 bg-neutral-50/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="text-xs text-neutral-500 flex items-center space-x-2 truncate">
-            <Link to="/" className="hover:text-black">Home</Link>
-            <span>/</span>
-            <Link to="/shop" className="hover:text-black">Shop</Link>
-            <span>/</span>
-            <Link to={`/category/${product.categorySlug || (product.category ? product.category.toLowerCase().replace(/\s+/g, '-') : 'all')}`} className="hover:text-black">
+      <div className="border-b border-neutral-100 py-3 sm:py-3.5 bg-neutral-50/60">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
+          <nav className="text-[11px] sm:text-xs text-neutral-500 flex items-center space-x-1.5 sm:space-x-2 overflow-x-auto no-scrollbar py-0.5">
+            <Link to="/" className="hover:text-black flex-shrink-0">Home</Link>
+            <span className="flex-shrink-0">/</span>
+            <Link to="/shop" className="hover:text-black flex-shrink-0">Shop</Link>
+            <span className="flex-shrink-0">/</span>
+            <Link to={`/category/${product.categorySlug || (product.category ? product.category.toLowerCase().replace(/\s+/g, '-') : 'all')}`} className="hover:text-black flex-shrink-0">
               {product.category || 'Category'}
             </Link>
-            <span>/</span>
-            <span className="text-black font-semibold truncate">{product.name}</span>
+            <span className="flex-shrink-0">/</span>
+            <span className="text-black font-semibold truncate max-w-[140px] sm:max-w-xs">{product.name}</span>
           </nav>
         </div>
       </div>
 
       {/* Product Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 lg:pt-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-14">
           {/* Gallery Column */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Primary Main Media Viewer: Image Zoom OR High-Res Video Player */}
             {activeMedia.type === 'video' ? (
-              <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-200 shadow-sm flex items-center justify-center group select-none">
+              <div className="relative aspect-[4/5] max-h-[62vh] sm:max-h-none rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-200 shadow-sm flex items-center justify-center group select-none">
                 <video
                   key={activeMedia.url}
                   src={activeMedia.url}
@@ -333,29 +333,36 @@ const ProductDetail = () => {
                 </video>
 
                 {/* Video Indicator Badge */}
-                <div className="absolute top-4 left-4 z-10 flex items-center space-x-1.5 px-3 py-1 rounded-full bg-neutral-900/80 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider border border-white/10 pointer-events-none">
+                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-neutral-900/80 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider border border-white/10 pointer-events-none">
                   <Play className="w-3 h-3 fill-emerald-400 text-emerald-400" />
                   <span>Product Video</span>
                 </div>
 
                 {/* Wishlist Button */}
-                <div className="absolute top-4 right-4 z-10">
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
                   <button
                     onClick={() => toggleWishlist(product)}
                     aria-label="Toggle Wishlist"
-                    className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-neutral-800 hover:text-red-600 transition-all hover:scale-110 active:scale-95"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-neutral-800 hover:text-red-600 transition-all hover:scale-110 active:scale-95"
                   >
                     <Heart
-                      className={`w-5 h-5 ${
+                      className={`w-4.5 h-4.5 sm:w-5 sm:h-5 ${
                         inWishlist ? 'fill-red-500 text-red-500' : 'text-neutral-700'
                       }`}
                     />
                   </button>
                 </div>
+
+                {/* Mobile Media Counter Badge (Phone Only) */}
+                {mediaList.length > 1 && (
+                  <div className="absolute bottom-3 right-3 sm:hidden z-10 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold pointer-events-none">
+                    {selectedImageIndex + 1} / {mediaList.length}
+                  </div>
+                )}
               </div>
             ) : (
               <div 
-                className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-100 group cursor-crosshair select-none"
+                className="relative aspect-[4/5] max-h-[62vh] sm:max-h-none rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-100 group select-none cursor-crosshair"
                 onMouseMove={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
@@ -363,6 +370,7 @@ const ProductDetail = () => {
                   setZoomPos({ x, y, isHovering: true });
                 }}
                 onMouseLeave={() => setZoomPos((prev) => ({ ...prev, isHovering: false }))}
+                onClick={() => setIsLightboxOpen(true)}
               >
                 <img
                   src={activeMedia.url}
@@ -377,24 +385,24 @@ const ProductDetail = () => {
                   className="w-full h-full object-cover object-center transition-transform duration-150 ease-out pointer-events-none"
                 />
                 {/* Badges */}
-                <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-10 pointer-events-none">
+                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex flex-col gap-1.5 z-10 pointer-events-none">
                   {product.discount > 0 && (
-                    <span className="badge-sale shadow-sm">-{product.discount}% OFF</span>
+                    <span className="badge-sale shadow-sm text-[10px] sm:text-xs">-{product.discount}% OFF</span>
                   )}
                   {product.newArrival && (
-                    <span className="badge-new shadow-sm">NEW</span>
+                    <span className="badge-new shadow-sm text-[10px] sm:text-xs">NEW</span>
                   )}
                 </div>
 
                 {/* Action Buttons on Image */}
-                <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => toggleWishlist(product)}
                     aria-label="Toggle Wishlist"
-                    className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-neutral-800 hover:text-red-600 transition-all hover:scale-110 active:scale-95"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-neutral-800 hover:text-red-600 transition-all hover:scale-110 active:scale-95"
                   >
                     <Heart
-                      className={`w-5 h-5 ${
+                      className={`w-4.5 h-4.5 sm:w-5 sm:h-5 ${
                         inWishlist ? 'fill-red-500 text-red-500' : 'text-neutral-700'
                       }`}
                     />
@@ -402,28 +410,35 @@ const ProductDetail = () => {
                   <button
                     onClick={() => setIsLightboxOpen(true)}
                     aria-label="View Fullscreen"
-                    className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-neutral-800 hover:text-black transition-all hover:scale-110 active:scale-95"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center text-neutral-800 hover:text-black transition-all hover:scale-110 active:scale-95"
                     title="Fullscreen zoom view"
                   >
                     <Maximize2 className="w-4 h-4" />
                   </button>
                 </div>
 
-                {/* Hover Zoom Hint */}
-                <div className="absolute bottom-3 left-3 z-10 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                {/* Hover Zoom Hint (Desktop Only) */}
+                <div className="absolute bottom-3 left-3 z-10 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden sm:block">
                   Roll over image to zoom
                 </div>
+
+                {/* Mobile Media Counter Badge (Phone Only) */}
+                {mediaList.length > 1 && (
+                  <div className="absolute bottom-3 right-3 sm:hidden z-10 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold pointer-events-none">
+                    {selectedImageIndex + 1} / {mediaList.length}
+                  </div>
+                )}
               </div>
             )}
 
             {/* Thumbnail Row (Supports both Images & Videos) */}
             {mediaList.length > 1 && (
-              <div className="flex space-x-3 overflow-x-auto pb-2 no-scrollbar">
+              <div className="flex space-x-2 sm:space-x-3 overflow-x-auto pb-1.5 no-scrollbar touch-pan-x -mx-1 px-1">
                 {mediaList.map((item, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
-                    className={`relative w-20 h-24 rounded-xl overflow-hidden flex-shrink-0 border-2 transition-all ${
+                    className={`relative w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden flex-shrink-0 border-2 transition-all ${
                       selectedImageIndex === idx
                         ? 'border-black shadow-md scale-95'
                         : 'border-transparent opacity-70 hover:opacity-100'
@@ -431,10 +446,10 @@ const ProductDetail = () => {
                   >
                     {item.type === 'video' ? (
                       <div className="w-full h-full bg-neutral-900 flex flex-col items-center justify-center text-white relative">
-                        <div className="w-8 h-8 rounded-full bg-emerald-500/90 flex items-center justify-center shadow-lg">
-                          <Play className="w-4 h-4 fill-white text-white translate-x-0.5" />
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-500/90 flex items-center justify-center shadow-lg">
+                          <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white text-white translate-x-0.5" />
                         </div>
-                        <span className="text-[9px] font-extrabold uppercase tracking-wider mt-1.5 text-neutral-300">
+                        <span className="text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider mt-1 text-neutral-300">
                           Video
                         </span>
                       </div>
@@ -455,73 +470,73 @@ const ProductDetail = () => {
           </div>
 
           {/* Product Details Column */}
-          <div className="flex flex-col justify-start space-y-6">
+          <div className="flex flex-col justify-start space-y-5 sm:space-y-6">
             <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-neutral-600">
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-neutral-500">
                 {product.brand || 'VEXIVO'}
               </span>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-900 tracking-tight mt-1 leading-snug">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-neutral-900 tracking-tight mt-1 leading-snug break-words">
                 {product.name}
               </h1>
 
               {/* Rating & Review Counter */}
-              <div className="flex items-center space-x-3 mt-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2.5 sm:mt-3">
                 <RatingStars rating={product.rating || 4.8} numReviews={product.numReviews} />
-                <span className="text-neutral-300">|</span>
+                <span className="text-neutral-300 hidden sm:inline">|</span>
                 <span className="text-xs text-[#0D8756] font-semibold flex items-center space-x-1">
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>In Stock ({product.stock} units available)</span>
                 </span>
               </div>
             </div>
 
             {/* Pricing */}
-            <div className="flex items-baseline space-x-3 py-2 border-y border-neutral-100">
-              <span className="text-3xl font-extrabold text-neutral-900">
-                ₹{Number(product.price || 0).toFixed(2)}
+            <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 py-2 sm:py-2.5 border-y border-neutral-100">
+              <span className="text-2xl sm:text-3xl font-extrabold text-neutral-900">
+                ₹{Number(product.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               {Number(product.compareAtPrice || 0) > Number(product.price || 0) && (
-                <span className="text-base text-neutral-600 line-through">
-                  ₹{Number(product.compareAtPrice || 0).toFixed(2)}
+                <span className="text-sm sm:text-base text-neutral-500 line-through">
+                  ₹{Number(product.compareAtPrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               )}
               {Number(product.discount || 0) > 0 && (
-                <span className="text-xs font-bold text-[#C4301C] bg-red-50 px-2.5 py-1 rounded-full">
+                <span className="text-[11px] sm:text-xs font-bold text-[#C4301C] bg-red-50 px-2.5 py-0.5 sm:py-1 rounded-full whitespace-nowrap">
                   Save ₹{(Number(product.compareAtPrice || 0) - Number(product.price || 0)).toFixed(2)} ({product.discount}%)
                 </span>
               )}
             </div>
 
             {/* Live Conversion & Urgency Drivers (Shaporoo Style) */}
-            <div className="space-y-3 bg-neutral-50/70 p-3.5 rounded-2xl border border-neutral-200/60">
+            <div className="space-y-2.5 sm:space-y-3 bg-neutral-50/80 p-3 sm:p-3.5 rounded-2xl border border-neutral-200/60">
               {/* Live Viewers Pulse */}
-              <div className="flex items-center space-x-2 text-xs font-semibold text-neutral-800">
-                <span className="relative flex h-2.5 w-2.5">
+              <div className="flex items-center space-x-2 text-[11px] sm:text-xs font-semibold text-neutral-800">
+                <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#0D8756]"></span>
                 </span>
-                <Flame className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <span>
-                  <strong className="text-neutral-950 font-bold">{liveViewers} people</strong> are viewing this item right now
+                <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 flex-shrink-0" />
+                <span className="truncate">
+                  <strong className="text-neutral-950 font-bold">{liveViewers} people</strong> are viewing this right now
                 </span>
               </div>
 
               {/* Delivery Countdown Timer */}
-              <div className="flex items-center space-x-2.5 text-xs text-neutral-700 pt-1 border-t border-neutral-200/50">
-                <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                <div>
-                  Order within <strong className="text-neutral-950 font-mono font-bold">{String(timeLeft.hours).padStart(2, '0')}h {String(timeLeft.minutes).padStart(2, '0')}m {String(timeLeft.seconds).padStart(2, '0')}s</strong> for <span className="font-semibold text-neutral-900 underline decoration-neutral-400">Complimentary UK Next-Day Delivery</span>
+              <div className="flex items-start sm:items-center space-x-2 sm:space-x-2.5 text-[11px] sm:text-xs text-neutral-700 pt-1 border-t border-neutral-200/50">
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 flex-shrink-0 mt-0.5 sm:mt-0" />
+                <div className="leading-snug">
+                  Order within <strong className="text-neutral-950 font-mono font-bold">{String(timeLeft.hours).padStart(2, '0')}h {String(timeLeft.minutes).padStart(2, '0')}m {String(timeLeft.seconds).padStart(2, '0')}s</strong> for <span className="font-semibold text-neutral-900 underline decoration-neutral-400">Complimentary Pan-India Delivery</span>
                 </div>
               </div>
 
               {/* Stock Urgency Progress Bar */}
               <div className="space-y-1.5 pt-1 border-t border-neutral-200/50">
-                <div className="flex justify-between text-[11px] font-semibold">
+                <div className="flex justify-between text-[10px] sm:text-[11px] font-semibold">
                   <span className="text-red-600 flex items-center space-x-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping inline-block mr-1"></span>
                     Only {product.stock > 0 && product.stock <= 10 ? product.stock : 4} items left in stock — selling fast!
                   </span>
-                  <span className="text-neutral-500">86% sold</span>
+                  <span className="text-neutral-500 flex-shrink-0 ml-2">86% sold</span>
                 </div>
                 <div className="w-full bg-neutral-200/80 rounded-full h-1.5 overflow-hidden">
                   <div className="bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500 h-1.5 rounded-full w-[86%] transition-all duration-500"></div>
@@ -535,15 +550,15 @@ const ProductDetail = () => {
             </p>
 
             {/* Intelligent Category-Aware Size & Variant Selector */}
-            <div className="space-y-4 p-4 rounded-2xl bg-neutral-50/90 border border-neutral-200/90 shadow-2xs">
+            <div className="space-y-3.5 sm:space-y-4 p-3.5 sm:p-4 rounded-2xl bg-neutral-50/90 border border-neutral-200/90 shadow-2xs">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Ruler className="w-3.5 h-3.5 text-neutral-700" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                  <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0">
+                    <Ruler className="w-3.5 h-3.5 text-neutral-700 flex-shrink-0" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-900 truncate">
                       {sizeConfig.label}:
                     </span>
-                    <span className="text-xs font-extrabold text-black bg-white px-2.5 py-0.5 rounded-md border border-neutral-200 shadow-2xs">
+                    <span className="text-xs font-extrabold text-black bg-white px-2.5 py-0.5 rounded-md border border-neutral-200 shadow-2xs flex-shrink-0">
                       {selectedVariant || sizeConfig.defaultSize}
                     </span>
                   </div>
@@ -551,15 +566,15 @@ const ProductDetail = () => {
                     <button
                       type="button"
                       onClick={() => setIsSizeGuideOpen(true)}
-                      className="text-xs font-semibold text-neutral-700 hover:text-black flex items-center space-x-1 underline underline-offset-4 transition-colors"
+                      className="text-xs font-semibold text-neutral-700 hover:text-black flex items-center space-x-1 underline underline-offset-4 transition-colors flex-shrink-0"
                     >
-                      <span>Size & Fit Guide</span>
+                      <span>Size Guide</span>
                     </button>
                   )}
                 </div>
 
                 {/* Size Options Pill Badges */}
-                <div className="flex flex-wrap gap-2 pt-1">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-1">
                   {sizeConfig.sizes.map((opt) => {
                     const isSelected = (selectedVariant || sizeConfig.defaultSize) === opt;
                     return (
@@ -567,9 +582,9 @@ const ProductDetail = () => {
                         key={opt}
                         type="button"
                         onClick={() => setSelectedVariant(opt)}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
+                        className={`min-w-[42px] px-3 py-2 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold border transition-all touch-manipulation active:scale-95 ${
                           isSelected
-                            ? 'bg-black text-white border-black shadow-md scale-105 ring-2 ring-neutral-400/40'
+                            ? 'bg-black text-white border-black shadow-md scale-102 ring-2 ring-neutral-400/40'
                             : 'bg-white text-neutral-800 border-neutral-200 hover:border-black hover:bg-neutral-100/60'
                         }`}
                       >
@@ -579,10 +594,10 @@ const ProductDetail = () => {
                   })}
                 </div>
 
-                <div className="flex items-center space-x-1.5 text-[11px] text-neutral-500 pt-1">
+                <div className="flex items-center space-x-1.5 text-[10px] sm:text-[11px] text-neutral-500 pt-1">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#0D8756] flex-shrink-0" />
-                  <span>
-                    Size <strong className="text-neutral-800 font-bold">{selectedVariant || sizeConfig.defaultSize}</strong> is in stock & reserved upon bag addition
+                  <span className="leading-tight">
+                    Size <strong className="text-neutral-800 font-bold">{selectedVariant || sizeConfig.defaultSize}</strong> is reserved upon addition
                   </span>
                 </div>
               </div>
@@ -598,13 +613,13 @@ const ProductDetail = () => {
                           {v.name}: <strong className="text-black">{typeof v.options?.[0] === 'object' ? (v.options[0]?.name || v.options[0]?.value || '') : (v.options?.[0] || '')}</strong>
                         </span>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         {v.options?.map((opt, oIdx) => {
                           const optLabel = typeof opt === 'object' ? (opt?.name || opt?.value || opt?.color || '') : String(opt);
                           return (
                             <span
                               key={oIdx}
-                              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-neutral-200 text-neutral-700"
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white border border-neutral-200 text-neutral-700"
                             >
                               {optLabel}
                             </span>
@@ -616,22 +631,22 @@ const ProductDetail = () => {
             </div>
 
             {/* Frequently Bought Together Bundle Card */}
-            <div className="p-3.5 rounded-2xl bg-neutral-50/90 border border-neutral-200/80 space-y-3">
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-neutral-50/90 border border-neutral-200/80 space-y-2.5 sm:space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center space-x-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
                   <span>Frequently Bought Together</span>
                 </span>
-                <span className="text-[10px] font-bold text-[#0D8756] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Save 15% Bundle
+                <span className="text-[10px] font-bold text-[#0D8756] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex-shrink-0">
+                  Save 15%
                 </span>
               </div>
-              <div className="flex items-center space-x-3">
-                <div className="relative w-12 h-14 rounded-lg overflow-hidden border border-neutral-200 bg-white flex-shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="relative w-11 h-13 sm:w-12 sm:h-14 rounded-lg overflow-hidden border border-neutral-200 bg-white flex-shrink-0">
                   <img src={activeImage} alt={product.name} className="w-full h-full object-cover" />
                 </div>
-                <span className="text-neutral-400 font-bold text-sm">+</span>
-                <div className="relative w-12 h-14 rounded-lg overflow-hidden border border-neutral-200 bg-white flex-shrink-0">
+                <span className="text-neutral-400 font-bold text-sm flex-shrink-0">+</span>
+                <div className="relative w-11 h-13 sm:w-12 sm:h-14 rounded-lg overflow-hidden border border-neutral-200 bg-white flex-shrink-0">
                   <img
                     src="https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=300&q=80"
                     alt="Premium Protection Sleeve"
@@ -642,10 +657,10 @@ const ProductDetail = () => {
                   <p className="text-xs font-semibold text-neutral-900 truncate">VEXIVO Silk Care & Travel Pouch</p>
                   <div className="flex items-center space-x-1.5 mt-0.5">
                     <span className="text-xs font-bold text-black">₹18.00</span>
-                    <span className="text-[11px] text-neutral-600 line-through">₹28.00</span>
+                    <span className="text-[11px] text-neutral-500 line-through">₹28.00</span>
                   </div>
                 </div>
-                <label className="flex items-center cursor-pointer select-none">
+                <label className="flex items-center cursor-pointer select-none flex-shrink-0 p-1">
                   <input
                     type="checkbox"
                     checked={bundleAdded}
@@ -657,20 +672,22 @@ const ProductDetail = () => {
             </div>
 
             {/* Quantity Selector & Action Buttons */}
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center space-x-3">
+            <div className="space-y-2.5 sm:space-y-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
                 {/* Quantity */}
-                <div className="flex items-center border border-neutral-200 rounded-full py-2.5 px-4 space-x-3">
+                <div className="flex items-center justify-between sm:justify-center border border-neutral-200 rounded-full py-2 px-4 h-12 flex-shrink-0">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="text-neutral-500 hover:text-black p-0.5"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-600 hover:text-black active:bg-neutral-100 transition-colors"
+                    aria-label="Decrease quantity"
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
-                  <span className="text-sm font-bold w-6 text-center">{quantity}</span>
+                  <span className="text-sm font-bold w-8 text-center">{quantity}</span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="text-neutral-500 hover:text-black p-0.5"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-600 hover:text-black active:bg-neutral-100 transition-colors"
+                    aria-label="Increase quantity"
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
@@ -679,9 +696,9 @@ const ProductDetail = () => {
                 {/* Add To Cart */}
                 <button
                   onClick={handleAddToCart}
-                  className="btn-pill-dark flex-1 py-3.5 text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center space-x-2"
+                  className="btn-pill-dark flex-1 h-12 py-3 text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center space-x-2 active:scale-[0.98] transition-transform shadow-xs"
                 >
-                  <ShoppingBag className="w-4 h-4" />
+                  <ShoppingBag className="w-4 h-4 flex-shrink-0" />
                   <span>Add to Bag</span>
                 </button>
               </div>
@@ -689,52 +706,52 @@ const ProductDetail = () => {
               {/* Buy Now Direct Button */}
               <button
                 onClick={handleBuyNow}
-                className="btn-pill-yellow w-full py-3.5 text-xs sm:text-sm uppercase tracking-wider text-center"
+                className="btn-pill-yellow w-full h-12 py-3 text-xs sm:text-sm uppercase tracking-wider text-center font-bold shadow-xs active:scale-[0.98] transition-transform"
               >
                 Instant Buy Now
               </button>
             </div>
 
             {/* Verified Marketplace Seller Card */}
-            <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200/80 text-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-                    <Store className="w-4 h-4" />
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200/80 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center space-x-2 sm:space-x-2.5 min-w-0">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold flex-shrink-0">
+                    <Store className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                  <div className="min-w-0">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
                       Sold by
                     </span>
-                    <span className="font-extrabold text-neutral-900 text-xs">
+                    <span className="font-extrabold text-neutral-900 text-xs truncate block">
                       {product.sellerName || 'VEXIVO Official Flagship'}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200/60">
+                <div className="flex items-center space-x-1 px-2 sm:px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[10px] sm:text-[11px] font-bold border border-emerald-200/60 flex-shrink-0">
                   <span className="text-amber-500">★</span>
                   <span>4.9</span>
-                  <span className="text-[10px] text-emerald-600 font-medium ml-1">Verified Seller</span>
+                  <span className="text-[9px] sm:text-[10px] text-emerald-600 font-medium ml-0.5">Verified</span>
                 </div>
               </div>
             </div>
 
             {/* Guarantees Box */}
-            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100 divide-y divide-neutral-100 text-xs text-neutral-600">
-              <div className="flex items-center space-x-3 py-2.5 first:pt-0">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-neutral-50 border border-neutral-100 divide-y divide-neutral-100 text-[11px] sm:text-xs text-neutral-600">
+              <div className="flex items-center space-x-2.5 sm:space-x-3 py-2.5 first:pt-0">
                 <Truck className="w-4 h-4 text-black flex-shrink-0" />
                 <span>
                   <strong>Complimentary Pan-India Express Delivery</strong> on orders over ₹499
                 </span>
               </div>
-              <div className="flex items-center space-x-3 py-2.5">
+              <div className="flex items-center space-x-2.5 sm:space-x-3 py-2.5">
                 <RotateCcw className="w-4 h-4 text-black flex-shrink-0" />
                 <span>
                   <strong>30-Day Hassle-Free Returns</strong> with doorstep courier pickup
                 </span>
               </div>
-              <div className="flex items-center space-x-3 py-2.5 last:pb-0">
+              <div className="flex items-center space-x-2.5 sm:space-x-3 py-2.5 last:pb-0">
                 <ShieldCheck className="w-4 h-4 text-black flex-shrink-0" />
                 <span>
                   <strong>Genuine Product Guarantee</strong> verified by VEXIVO Marketplace
@@ -745,9 +762,9 @@ const ProductDetail = () => {
         </div>
 
         {/* Detailed Tabs: Description, Specs, Shipping, Reviews */}
-        <div className="mt-16 sm:mt-24 pt-8 border-t border-neutral-100">
+        <div className="mt-12 sm:mt-16 lg:mt-24 pt-6 sm:pt-8 border-t border-neutral-100">
           {/* Tabs Navigation */}
-          <div className="flex items-center justify-center space-x-4 sm:space-x-8 border-b border-neutral-200 pb-3 overflow-x-auto no-scrollbar">
+          <div className="flex items-center justify-start sm:justify-center space-x-2 sm:space-x-8 border-b border-neutral-200 pb-2 overflow-x-auto no-scrollbar scroll-smooth px-1">
             {[
               { id: 'description', label: 'Full Description' },
               { id: 'specs', label: 'Specifications & Materials' },
@@ -757,10 +774,10 @@ const ProductDetail = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`text-xs sm:text-sm uppercase tracking-wider font-bold py-2 border-b-2 transition-all whitespace-nowrap ${
+                className={`text-xs sm:text-sm uppercase tracking-wider font-bold py-2 border-b-2 transition-all whitespace-nowrap flex-shrink-0 px-2 sm:px-0 ${
                   activeTab === tab.id
                     ? 'border-black text-black'
-                    : 'border-transparent text-neutral-600 hover:text-black'
+                    : 'border-transparent text-neutral-500 hover:text-black'
                 }`}
               >
                 {tab.label}
@@ -769,11 +786,11 @@ const ProductDetail = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="max-w-4xl mx-auto py-10">
+          <div className="max-w-4xl mx-auto py-6 sm:py-10">
             {activeTab === 'description' && (
               <div className="prose max-w-none text-xs sm:text-sm text-neutral-700 leading-relaxed space-y-4">
-                <p>{product.description}</p>
-                <h4 className="text-base font-bold text-neutral-900 mt-6">Acoustic & Craftsmanship Details</h4>
+                <p className="break-words">{product.description}</p>
+                <h4 className="text-sm sm:text-base font-bold text-neutral-900 mt-6">Acoustic & Craftsmanship Details</h4>
                 <p>
                   Every VEXIVO creation undergoes extensive quality control. From the tensile
                   strength of our double-faced cashmere seams to the acoustic frequency tuning of each
@@ -783,28 +800,28 @@ const ProductDetail = () => {
             )}
 
             {activeTab === 'specs' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
-                <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100 space-y-1">
-                  <p className="text-neutral-500">Brand / Atelier</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50 border border-neutral-100 space-y-1">
+                  <p className="text-neutral-500 text-[11px] sm:text-xs">Brand / Atelier</p>
                   <p className="font-bold text-neutral-900">{product.brand || 'VEXIVO'}</p>
                 </div>
-                <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100 space-y-1">
-                  <p className="text-neutral-500">SKU / Model Number</p>
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50 border border-neutral-100 space-y-1">
+                  <p className="text-neutral-500 text-[11px] sm:text-xs">SKU / Model Number</p>
                   <p className="font-bold text-neutral-900">{product.sku || 'VEX-STD-001'}</p>
                 </div>
-                <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100 space-y-1">
-                  <p className="text-neutral-500">Department</p>
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50 border border-neutral-100 space-y-1">
+                  <p className="text-neutral-500 text-[11px] sm:text-xs">Department</p>
                   <p className="font-bold text-neutral-900">{product.category}</p>
                 </div>
-                <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100 space-y-1">
-                  <p className="text-neutral-500">Warranty Coverage</p>
+                <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50 border border-neutral-100 space-y-1">
+                  <p className="text-neutral-500 text-[11px] sm:text-xs">Warranty Coverage</p>
                   <p className="font-bold text-neutral-900">Lifetime Hardware & Craft Guarantee</p>
                 </div>
               </div>
             )}
 
             {activeTab === 'shipping' && (
-              <div className="space-y-4 text-xs sm:text-sm text-neutral-700">
+              <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm text-neutral-700 leading-relaxed">
                 <p>
                   <strong>Pan-India Express:</strong> Complimentary Tracked Delivery on all orders over ₹499 across 28,000+ Indian PIN codes. Orders under ₹499 are charged at ₹49 via Ekart / Delhivery / Bluedart.
                 </p>
@@ -818,19 +835,19 @@ const ProductDetail = () => {
             )}
 
             {activeTab === 'reviews' && (
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 {/* Write Review Form */}
-                <div className="bg-neutral-50 p-6 sm:p-8 rounded-2xl border border-neutral-100">
-                  <h3 className="text-base font-bold text-neutral-900 mb-4">Write a Verified Review</h3>
+                <div className="bg-neutral-50 p-4 sm:p-8 rounded-2xl border border-neutral-100">
+                  <h3 className="text-sm sm:text-base font-bold text-neutral-900 mb-3 sm:mb-4">Write a Verified Review</h3>
                   {reviewSuccess ? (
                     <div className="flex items-center space-x-2 text-[#0D8756] text-xs font-bold py-3">
-                      <Check className="w-4 h-4" />
+                      <Check className="w-4 h-4 flex-shrink-0" />
                       <span>Thank you! Your review has been submitted and published.</span>
                     </div>
                   ) : (
-                    <form onSubmit={handleReviewSubmit} className="space-y-4">
+                    <form onSubmit={handleReviewSubmit} className="space-y-3.5 sm:space-y-4">
                       <div>
-                        <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
+                        <label className="block text-[11px] sm:text-xs font-bold uppercase text-neutral-700 mb-1">
                           Rating
                         </label>
                         <div className="flex space-x-2">
@@ -842,7 +859,7 @@ const ProductDetail = () => {
                               className="focus:outline-none"
                             >
                               <Star
-                                className={`w-6 h-6 ${
+                                className={`w-5 h-5 sm:w-6 sm:h-6 ${
                                   star <= reviewRating
                                     ? 'fill-amber-400 text-amber-400'
                                     : 'text-neutral-300'
@@ -855,7 +872,7 @@ const ProductDetail = () => {
 
                       {!user && (
                         <div>
-                          <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
+                          <label className="block text-[11px] sm:text-xs font-bold uppercase text-neutral-700 mb-1">
                             Your Name
                           </label>
                           <input
@@ -864,13 +881,13 @@ const ProductDetail = () => {
                             value={reviewName}
                             onChange={(e) => setReviewName(e.target.value)}
                             placeholder="e.g. Eleanor Vance"
-                            className="input-pill"
+                            className="input-pill w-full"
                           />
                         </div>
                       )}
 
                       <div>
-                        <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
+                        <label className="block text-[11px] sm:text-xs font-bold uppercase text-neutral-700 mb-1">
                           Review Headline
                         </label>
                         <input
@@ -879,12 +896,12 @@ const ProductDetail = () => {
                           value={reviewTitle}
                           onChange={(e) => setReviewTitle(e.target.value)}
                           placeholder="e.g. Masterful acoustics and supreme comfort"
-                          className="input-pill"
+                          className="input-pill w-full"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
+                        <label className="block text-[11px] sm:text-xs font-bold uppercase text-neutral-700 mb-1">
                           Review Feedback
                         </label>
                         <textarea
@@ -893,14 +910,14 @@ const ProductDetail = () => {
                           value={reviewComment}
                           onChange={(e) => setReviewComment(e.target.value)}
                           placeholder="Share details about the quality, fit, and audio performance..."
-                          className="w-full px-4 py-3 rounded-2xl border border-neutral-200 text-xs focus:outline-none focus:border-black"
+                          className="w-full px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl border border-neutral-200 text-xs focus:outline-none focus:border-black"
                         />
                       </div>
 
                       <button
                         type="submit"
                         disabled={isSubmittingReview}
-                        className="btn-pill-dark text-xs py-3 px-8 flex items-center space-x-2"
+                        className="btn-pill-dark text-xs py-3 px-6 sm:px-8 flex items-center justify-center space-x-2 w-full sm:w-auto"
                       >
                         <Send className="w-3.5 h-3.5" />
                         <span>{isSubmittingReview ? 'Submitting...' : 'Submit Review'}</span>
@@ -910,7 +927,7 @@ const ProductDetail = () => {
                 </div>
 
                 {/* Reviews Listing */}
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {reviewsList.length === 0 ? (
                     <p className="text-xs text-neutral-500 text-center py-6">
                       Be the first to review this iconic piece.
@@ -919,17 +936,17 @@ const ProductDetail = () => {
                     reviewsList.map((rev) => (
                       <div
                         key={rev._id || rev.id}
-                        className="p-5 rounded-2xl border border-neutral-100 bg-white space-y-2 shadow-subtle"
+                        className="p-4 sm:p-5 rounded-2xl border border-neutral-100 bg-white space-y-2 shadow-subtle"
                       >
                         <div className="flex items-center justify-between">
                           <RatingStars rating={rev.rating} showText={false} />
-                          <span className="text-[11px] text-neutral-600">
+                          <span className="text-[10px] sm:text-[11px] text-neutral-500">
                             {new Date(rev.createdAt || Date.now()).toLocaleDateString('en-GB')}
                           </span>
                         </div>
-                        <h4 className="text-sm font-bold text-neutral-900">{rev.title}</h4>
-                        <p className="text-xs text-neutral-600 leading-relaxed">{rev.comment}</p>
-                        <p className="text-[11px] font-semibold text-neutral-500 pt-1">
+                        <h4 className="text-xs sm:text-sm font-bold text-neutral-900 break-words">{rev.title}</h4>
+                        <p className="text-xs text-neutral-600 leading-relaxed break-words">{rev.comment}</p>
+                        <p className="text-[10px] sm:text-[11px] font-semibold text-neutral-500 pt-1">
                           — {rev.userName}
                         </p>
                       </div>
@@ -941,23 +958,23 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Similar Products & Recommendations Carousel */}
+        {/* Similar Products & Recommendations */}
         {relatedProducts.length > 0 && (
-          <div className="mt-16 pt-12 border-t border-neutral-100">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6">
+          <div className="mt-12 sm:mt-16 pt-8 sm:pt-12 border-t border-neutral-100">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-4 sm:mb-6 gap-1">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+                <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-neutral-500">
                   Curated For You
                 </span>
-                <h3 className="text-2xl font-bold tracking-tight text-neutral-900 mt-1">
+                <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 mt-0.5">
                   Similar Products & Recommendations
                 </h3>
               </div>
-              <p className="text-xs text-neutral-500 mt-1 sm:mt-0 font-medium">
+              <p className="text-xs text-neutral-500 font-medium">
                 Matching items in <span className="text-black font-bold">{product.category || 'Store'}</span>
               </p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
               {relatedProducts.map((p, idx) => (
                 <ProductCard key={p._id || p.id} product={p} index={idx} />
               ))}
@@ -966,46 +983,46 @@ const ProductDetail = () => {
         )}
       </div>
 
-      {/* Sticky Bottom Buy Bar (Shows on Scroll like Shaporoo) */}
+      {/* Sticky Bottom Buy Bar (Shows on Scroll like Shaporoo, coordinated with MobileStickyBar) */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200/80 shadow-[0_-8px_30px_rgb(0,0,0,0.08)] transition-transform duration-300 ${
-          isStickyVisible ? 'translate-y-0' : 'translate-y-full'
+        className={`fixed bottom-14 lg:bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200/80 shadow-[0_-8px_30px_rgb(0,0,0,0.08)] transition-transform duration-300 ${
+          isStickyVisible ? 'translate-y-0' : 'translate-y-[200%]'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center space-x-3 min-w-0">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-2 sm:py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
             <img
               src={activeImage}
               alt={product.name}
               onError={(e) => {
                 e.currentTarget.src = fallbackImg;
               }}
-              className="w-11 h-13 rounded-lg object-cover border border-neutral-200 flex-shrink-0"
+              className="w-10 h-12 sm:w-11 sm:h-13 rounded-lg object-cover border border-neutral-200 flex-shrink-0"
             />
             <div className="min-w-0">
-              <h4 className="text-xs sm:text-sm font-bold text-neutral-900 truncate max-w-xs sm:max-w-md">
+              <h4 className="text-xs sm:text-sm font-bold text-neutral-900 truncate max-w-[140px] xs:max-w-xs sm:max-w-md">
                 {product.name}
               </h4>
-              <div className="flex items-center space-x-2 text-xs">
+              <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs">
                 <span className="font-extrabold text-neutral-950">₹{Number(product.price || 0).toFixed(2)}</span>
                 {Number(product.compareAtPrice || 0) > Number(product.price || 0) && (
-                  <span className="text-neutral-600 line-through text-[11px]">
+                  <span className="text-neutral-500 line-through text-[11px] hidden xs:inline">
                     ₹{Number(product.compareAtPrice || 0).toFixed(2)}
                   </span>
                 )}
                 {(selectedVariant || sizeConfig.defaultSize) && (
-                  <span className="text-neutral-700 bg-neutral-100 px-2 py-0.5 rounded font-semibold text-[11px] hidden sm:inline">
-                    Size: {selectedVariant || sizeConfig.defaultSize}
+                  <span className="text-neutral-700 bg-neutral-100 px-1.5 py-0.5 rounded font-semibold text-[10px] sm:text-[11px] truncate max-w-[80px]">
+                    {selectedVariant || sizeConfig.defaultSize}
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3 flex-shrink-0">
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <button
               onClick={handleAddToCart}
-              className="btn-pill-dark px-6 py-2.5 text-xs sm:text-sm uppercase tracking-wider flex items-center space-x-2 shadow-md hover:scale-105 active:scale-95 transition-all"
+              className="btn-pill-dark px-3.5 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm uppercase tracking-wider flex items-center space-x-1.5 shadow-md active:scale-95 transition-all"
             >
               <ShoppingBag className="w-3.5 h-3.5" />
               <span>Add to Bag</span>
@@ -1017,19 +1034,19 @@ const ProductDetail = () => {
       {/* Fullscreen Lightbox Modal */}
       {isLightboxOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
           onClick={() => setIsLightboxOpen(false)}
         >
           <button
             onClick={() => setIsLightboxOpen(false)}
             aria-label="Close Fullscreen"
-            className="absolute top-6 right-6 z-50 w-11 h-11 rounded-full bg-white/20 hover:bg-white text-white hover:text-black flex items-center justify-center transition-all"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 z-50 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/20 hover:bg-white text-white hover:text-black flex items-center justify-center transition-all"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
           <div
-            className="relative max-w-4xl max-h-[80vh] flex items-center justify-center select-none"
+            className="relative max-w-4xl w-full max-h-[72vh] sm:max-h-[80vh] flex items-center justify-center select-none"
             onClick={(e) => e.stopPropagation()}
           >
             {activeMedia.type === 'video' ? (
@@ -1039,33 +1056,33 @@ const ProductDetail = () => {
                 controls
                 playsInline
                 autoPlay
-                className="max-w-full max-h-[78vh] object-contain rounded-xl shadow-2xl bg-black"
+                className="max-w-full max-h-[70vh] sm:max-h-[78vh] object-contain rounded-xl shadow-2xl bg-black"
               />
             ) : (
               <img
                 src={activeMedia.url}
                 alt={product.name}
-                className="max-w-full max-h-[78vh] object-contain rounded-xl shadow-2xl"
+                className="max-w-full max-h-[70vh] sm:max-h-[78vh] object-contain rounded-xl shadow-2xl"
               />
             )}
           </div>
 
           {mediaList.length > 1 && (
             <div
-              className="flex space-x-3 mt-6 z-50 overflow-x-auto max-w-md no-scrollbar"
+              className="flex space-x-2 sm:space-x-3 mt-4 sm:mt-6 z-50 overflow-x-auto max-w-[90vw] sm:max-w-md no-scrollbar px-2"
               onClick={(e) => e.stopPropagation()}
             >
               {mediaList.map((item, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSelectedImageIndex(idx)}
-                  className={`relative w-14 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                  className={`relative w-12 h-14 sm:w-14 sm:h-16 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${
                     selectedImageIndex === idx ? 'border-white scale-105' : 'border-transparent opacity-60'
                   }`}
                 >
                   {item.type === 'video' ? (
                     <div className="w-full h-full bg-neutral-900 flex items-center justify-center">
-                      <Play className="w-4 h-4 fill-white text-white" />
+                      <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white text-white" />
                     </div>
                   ) : (
                     <img src={item.url} alt="Thumbnail preview" className="w-full h-full object-cover" />
@@ -1080,21 +1097,22 @@ const ProductDetail = () => {
       {/* Size Guide Modal */}
       {isSizeGuideOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
           onClick={() => setIsSizeGuideOpen(false)}
         >
           <div
-            className="relative bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-neutral-100 overflow-hidden"
+            className="relative bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-8 shadow-2xl border border-neutral-100"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+            <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-neutral-100">
               <div className="flex items-center space-x-2">
-                <Ruler className="w-5 h-5 text-neutral-900" />
-                <h3 className="text-lg font-bold text-neutral-900">VEXIVO Size & Fit Guide</h3>
+                <Ruler className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-900 flex-shrink-0" />
+                <h3 className="text-base sm:text-lg font-bold text-neutral-900">VEXIVO Size & Fit Guide</h3>
               </div>
               <button
                 onClick={() => setIsSizeGuideOpen(false)}
                 className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-700 transition-colors"
+                aria-label="Close size guide"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1106,12 +1124,12 @@ const ProductDetail = () => {
               </p>
 
               {/* Dynamic Size Conversion Table */}
-              <div className="overflow-x-auto border border-neutral-200 rounded-2xl">
+              <div className="overflow-x-auto border border-neutral-200 rounded-xl sm:rounded-2xl">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-neutral-100/80 border-b border-neutral-200 text-neutral-900 font-bold uppercase tracking-wider">
                       {(sizeConfig.guideHeaders || ['Size', 'Fit']).map((h, idx) => (
-                        <th key={idx} className="p-3">
+                        <th key={idx} className="p-2.5 sm:p-3 whitespace-nowrap">
                           {h}
                         </th>
                       ))}
@@ -1120,17 +1138,17 @@ const ProductDetail = () => {
                   <tbody className="divide-y divide-neutral-200">
                     {(sizeConfig.guideRows || []).map((row, idx) => (
                       <tr key={idx} className={idx % 2 === 1 ? 'bg-neutral-50/60' : 'bg-white'}>
-                        <td className="p-3 font-bold text-neutral-900">{row.col1}</td>
-                        {row.col2 && <td className="p-3 text-neutral-700">{row.col2}</td>}
-                        {row.col3 && <td className="p-3 text-neutral-700">{row.col3}</td>}
-                        {row.col4 && <td className="p-3 text-neutral-700">{row.col4}</td>}
+                        <td className="p-2.5 sm:p-3 font-bold text-neutral-900 whitespace-nowrap">{row.col1}</td>
+                        {row.col2 && <td className="p-2.5 sm:p-3 text-neutral-700 whitespace-nowrap">{row.col2}</td>}
+                        {row.col3 && <td className="p-2.5 sm:p-3 text-neutral-700 whitespace-nowrap">{row.col3}</td>}
+                        {row.col4 && <td className="p-2.5 sm:p-3 text-neutral-700 whitespace-nowrap">{row.col4}</td>}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              <div className="p-3.5 bg-neutral-50 rounded-xl flex items-center space-x-2 text-neutral-700">
+              <div className="p-3 sm:p-3.5 bg-neutral-50 rounded-xl flex items-center space-x-2 text-neutral-700">
                 <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
                 <span>Complimentary exchanges are available within 30 days if you need a different size.</span>
               </div>
@@ -1140,6 +1158,7 @@ const ProductDetail = () => {
       )}
     </div>
   );
+
 };
 
 export default ProductDetail;

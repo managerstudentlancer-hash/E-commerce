@@ -635,31 +635,31 @@ const DeliveryDashboard = () => {
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-24 sm:pb-8">
         {/* Partner Identity Card / Welcome Banner */}
-        <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/80 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
-          <div className="flex items-center space-x-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-slate-950 font-black text-lg flex items-center justify-center shadow-lg shadow-emerald-500/20 flex-shrink-0">
+        <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shadow-xl">
+          <div className="flex items-center space-x-3 sm:space-x-3.5">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-slate-950 font-black text-base sm:text-lg flex items-center justify-center shadow-lg shadow-emerald-500/20 flex-shrink-0">
               {partnerInitials}
             </div>
-            <div className="space-y-0.5">
-              <div className="flex items-center space-x-2">
-                <h2 className="text-base sm:text-lg font-black text-white">
+            <div className="space-y-0.5 min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h2 className="text-sm sm:text-lg font-black text-white truncate">
                   {partnerName}
                 </h2>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
+                <span className="text-[9px] sm:text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
                   ID: #{partnerIdShort}
                 </span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                <span className={`text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                   metrics.isOnline ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                 }`}>
                   {metrics.isOnline ? 'Active on Duty' : 'Off-Duty'}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span>📍 Zone: <span className="text-slate-200 font-semibold">{partnerCity}</span></span>
+              <p className="text-[11px] text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span>📍 <span className="text-slate-200 font-semibold">{partnerCity}</span></span>
                 <span>•</span>
-                <span>🛵 Vehicle: <span className="text-slate-200 font-semibold">{partnerVehicle}</span></span>
+                <span>🛵 <span className="text-slate-200 font-semibold">{partnerVehicle}</span></span>
                 <span>•</span>
                 <span className="text-slate-300 font-mono">📱 {partnerPhone}</span>
               </p>
@@ -673,57 +673,57 @@ const DeliveryDashboard = () => {
                 fetchOrders(activeTab, true);
               }}
               disabled={isRefreshing}
-              className="px-3.5 py-2 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 text-xs font-bold transition-all flex items-center space-x-1.5 active:scale-95 disabled:opacity-50"
+              className="px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 text-xs font-bold transition-all flex items-center space-x-1.5 active:scale-95 disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
-              <span>{isRefreshing ? 'Refreshing...' : 'Refresh Deliveries'}</span>
+              <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
             </button>
           </div>
         </div>
 
-        {/* Rider KPI Metrics Overview */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div className="p-4 rounded-3xl bg-slate-900/80 border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
+        {/* Rider KPI Metrics Overview (Compact 2x2 on Mobile Phones) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
+          <div className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-white/10 space-y-0.5 sm:space-y-1">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
               <Clock className="w-3 h-3 text-amber-400" />
               <span>New Assignments</span>
             </span>
-            <p className="text-2xl font-black text-amber-400 font-mono">{metrics.newAssignmentsCount || 0}</p>
-            <p className="text-[10px] text-slate-400">Awaiting your acceptance</p>
+            <p className="text-xl sm:text-2xl font-black text-amber-400 font-mono">{metrics.newAssignmentsCount || 0}</p>
+            <p className="text-[9px] sm:text-[10px] text-slate-400">Awaiting acceptance</p>
           </div>
 
-          <div className="p-4 rounded-3xl bg-slate-900/80 border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
+          <div className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-white/10 space-y-0.5 sm:space-y-1">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
               <Truck className="w-3 h-3 text-cyan-400" />
-              <span>Active In Transit</span>
+              <span>In Transit</span>
             </span>
-            <p className="text-2xl font-black text-cyan-400 font-mono">{metrics.inTransitCount || (metrics.activeDeliveries - (metrics.newAssignmentsCount || 0)) || 0}</p>
-            <p className="text-[10px] text-slate-400">Pickup & Run</p>
+            <p className="text-xl sm:text-2xl font-black text-cyan-400 font-mono">{metrics.inTransitCount || (metrics.activeDeliveries - (metrics.newAssignmentsCount || 0)) || 0}</p>
+            <p className="text-[9px] sm:text-[10px] text-slate-400">Pickup & Run</p>
           </div>
 
-          <div className="p-4 rounded-3xl bg-slate-900/80 border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
+          <div className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-white/10 space-y-0.5 sm:space-y-1">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
               <Wallet className="w-3 h-3 text-emerald-400" />
               <span>Earnings Today</span>
             </span>
-            <p className="text-2xl font-black text-emerald-400 font-mono">₹{metrics.todayEarnings || 0}</p>
-            <p className="text-[10px] text-slate-400">COD Cash: ₹{metrics.codInHand || 0}</p>
+            <p className="text-xl sm:text-2xl font-black text-emerald-400 font-mono">₹{metrics.todayEarnings || 0}</p>
+            <p className="text-[9px] sm:text-[10px] text-slate-400">COD: ₹{metrics.codInHand || 0}</p>
           </div>
 
-          <div className="p-4 rounded-3xl bg-slate-900/80 border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
+          <div className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-white/10 space-y-0.5 sm:space-y-1">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
               <Star className="w-3 h-3 text-amber-400" />
               <span>Rider Rating</span>
             </span>
-            <p className="text-2xl font-black text-amber-400 font-mono">
+            <p className="text-xl sm:text-2xl font-black text-amber-400 font-mono">
               ★ {metrics.rating ? Number(metrics.rating).toFixed(2) : '4.95'}
             </p>
-            <p className="text-[10px] text-emerald-400">{metrics.onTimeRate || 98.4}% On-Time ✓</p>
+            <p className="text-[9px] sm:text-[10px] text-emerald-400">{metrics.onTimeRate || 98.4}% On-Time ✓</p>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center space-x-2 border-b border-white/10 pb-2 overflow-x-auto custom-scrollbar">
+        <div className="flex items-center space-x-1.5 sm:space-x-2 border-b border-white/10 pb-2 overflow-x-auto no-scrollbar">
           {[
             {
               id: 'assigned',
@@ -1834,6 +1834,75 @@ const DeliveryDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Rider Mobile App Bottom Navigation Bar (Phone Only) */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-white/10 px-2 py-1 flex items-center justify-around shadow-2xl">
+        <button
+          type="button"
+          onClick={() => setActiveTab('assigned')}
+          className={`flex flex-col items-center justify-center py-1 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all relative ${
+            activeTab === 'assigned'
+              ? 'text-amber-400 font-black'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <div className="relative">
+            <Clock className="w-4 h-4 mb-0.5" />
+            {metrics.newAssignmentsCount > 0 && (
+              <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            )}
+          </div>
+          <span>New</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('active')}
+          className={`flex flex-col items-center justify-center py-1 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all ${
+            activeTab === 'active'
+              ? 'text-emerald-400 font-black'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Truck className="w-4 h-4 mb-0.5" />
+          <span>Active ({metrics.activeDeliveries || 0})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('available')}
+          className={`flex flex-col items-center justify-center py-1 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all ${
+            activeTab === 'available'
+              ? 'text-cyan-400 font-black'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Package className="w-4 h-4 mb-0.5" />
+          <span>Available</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('earnings')}
+          className={`flex flex-col items-center justify-center py-1 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all ${
+            activeTab === 'earnings'
+              ? 'text-emerald-400 font-black'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Wallet className="w-4 h-4 mb-0.5" />
+          <span>Earnings</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowProfileModal(true)}
+          className="flex flex-col items-center justify-center py-1 px-2 flex-1 rounded-xl text-[10px] font-bold text-slate-400 hover:text-white active:scale-95 transition-all"
+        >
+          <Settings className="w-4 h-4 mb-0.5" />
+          <span>Profile</span>
+        </button>
+      </nav>
     </div>
   );
 };

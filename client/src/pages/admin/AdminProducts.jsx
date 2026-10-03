@@ -51,6 +51,9 @@ const AdminProducts = () => {
   // Form State
   const [formData, setFormData] = useState({
     name: '',
+    brand: 'VEXIVO',
+    rating: 4.8,
+    numReviews: 0,
     price: '',
     compareAtPrice: '',
     category: 'Women',
@@ -245,6 +248,9 @@ const AdminProducts = () => {
 
       setFormData({
         name: prod.name || '',
+        brand: prod.brand || 'VEXIVO',
+        rating: prod.rating !== undefined ? prod.rating : 4.8,
+        numReviews: prod.numReviews !== undefined ? prod.numReviews : 0,
         price: prod.price || '',
         compareAtPrice: prod.compareAtPrice || '',
         category: prod.category || 'Women',
@@ -267,6 +273,9 @@ const AdminProducts = () => {
       setEditingProduct(null);
       setFormData({
         name: '',
+        brand: 'VEXIVO',
+        rating: 4.8,
+        numReviews: 0,
         price: '',
         compareAtPrice: '',
         category: categories[0]?.name || 'Women',
@@ -359,6 +368,9 @@ const AdminProducts = () => {
 
       const payload = {
         name: formData.name,
+        brand: formData.brand ? formData.brand.trim() : 'VEXIVO',
+        rating: Number(formData.rating || 4.8),
+        numReviews: Number(formData.numReviews || 0),
         price: Number(formData.price),
         compareAtPrice: Number(formData.compareAtPrice || 0),
         category: formData.category,
@@ -542,9 +554,118 @@ const AdminProducts = () => {
             <p className="text-xs text-slate-400 font-bold">Querying catalog inventory...</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-white/[0.03] border-b border-white/10 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+          <div>
+            {/* Mobile Products Card View (Screens < md) */}
+            <div className="md:hidden divide-y divide-white/5">
+              {products.length === 0 ? (
+                <div className="py-16 text-center text-slate-400 text-xs">
+                  No products match your selected search or filter criteria.
+                </div>
+              ) : (
+                products.map((prod) => {
+                  const isLow = prod.stock <= 10 && prod.stock > 0;
+                  const isOut = prod.stock <= 0;
+                  return (
+                    <div key={prod._id} className="p-4 space-y-3 hover:bg-white/[0.02] transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={prod.thumbnail || prod.images?.[0] || getCategoryFallback(prod.category)}
+                          alt=""
+                          onError={(e) => {
+                            e.currentTarget.src = getCategoryFallback(prod.category);
+                          }}
+                          className="w-14 h-14 object-cover rounded-xl bg-slate-900 border border-white/10 flex-shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-white text-xs line-clamp-1">
+                            {prod.name}
+                          </p>
+                          <div className="flex items-center space-x-1.5 mt-1 flex-wrap gap-1">
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {prod.sku || 'SKU-PENDING'}
+                            </span>
+                            <span className="text-[9px] px-2 py-0.5 rounded-md bg-white/5 text-slate-300 font-semibold">
+                              {prod.category}
+                            </span>
+                            {prod.brand && (
+                              <span className="text-[9px] px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 font-semibold">
+                                {prod.brand}
+                              </span>
+                            )}
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 font-bold flex items-center space-x-0.5">
+                              <span>★</span>
+                              <span>{prod.rating || 4.8}</span>
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <span className="font-black text-cyan-300 font-mono text-sm">
+                              ₹{prod.price?.toLocaleString('en-IN')}
+                            </span>
+                            {prod.compareAtPrice > prod.price && (
+                              <>
+                                <span className="text-[10px] text-slate-500 line-through">
+                                  ₹{prod.compareAtPrice?.toLocaleString('en-IN')}
+                                </span>
+                                <span className="text-[10px] text-emerald-400 font-bold">
+                                  -{Math.round(((prod.compareAtPrice - prod.price) / prod.compareAtPrice) * 100)}%
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs">
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase font-mono ${
+                              isOut
+                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                : isLow
+                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            }`}
+                          >
+                            {isOut ? 'Out of Stock' : `${prod.stock} in stock`}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                              prod.status === 'active'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : 'bg-white/5 text-slate-400 border border-white/10'
+                            }`}
+                          >
+                            {prod.status}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleOpenModal(prod)}
+                            className="p-2 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-colors"
+                            title="Edit product"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(prod._id)}
+                            className="p-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-colors"
+                            title="Delete product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table View (Screens >= md) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-white/[0.03] border-b border-white/10 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="py-4 px-6">Product Details</th>
                   <th className="py-4 px-4">Department</th>
@@ -581,9 +702,18 @@ const AdminProducts = () => {
                               <p className="font-bold text-white line-clamp-1 group-hover:text-cyan-300 transition-colors">
                                 {prod.name}
                               </p>
-                              <div className="flex items-center space-x-2 mt-0.5">
+                              <div className="flex items-center space-x-2 mt-0.5 flex-wrap gap-1">
                                 <span className="text-[10px] text-slate-400 font-mono">
                                   {prod.sku || 'SKU-PENDING'}
+                                </span>
+                                {prod.brand && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/25">
+                                    {prod.brand}
+                                  </span>
+                                )}
+                                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/25 flex items-center space-x-0.5">
+                                  <span>★</span>
+                                  <span>{prod.rating || 4.8}</span>
                                 </span>
                                 {prod.bestseller && (
                                   <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -604,9 +734,14 @@ const AdminProducts = () => {
                         <td className="py-4 px-4 font-black text-white font-mono text-sm">
                           ₹{prod.price?.toLocaleString('en-IN')}
                           {prod.compareAtPrice > prod.price && (
-                            <span className="text-[10px] text-slate-500 line-through ml-2 font-normal">
-                              ₹{prod.compareAtPrice?.toLocaleString('en-IN')}
-                            </span>
+                            <>
+                              <span className="text-[10px] text-slate-500 line-through ml-2 font-normal">
+                                ₹{prod.compareAtPrice?.toLocaleString('en-IN')}
+                              </span>
+                              <span className="text-[10px] text-emerald-400 font-bold ml-1.5">
+                                ({Math.round(((prod.compareAtPrice - prod.price) / prod.compareAtPrice) * 100)}% off)
+                              </span>
+                            </>
                           )}
                         </td>
 
@@ -659,7 +794,8 @@ const AdminProducts = () => {
               </tbody>
             </table>
           </div>
-        )}
+        </div>
+      )}
 
         {/* Pagination Footer */}
         <div className="p-4 sm:p-5 border-t border-white/10 flex items-center justify-between text-xs text-slate-400 font-bold bg-white/[0.02]">
@@ -751,7 +887,7 @@ const AdminProducts = () => {
                 </div>
                 <div>
                   <label className="block font-bold uppercase text-slate-300 mb-1.5">
-                    Compare Price (₹)
+                    Compare Price / MRP (₹)
                   </label>
                   <input
                     type="number"
@@ -774,6 +910,25 @@ const AdminProducts = () => {
                     className="w-full px-4 py-3 rounded-2xl admin-input font-mono font-bold"
                   />
                 </div>
+
+                {/* Live Discount Calculator Preview */}
+                {Number(formData.compareAtPrice) > Number(formData.price) && Number(formData.price) > 0 ? (
+                  <div className="col-span-1 sm:col-span-3 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex items-center space-x-2">
+                      <span className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 font-black font-mono">
+                        {Math.round(((Number(formData.compareAtPrice) - Number(formData.price)) / Number(formData.compareAtPrice)) * 100)}% OFF
+                      </span>
+                      <span>Active Discount Badge (Automatically filters on category pages)</span>
+                    </span>
+                    <span className="text-[11px] font-mono text-emerald-300">
+                      Customer saves ₹{(Number(formData.compareAtPrice) - Number(formData.price)).toFixed(2)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="col-span-1 sm:col-span-3 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 text-[11px] flex items-center justify-between">
+                    <span>💡 Tip: Set <strong>Compare Price</strong> higher than <strong>Price</strong> to automatically calculate and activate discount filters & badges.</span>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -830,6 +985,63 @@ const AdminProducts = () => {
                     placeholder="VEX-COAT-001"
                     className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
                   />
+                </div>
+              </div>
+
+              {/* Brand, Rating & Review Count Controls (Filters & Display) */}
+              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-cyan-400 flex items-center space-x-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Brand, Rating & Reviews Control (Filters)</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400">Controls rating stars & brand filter tags</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  <div>
+                    <label className="block font-bold uppercase text-slate-300 mb-1.5 text-[11px]">
+                      Brand Name (Brand Filter)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.brand}
+                      onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                      placeholder="VEXIVO, ZARA, NIKE, etc."
+                      className="w-full px-4 py-3 rounded-2xl admin-input font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold uppercase text-slate-300 mb-1.5 text-[11px] flex items-center space-x-1">
+                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                      <span>Rating (1.0 - 5.0)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="5"
+                      step="0.1"
+                      value={formData.rating}
+                      onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
+                      placeholder="4.8"
+                      className="w-full px-4 py-3 rounded-2xl admin-input font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold uppercase text-slate-300 mb-1.5 text-[11px]">
+                      Verified Review Count
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.numReviews}
+                      onChange={(e) => setFormData({ ...formData, numReviews: e.target.value })}
+                      placeholder="24"
+                      className="w-full px-4 py-3 rounded-2xl admin-input font-mono font-bold"
+                    />
+                  </div>
                 </div>
               </div>
 

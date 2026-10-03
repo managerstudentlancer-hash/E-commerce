@@ -73,7 +73,7 @@ const Header = () => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { settings } = useSettings();
   const { itemCount, openCart } = useCart();
-  const { wishlistCount } = useWishlist?.() || { wishlistCount: 0 };
+  const { wishlistCount } = useWishlist();
   const navigate = useNavigate();
   const location = useLocation();
   const searchInputRef = useRef(null);
