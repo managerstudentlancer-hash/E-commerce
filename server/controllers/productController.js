@@ -31,7 +31,6 @@ const getProducts = async (req, res, next) => {
       newArrival,
       specialOffer,
       brand,
-      subcategory,
       rating,
       minRating,
       inStock,
@@ -107,6 +106,8 @@ const getProducts = async (req, res, next) => {
             { subcategory: new RegExp(`^${targetCategory}$`, 'i') },
           ],
         });
+      }
+    }
 
 
     if (subcategory && subcategory !== 'all') {
@@ -157,7 +158,6 @@ const getProducts = async (req, res, next) => {
           { 'options.color': new RegExp(`^${cSafe}$`, 'i') },
         ],
       });
->>>>>>> main
     }
 
     const targetCol = collection || collectionSlug;
