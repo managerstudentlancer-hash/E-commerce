@@ -7,7 +7,7 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "npm run dev --prefix server",
     "client": "npm run dev --prefix client",
-    "build": "npm run build --prefix client",
+    "build": "npm --prefix client install && npm --prefix client run build",
     "seed": "npm run seed --prefix server",
     "install:all": "npm install && npm install --prefix server && npm install --prefix client",
     "python-check": "node -e \"const fs=require('fs');function scan(dir){fs.readdirSync(dir,{withFileTypes:true}).forEach(f=>{if(f.name==='node_modules'||f.name==='.git')return;const p=dir+'/'+f.name;if(f.isDirectory())scan(p);else if(f.name.endsWith('.py')){console.error('Python file detected:',p);process.exit(1);}})};scan('.');console.log('Zero Python Check: PASSED! 100% Pure JavaScript/Node.js/React.');\"",

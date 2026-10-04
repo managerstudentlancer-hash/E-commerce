@@ -88,6 +88,8 @@ const AdminSettings = () => {
     try {
       const data = new FormData();
       data.append('image', file);
+      data.append('folder', 'banners');
+      data.append('entityId', 'logo');
       const res = await api.admin.uploadImage(data);
       if (res.success && res.url) {
         setFormData((prev) => ({ ...prev, logo: res.url }));

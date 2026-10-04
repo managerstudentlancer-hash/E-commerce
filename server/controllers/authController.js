@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const supabaseStorage = require('../services/supabaseStorage');
 
 const getJwtSecret = () => {
   const secret = process.env.JWT_SECRET;
@@ -138,9 +139,23 @@ const login = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please provide email and password' });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const identifier = (email || '').trim();
 
-    const user = await User.findOne({ email: normalizedEmail });
+    let user;
+    if (identifier.includes('@')) {
+      user = await User.findOne({ email: identifier.toLowerCase() });
+    } else {
+      const cleanPhone = identifier.replace(/[\s\-\(\)]/g, '');
+      const raw10 = cleanPhone.replace(/^\+?91|^0/, '');
+      user = await User.findOne({
+        $or: [
+          { email: identifier.toLowerCase() },
+          { phone: identifier },
+          { phone: `+91${raw10}` },
+          { phone: raw10 },
+        ],
+      });
+    }
     if (!user) {
       await performDummyPasswordVerification(password);
       const fail = recordFailedLogin(req);
@@ -285,6 +300,7 @@ const formatUserResponse = (user) => {
     role: user.role,
     isSeller: Boolean(user.isSeller || user.role === 'seller'),
     sellerProfile: user.sellerProfile || {},
+    deliveryProfile: user.deliveryProfile || {},
     rewardPoints: user.rewardPoints !== undefined ? user.rewardPoints : 100,
     rewardsHistory: user.rewardsHistory || [],
     addresses: user.addresses || [],
@@ -338,24 +354,53 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
-// @desc Upload profile photo
+// @desc Upload profile photo to Supabase Storage (profiles/{userId}/{unique-file-name})
 // @route POST /api/auth/profile-photo
 const uploadProfilePhoto = async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: 'Please upload an image file' });
+      return res.status(400).json({
+        success: false,
+        message: 'Please upload an image file (JPEG, PNG, WEBP, GIF up to 5MB)',
+      });
     }
+
     const user = await User.findById(req.user._id);
-    user.profilePhoto = `/uploads/${req.file.filename}`;
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Clean up previous Supabase profile image (image replacement)
+    if (user.profilePhoto) {
+      await supabaseStorage.deleteFromSupabase(user.profilePhoto).catch(() => {});
+    }
+
+    // Upload to Supabase Storage
+    const result = await supabaseStorage.uploadToSupabase({
+      buffer: req.file.buffer,
+      mimetype: req.file.mimetype,
+      originalname: req.file.originalname,
+      folder: 'profiles',
+      entityId: user._id.toString(),
+    });
+
+    user.profilePhoto = result.url;
     await user.save();
+
     res.json({
       success: true,
-      message: 'Profile photo uploaded successfully',
+      message: 'Profile photo uploaded successfully to Supabase Storage',
       profilePhoto: user.profilePhoto,
+      path: result.path,
       user: formatUserResponse(user),
     });
   } catch (error) {
-    next(error);
+    console.error('[Profile Photo Upload Error]:', error.message);
+    const isConfigError = error.message.includes('configured');
+    res.status(isConfigError ? 503 : 400).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -364,8 +409,17 @@ const uploadProfilePhoto = async (req, res, next) => {
 const removeProfilePhoto = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.profilePhoto) {
+      await supabaseStorage.deleteFromSupabase(user.profilePhoto).catch(() => {});
+    }
+
     user.profilePhoto = '';
     await user.save();
+
     res.json({
       success: true,
       message: 'Profile photo removed successfully',

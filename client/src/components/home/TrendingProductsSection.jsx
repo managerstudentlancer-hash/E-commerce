@@ -201,8 +201,8 @@ const TrendingProductsSection = ({ products = [] }) => {
             product.image ||
             fallbackTrending[0].image;
 
-          const currentPrice = Number(product.price || 0).toFixed(2);
-          const originalPrice = product.compareAtPrice ? Number(product.compareAtPrice).toFixed(2) : null;
+          const currentPrice = Number(product.price || 0);
+          const originalPrice = product.compareAtPrice ? Number(product.compareAtPrice) : null;
           const hasDiscount = Boolean(originalPrice && Number(originalPrice) > Number(currentPrice));
 
           return (
@@ -237,7 +237,7 @@ const TrendingProductsSection = ({ products = [] }) => {
                   className={`absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
                     inWishlist
                       ? 'bg-red-50 text-red-500 shadow-sm'
-                      : 'bg-white/85 hover:bg-white text-neutral-600 hover:text-black opacity-0 group-hover:opacity-100 shadow-xs hover:scale-105'
+                      : 'bg-white/85 hover:bg-white text-neutral-600 hover:text-black opacity-100 sm:opacity-0 sm:group-hover:opacity-100 shadow-xs hover:scale-105'
                   }`}
                 >
                   <Heart className={`w-4 h-4 ${inWishlist ? 'fill-current text-red-500' : ''}`} />
@@ -256,12 +256,12 @@ const TrendingProductsSection = ({ products = [] }) => {
                   />
                 </div>
 
-                {/* Quick Add To Cart Floating Button on Hover with Glassmorphism */}
+                {/* Quick Add To Cart Floating Button on Hover (Desktop only) */}
                 <button
                   type="button"
                   onClick={(e) => handleQuickAdd(e, product)}
                   disabled={isAdded}
-                  className={`absolute bottom-2.5 left-2.5 right-2.5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all shadow-md active:scale-95 ${
+                  className={`hidden sm:flex absolute bottom-2.5 left-2.5 right-2.5 py-2.5 rounded-xl text-xs font-bold items-center justify-center space-x-1.5 transition-all shadow-md active:scale-95 ${
                     isAdded
                       ? 'bg-emerald-600 text-white opacity-100'
                       : 'bg-neutral-950/90 hover:bg-neutral-950 text-white opacity-0 group-hover:opacity-100 backdrop-blur-xs'
@@ -306,11 +306,11 @@ const TrendingProductsSection = ({ products = [] }) => {
                 {/* Price Row */}
                 <div className="flex items-center space-x-2 text-xs sm:text-sm">
                   <span className={`font-bold ${hasDiscount ? 'text-[#C4301C]' : 'text-neutral-950'}`}>
-                    ${currentPrice}
+                    ₹{Math.round(currentPrice).toLocaleString('en-IN')}
                   </span>
                   {originalPrice && (
                     <span className="text-neutral-400 line-through text-[11px] font-normal">
-                      ${originalPrice}
+                      ₹{Math.round(originalPrice).toLocaleString('en-IN')}
                     </span>
                   )}
                 </div>
@@ -325,6 +325,32 @@ const TrendingProductsSection = ({ products = [] }) => {
                   <span className="text-[10px] text-neutral-400 font-medium">
                     ({product.numReviews || product.reviewsCount || 88})
                   </span>
+                </div>
+
+                {/* Mobile Quick Add Button (Phone only) */}
+                <div className="pt-2 mt-1 border-t border-neutral-100 sm:hidden">
+                  <button
+                    type="button"
+                    onClick={(e) => handleQuickAdd(e, product)}
+                    disabled={isAdded}
+                    className={`w-full py-1.5 px-2 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center justify-center space-x-1 transition-all active:scale-95 ${
+                      isAdded
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-neutral-900 text-white hover:bg-black'
+                    }`}
+                  >
+                    {isAdded ? (
+                      <>
+                        <Check className="w-3 h-3 text-white" />
+                        <span>Added</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag className="w-3 h-3 text-white" />
+                        <span>Quick Add</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>

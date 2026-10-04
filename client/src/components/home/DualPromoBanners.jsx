@@ -246,13 +246,11 @@ const DualPromoBanners = () => {
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-4 select-none">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
         
-        {/* ============================================================ */}
-        {/* Banner 1 (Left Card) with 10s Auto-Rotating Branding Items   */}
-        {/* ============================================================ */}
+        {/* Banner 1 (Left Card) with Auto-Rotating Branding Items */}
         <div
           onMouseEnter={() => setIsLeftHovered(true)}
           onMouseLeave={() => setIsLeftHovered(false)}
-          className={`relative rounded-3xl overflow-hidden bg-gradient-to-br ${currentLeft.bgGradient} p-7 sm:p-9 lg:p-10 min-h-[270px] sm:min-h-[300px] lg:min-h-[320px] flex items-center justify-between shadow-[0_4px_25px_rgba(0,0,0,0.03)] border border-[#E4DACF] hover:shadow-[0_12px_35px_rgba(0,0,0,0.06)] hover:border-[#DACCC0] transition-all duration-700 group`}
+          className={`relative rounded-3xl overflow-hidden bg-gradient-to-br ${currentLeft.bgGradient || 'from-[#EFE8DF] via-[#ECE4DA] to-[#E3D7CB]'} p-5 sm:p-9 lg:p-10 min-h-[220px] sm:min-h-[290px] lg:min-h-[310px] flex items-center justify-between shadow-[0_4px_25px_rgba(0,0,0,0.03)] border border-[#E4DACF] hover:shadow-[0_12px_35px_rgba(0,0,0,0.06)] hover:border-[#DACCC0] transition-all duration-700 group`}
         >
           {/* Subtle Ambient Light Spot */}
           <div className="absolute top-0 right-1/3 w-64 h-64 rounded-full bg-white/40 blur-2xl pointer-events-none" />
@@ -381,13 +379,11 @@ const DualPromoBanners = () => {
           )}
         </div>
 
-        {/* ============================================================ */}
-        {/* Banner 2 (Right Card) with 10s Auto-Rotating Branding Items  */}
-        {/* ============================================================ */}
+        {/* Banner 2 (Right Card) with Auto-Rotating Branding Items */}
         <div
           onMouseEnter={() => setIsRightHovered(true)}
           onMouseLeave={() => setIsRightHovered(false)}
-          className={`relative rounded-3xl overflow-hidden bg-gradient-to-br ${currentRight.bgGradient} p-7 sm:p-9 lg:p-10 min-h-[270px] sm:min-h-[300px] lg:min-h-[320px] flex items-center justify-between shadow-[0_4px_25px_rgba(0,0,0,0.03)] border border-[#E4DACF] hover:shadow-[0_12px_35px_rgba(0,0,0,0.06)] hover:border-[#DACCC0] transition-all duration-700 group`}
+          className={`relative rounded-3xl overflow-hidden bg-gradient-to-br ${currentRight.bgGradient || 'from-[#EAE2D7] via-[#E6DDD1] to-[#DED3C4]'} p-5 sm:p-9 lg:p-10 min-h-[220px] sm:min-h-[290px] lg:min-h-[310px] flex items-center justify-between shadow-[0_4px_25px_rgba(0,0,0,0.03)] border border-[#E4DACF] hover:shadow-[0_12px_35px_rgba(0,0,0,0.06)] hover:border-[#DACCC0] transition-all duration-700 group`}
         >
           {/* Subtle Ambient Light Spot */}
           <div className="absolute top-0 right-1/3 w-64 h-64 rounded-full bg-white/40 blur-2xl pointer-events-none" />

@@ -60,14 +60,14 @@ const FeaturedCollectionTabs = () => {
           <p className="text-neutral-500 text-xs sm:text-sm mt-1">
             Discover iconic tailoring, luxury leather, and lifestyle essentials crafted to the finest standards.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 mt-6">
+          <div className="flex items-center sm:justify-center overflow-x-auto no-scrollbar gap-2 sm:gap-2.5 mt-6 py-1 px-1">
             {tabConfigs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
-                  className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
+                  className={`flex-shrink-0 px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
                     isActive
                       ? 'bg-black text-white shadow-md scale-105'
                       : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 hover:text-black'

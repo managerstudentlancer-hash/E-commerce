@@ -238,7 +238,7 @@ const AdminInventory = () => {
                   <th className="py-4 px-6">Product Item</th>
                   <th className="py-4 px-4">SKU</th>
                   <th className="py-4 px-4">Department</th>
-                  <th className="py-4 px-4">Price (£)</th>
+                  <th className="py-4 px-4">Price (₹)</th>
                   <th className="py-4 px-4">Stock Status</th>
                   <th className="py-4 px-6 text-right">Rapid Warehouse Adjustment</th>
                 </tr>
@@ -297,7 +297,7 @@ const AdminInventory = () => {
                         </td>
 
                         <td className="py-4 px-4 font-black text-white font-mono">
-                          £{prod.price?.toFixed(2)}
+                          ₹{prod.price?.toFixed(2)}
                         </td>
 
                         <td className="py-4 px-4">

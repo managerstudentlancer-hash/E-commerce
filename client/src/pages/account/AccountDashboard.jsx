@@ -32,12 +32,44 @@ import {
   ChevronDown,
   ArrowRight,
   Lock,
+  Star,
+  ChevronLeft,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import api from '../../services/api';
 import AIAssistantChat from '../../components/support/AIAssistantChat';
+import CustomerShipmentTracker from '../../components/logistics/CustomerShipmentTracker';
+
+const formatShortDate = (dateInput) => {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+};
+
+const formatFlipkartDate = (dateInput) => {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dayName = days[d.getDay()];
+  const monthName = months[d.getMonth()];
+  const dayNum = d.getDate();
+  const yearShort = String(d.getFullYear()).slice(-2);
+  const nth = (n) => {
+    if (n > 3 && n < 21) return 'th';
+    switch (n % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+  return `${dayName}, ${dayNum}${nth(dayNum)} ${monthName} '${yearShort}`;
+};
 
 const INDIAN_STATES = [
   'Andhra Pradesh',
@@ -83,10 +115,30 @@ const AccountDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Active tab state: orders | profile | addresses | wishlist | rewards | coupons | notifications | support | seller
-  const activeTab = searchParams.get('tab') || 'orders';
+  const urlTab = searchParams.get('tab');
+  // For phone users: tracks if a specific subpage (Orders, Profile, Addresses, etc.) is currently open
+  const [mobileSubpageOpen, setMobileSubpageOpen] = useState(() => Boolean(urlTab));
+
+  useEffect(() => {
+    if (urlTab) {
+      setMobileSubpageOpen(true);
+    } else {
+      setMobileSubpageOpen(false);
+    }
+  }, [urlTab]);
+
+  const activeTab = urlTab || 'orders';
 
   const setActiveTab = (tab) => {
     setSearchParams({ tab });
+    setMobileSubpageOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBackToMobileMenu = () => {
+    setMobileSubpageOpen(false);
+    setSearchParams({});
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Orders State
@@ -589,7 +641,7 @@ const AccountDashboard = () => {
         {/* Main Flipkart-Style 2-Column Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* ================= LEFT SIDEBAR (FLIPKART STYLE) ================= */}
-          <div className="lg:col-span-4 xl:col-span-3 space-y-4">
+          <div className={`${mobileSubpageOpen ? 'hidden lg:block' : 'block'} lg:col-span-4 xl:col-span-3 space-y-4`}>
             {/* User Profile Card */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-neutral-200/70 flex items-center space-x-3.5">
               <div className="relative group">
@@ -799,7 +851,32 @@ const AccountDashboard = () => {
           </div>
 
           {/* ================= RIGHT CONTENT AREA ================= */}
-          <div className="lg:col-span-8 xl:col-span-9 bg-white rounded-xl shadow-sm border border-neutral-200/70 p-4 sm:p-6 lg:p-8 min-h-[550px]">
+          <div className={`${mobileSubpageOpen ? 'block' : 'hidden lg:block'} lg:col-span-8 xl:col-span-9 bg-white rounded-xl shadow-sm border border-neutral-200/70 p-4 sm:p-6 lg:p-8 min-h-[550px]`}>
+            {/* Phone App Back Navigation Header (Only visible on Mobile Phones when a subpage is open) */}
+            <div className="lg:hidden flex items-center space-x-3 pb-3.5 mb-4 border-b border-neutral-100">
+              <button
+                type="button"
+                onClick={handleBackToMobileMenu}
+                className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-800 active:scale-90 transition-transform flex-shrink-0"
+                aria-label="Back to Account Menu"
+              >
+                <ChevronLeft className="w-5 h-5 text-neutral-800" />
+              </button>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-extrabold text-neutral-900 truncate">
+                  {activeTab === 'orders' ? 'My Orders' :
+                   activeTab === 'profile' ? 'Personal Information' :
+                   activeTab === 'addresses' ? 'Manage Addresses' :
+                   activeTab === 'wishlist' ? 'My Wishlist' :
+                   activeTab === 'coupons' ? 'Gift Cards & Coupons' :
+                   activeTab === 'rewards' ? 'VEXIVO Plus Zone' :
+                   activeTab === 'notifications' ? 'Notifications' :
+                   activeTab === 'support' ? '24x7 Customer Care' : 'Account Details'}
+                </h2>
+                <p className="text-[10px] text-neutral-400">Back to all options</p>
+              </div>
+            </div>
+
             {/* ---------------- 1. MY ORDERS TAB (FLIPKART STYLE) ---------------- */}
             {activeTab === 'orders' && (
               <div className="space-y-6">
@@ -877,13 +954,199 @@ const AccountDashboard = () => {
                       const isReturned = order.orderStatus === 'returned';
                       const isEligibleForCancel = ['pending', 'confirmed', 'processing'].includes(order.orderStatus);
 
+                      const orderDate = order?.createdAt ? new Date(order.createdAt) : new Date();
+                      const deliveryEstimatedDate = order?.estimatedDelivery ? new Date(order.estimatedDelivery) : new Date(orderDate.getTime() + 4 * 24 * 3600 * 1000);
+                      const deliveredTime = deliveryEstimatedDate;
+                      const isOutForDelivery = order.orderStatus === 'out_for_delivery';
+                      const isShipped = ['shipped', 'out_for_delivery', 'delivered'].includes(order.orderStatus);
+
                       return (
-                        <div
-                          key={order._id}
-                          className="border border-neutral-200 rounded-xl p-4 sm:p-5 hover:border-neutral-300 hover:shadow-sm transition-all bg-white"
-                        >
-                          {/* Order Header */}
-                          <div className="flex flex-wrap items-center justify-between pb-3 border-b border-neutral-100 text-xs gap-2">
+                        <div key={order._id} className="space-y-4">
+                          {/* ========================================================================= */}
+                          {/* FLIPKART MOBILE PHONE ORDER CARD (sm:hidden - STRICTLY FOR MOBILE PHONES) */}
+                          {/* ========================================================================= */}
+                          <div className="sm:hidden bg-white border border-neutral-200/90 rounded-xl p-3.5 shadow-2xs space-y-3">
+                            {/* 1. Status Row with Indicator Dot */}
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start space-x-2.5">
+                                <span
+                                  className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${
+                                    isDelivered
+                                      ? 'bg-[#26a541]'
+                                      : isCancelled
+                                      ? 'bg-red-500'
+                                      : isReturned
+                                      ? 'bg-amber-500'
+                                      : 'bg-[#2874f0] animate-pulse'
+                                  }`}
+                                />
+                                <div>
+                                  <p className="text-[13px] font-bold text-neutral-900 leading-tight">
+                                    {isDelivered
+                                      ? `Delivered on ${formatFlipkartDate(deliveredTime)}`
+                                      : isCancelled
+                                      ? `Cancelled`
+                                      : isReturned
+                                      ? `Returned`
+                                      : isOutForDelivery
+                                      ? `Out for delivery today`
+                                      : isShipped
+                                      ? `Expected delivery by ${formatShortDate(deliveryEstimatedDate)}`
+                                      : `Order Confirmed, ${formatShortDate(orderDate)}`}
+                                  </p>
+                                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                                    {isDelivered
+                                      ? 'Your item has been delivered'
+                                      : isCancelled
+                                      ? 'Order was cancelled'
+                                      : isReturned
+                                      ? 'Return processed successfully'
+                                      : isOutForDelivery
+                                      ? 'Arriving today by 9 PM'
+                                      : isShipped
+                                      ? 'Your item is on the way'
+                                      : 'Seller has processed your order'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <span className="text-[10px] font-bold font-mono text-neutral-400 uppercase">
+                                #{order.orderNumber?.slice(-6) || order.orderNumber}
+                              </span>
+                            </div>
+
+                            {/* 2. Items List */}
+                            <div className="divide-y divide-neutral-100">
+                              {order.items?.map((item, idx) => (
+                                <div key={idx} className="py-2.5 flex items-start space-x-3">
+                                  <Link to={`/product/${item.slug || ''}`} className="flex-shrink-0">
+                                    <img
+                                      src={item.image || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=150&q=80'}
+                                      alt={item.name}
+                                      className="w-16 h-18 object-cover rounded-lg bg-neutral-50 border border-neutral-200/80"
+                                    />
+                                  </Link>
+                                  <div className="flex-1 min-w-0">
+                                    <Link to={`/product/${item.slug || ''}`}>
+                                      <h4 className="text-xs font-semibold text-neutral-900 line-clamp-2 leading-snug">
+                                        {item.name}
+                                      </h4>
+                                    </Link>
+                                    {item.variant && (
+                                      <p className="text-[11px] text-neutral-500 mt-0.5">
+                                        Size: {item.variant}
+                                      </p>
+                                    )}
+                                    <div className="flex items-center space-x-2 mt-1">
+                                      <span className="text-xs font-extrabold text-neutral-900">
+                                        ₹{Number(item.price || 0).toFixed(2)}
+                                      </span>
+                                      <span className="text-[11px] text-neutral-400">
+                                        Qty: {item.quantity}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* 3. Flipkart Compact 2-Step Tracker */}
+                            <div className="pt-2 border-t border-neutral-100">
+                              <CustomerShipmentTracker order={order} />
+                            </div>
+
+                            {/* 4. Flipkart "Rate & Review Product" (Only on Delivered orders) */}
+                            {isDelivered && (
+                              <div className="pt-2.5 pb-1 border-t border-neutral-100 flex items-center justify-between">
+                                <span className="text-[11px] font-semibold text-neutral-700">
+                                  Rate & Review Product
+                                </span>
+                                <div className="flex items-center space-x-1">
+                                  {[1, 2, 3, 4, 5].map((s) => (
+                                    <button
+                                      key={s}
+                                      type="button"
+                                      onClick={() => {
+                                        if (order.items?.[0]?.slug) {
+                                          navigate(`/product/${order.items[0].slug}`);
+                                        }
+                                      }}
+                                      className="p-0.5 text-neutral-300 hover:text-amber-400 focus:outline-none"
+                                      aria-label={`Rate ${s} stars`}
+                                    >
+                                      <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 5. Mobile Action Buttons Row */}
+                            <div className="pt-2.5 border-t border-neutral-100 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                              <button
+                                onClick={() => handleBuyAgain(order)}
+                                disabled={buyingAgainId === order._id}
+                                className="flex-1 min-w-[90px] py-2 px-3 rounded-lg bg-[#2874f0] text-white text-[11px] font-bold flex items-center justify-center space-x-1 shadow-2xs active:scale-95 transition-transform"
+                              >
+                                <RotateCcw className="w-3 h-3 flex-shrink-0" />
+                                <span>{buyingAgainId === order._id ? 'Adding...' : 'Buy Again'}</span>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setTicketForm({
+                                    category: 'Order Issue',
+                                    subject: `Assistance with Order #${order.orderNumber}`,
+                                    message: '',
+                                    orderNumber: order.orderNumber,
+                                  });
+                                  setActiveTab('support');
+                                  setShowNewTicketModal(true);
+                                }}
+                                className="py-2 px-3 rounded-lg border border-neutral-200 text-neutral-700 text-[11px] font-bold flex items-center justify-center space-x-1 active:bg-neutral-50 transition-colors whitespace-nowrap"
+                              >
+                                <HelpCircle className="w-3 h-3 text-[#2874f0] flex-shrink-0" />
+                                <span>Help</span>
+                              </button>
+
+                              <button
+                                onClick={() => window.print()}
+                                className="py-2 px-3 rounded-lg border border-neutral-200 text-neutral-700 text-[11px] font-semibold flex items-center justify-center space-x-1 active:bg-neutral-50 transition-colors whitespace-nowrap"
+                              >
+                                <FileText className="w-3 h-3 flex-shrink-0" />
+                                <span>Invoice</span>
+                              </button>
+
+                              {isEligibleForCancel && (
+                                <button
+                                  onClick={() => setCancelModalOrder(order)}
+                                  className="py-2 px-3 rounded-lg border border-red-200 text-red-600 text-[11px] font-bold flex items-center justify-center active:bg-red-50 transition-colors whitespace-nowrap"
+                                >
+                                  Cancel
+                                </button>
+                              )}
+
+                              {isDelivered && (
+                                <button
+                                  onClick={() => {
+                                    setReturnModalOrder(order);
+                                    setReturnRequestType('return');
+                                    setExchangeNote('');
+                                  }}
+                                  className="py-2 px-3 rounded-lg border border-amber-300 text-amber-800 text-[11px] font-bold flex items-center justify-center active:bg-amber-50 transition-colors whitespace-nowrap"
+                                >
+                                  Return
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* ========================================================================= */}
+                          {/* DESKTOP ORDER CARD (hidden sm:block - 100% UNCHANGED FOR LAPTOP / PC)     */}
+                          {/* ========================================================================= */}
+                          <div className="hidden sm:block border border-neutral-200 rounded-xl p-4 sm:p-5 hover:border-neutral-300 hover:shadow-sm transition-all bg-white">
+                            {/* Order Header */}
+                            <div className="flex flex-wrap items-center justify-between pb-3 border-b border-neutral-100 text-xs gap-2">
                             <div className="flex items-center space-x-3">
                               <span className="font-bold text-neutral-900 font-mono">
                                 #{order.orderNumber}
@@ -898,8 +1161,8 @@ const AccountDashboard = () => {
                               </span>
                             </div>
 
-                            {/* Status Pill */}
-                            <div className="flex items-center space-x-2">
+                            {/* Status Pills */}
+                            <div className="flex items-center space-x-2 flex-wrap gap-1.5">
                               <span
                                 className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
                                   isDelivered
@@ -923,6 +1186,27 @@ const AccountDashboard = () => {
                                   }`}
                                 />
                                 <span>{order.orderStatus?.replace('_', ' ')}</span>
+                              </span>
+
+                              {/* Payment Status Pill */}
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                  order.paymentStatus === 'paid'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                    : order.paymentStatus === 'refunded'
+                                    ? 'bg-purple-50 text-purple-700 border border-purple-200/60'
+                                    : 'bg-amber-50 text-amber-800 border border-amber-200/60'
+                                }`}
+                              >
+                                {order.paymentStatus === 'paid'
+                                  ? 'Paid'
+                                  : order.paymentStatus === 'refunded'
+                                  ? 'Refunded'
+                                  : (order.paymentMethod?.toLowerCase().includes('cash') || order.paymentMethod?.toLowerCase().includes('cod'))
+                                  ? 'Cash on Delivery (Pending)'
+                                  : order.paymentDetails?.utrNumber
+                                  ? 'UPI (Under Verification)'
+                                  : 'Payment Pending'}
                               </span>
                             </div>
                           </div>
@@ -981,60 +1265,57 @@ const AccountDashboard = () => {
                             ))}
                           </div>
 
-                          {/* Order Stepper (Flipkart Timeline) */}
+                          {/* Real-time Multi-Stage Logistics Stepper & Location */}
                           <div className="pt-4 border-t border-neutral-100">
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 mb-3">
-                              Order Delivery Progress:
-                            </p>
-                            <div className="grid grid-cols-4 gap-2 text-center text-[10px] relative">
-                              {[
-                                {
-                                  label: 'Ordered',
-                                  completed: true,
-                                  date: new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                                },
-                                {
-                                  label: 'Confirmed',
-                                  completed: !isCancelled,
-                                  date: !isCancelled ? 'Verified' : 'Cancelled',
-                                },
-                                {
-                                  label: 'Shipped',
-                                  completed: ['shipped', 'out_for_delivery', 'delivered'].includes(order.orderStatus),
-                                  date: order.trackingNumber || 'Ekart Express India',
-                                },
-                                {
-                                  label: 'Delivered',
-                                  completed: isDelivered,
-                                  date: isDelivered ? 'Received' : 'Estimated 2-3 Days',
-                                },
-                              ].map((step, sIdx) => (
-                                <div key={sIdx} className="space-y-1">
-                                  <div
-                                    className={`w-6 h-6 rounded-full mx-auto flex items-center justify-center text-xs font-bold ${
-                                      isCancelled
-                                        ? 'bg-neutral-200 text-neutral-500'
-                                        : step.completed
-                                        ? 'bg-emerald-500 text-white ring-4 ring-emerald-50'
-                                        : 'bg-neutral-100 text-neutral-400'
-                                    }`}
-                                  >
-                                    {step.completed && !isCancelled ? <Check className="w-3.5 h-3.5" /> : sIdx + 1}
+                            <CustomerShipmentTracker order={order} />
+
+                            {/* Return & Refund Status Card */}
+                            {order.returnDetails?.status && order.returnDetails.status !== 'none' && (
+                              <div className="mt-3.5 p-3.5 bg-purple-50 border border-purple-200 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs text-purple-950">
+                                <div className="flex items-center space-x-2.5">
+                                  <RotateCcw className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                                  <div>
+                                    <p className="font-bold">
+                                      Return Status: <span className="uppercase">{order.returnDetails.status.replace('_', ' ')}</span>
+                                    </p>
+                                    <p className="text-[11px] text-purple-700">
+                                      Refund Mode: {order.returnDetails.refundMethod || 'Original Payment Method'} • Refund: <strong className="capitalize">{order.returnDetails.refundStatus || 'Processing'}</strong>
+                                    </p>
                                   </div>
-                                  <p className="font-bold text-neutral-800">{step.label}</p>
-                                  <p className="text-[9px] text-neutral-400">{step.date}</p>
                                 </div>
-                              ))}
-                            </div>
+                                {order.returnDetails.returnPickupOtp && order.returnDetails.status !== 'completed' && order.returnDetails.status !== 'refunded' && (
+                                  <div className="bg-white px-3 py-1 rounded-xl border border-purple-200 text-center">
+                                    <span className="text-[9px] uppercase font-bold text-purple-700 block">Return Pickup OTP</span>
+                                    <span className="font-mono font-black text-purple-900 text-sm tracking-widest">
+                                      {order.returnDetails.returnPickupOtp}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           {/* Order Actions Toolbar */}
                           <div className="pt-4 mt-4 border-t border-neutral-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-neutral-500">Total Order Amount:</span>
+                            <div className="flex items-center space-x-2 flex-wrap gap-1.5">
+                              <span className="text-neutral-500">
+                                {order.paymentStatus === 'paid'
+                                  ? 'Total Paid:'
+                                  : (order.paymentMethod?.toLowerCase().includes('cash') || order.paymentMethod?.toLowerCase().includes('cod'))
+                                  ? 'To Pay on Delivery:'
+                                  : 'Amount (Pending Verification):'}
+                              </span>
                               <span className="text-base font-extrabold text-neutral-900">
                                 ₹{order.total?.toFixed(2)}
                               </span>
+                              <span className="text-[11px] font-semibold text-neutral-400">
+                                ({order.paymentMethod || 'Online'})
+                              </span>
+                              {order.paymentDetails?.utrNumber && (
+                                <span className="font-mono text-[10px] font-bold text-cyan-800 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded">
+                                  UTR: {order.paymentDetails.utrNumber}
+                                </span>
+                              )}
                             </div>
 
                             <div className="flex items-center space-x-2 flex-wrap gap-2">
@@ -1062,22 +1343,6 @@ const AccountDashboard = () => {
                                 </button>
                               )}
 
-                              {/* Simulate Delivery Button (Fast-track to test Return/Exchange) */}
-                              {!isDelivered && !isCancelled && !isReturned && (
-                                <button
-                                  onClick={() => handleSimulateDelivery(order)}
-                                  disabled={deliveringId === order._id}
-                                  className="px-2.5 py-1.5 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold transition-all flex items-center space-x-1 shadow-2xs active:scale-95 disabled:opacity-50"
-                                  title="Mark order as delivered to test Return and Exchange"
-                                >
-                                  {deliveringId === order._id ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  ) : (
-                                    <Truck className="w-3.5 h-3.5" />
-                                  )}
-                                  <span>{deliveringId === order._id ? 'Delivering...' : '⚡ Mark Delivered (Test)'}</span>
-                                </button>
-                              )}
 
                               {/* Return / Exchange Button */}
                               {isDelivered && (
@@ -1123,7 +1388,8 @@ const AccountDashboard = () => {
                             </div>
                           </div>
                         </div>
-                      );
+                      </div>
+                    );
                     })}
                   </div>
                 )}

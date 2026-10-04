@@ -1,5 +1,6 @@
 const Category = require('../models/Category');
 const Product = require('../models/Product');
+const supabaseStorage = require('../services/supabaseStorage');
 
 const slugify = (text) => {
   return text
@@ -428,6 +429,11 @@ const updateCategory = async (req, res, next) => {
       category.name = name;
       category.slug = slugify(name);
     }
+
+    if (image !== undefined && category.image && category.image !== image) {
+      await supabaseStorage.deleteFromSupabase(category.image).catch(() => {});
+    }
+
     if (description !== undefined) category.description = description;
     if (image !== undefined) category.image = image;
     if (icon !== undefined) category.icon = icon;
@@ -449,6 +455,10 @@ const deleteCategory = async (req, res, next) => {
     const category = await Category.findById(req.params.id);
     if (!category) {
       return res.status(404).json({ success: false, message: 'Category not found' });
+    }
+
+    if (category.image) {
+      await supabaseStorage.deleteFromSupabase(category.image).catch(() => {});
     }
 
     await Category.findByIdAndDelete(req.params.id);

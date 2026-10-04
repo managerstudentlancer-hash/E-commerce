@@ -183,11 +183,11 @@ const FavoriteProductsSection = () => {
                     <div>
                       <div className="flex items-baseline space-x-1.5">
                         <span className="text-base font-extrabold text-neutral-950">
-                          ${slide.product.price.toFixed(2)}
+                          ₹{Math.round(slide.product.price).toLocaleString('en-IN')}
                         </span>
                         {slide.product.compareAtPrice > slide.product.price && (
                           <span className="text-xs text-neutral-400 line-through">
-                            ${slide.product.compareAtPrice.toFixed(2)}
+                            ₹{Math.round(slide.product.compareAtPrice).toLocaleString('en-IN')}
                           </span>
                         )}
                       </div>

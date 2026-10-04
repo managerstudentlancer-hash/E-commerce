@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Tag } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 
 const CartDrawer = () => {
@@ -13,6 +13,8 @@ const CartDrawer = () => {
     subtotal,
     freeShippingRemaining,
     freeShippingProgress,
+    appliedCoupon,
+    couponDiscount,
   } = useCart();
 
   if (!isCartOpen) return null;
@@ -151,10 +153,20 @@ const CartDrawer = () => {
           {/* Drawer Footer */}
           {items.length > 0 && (
             <div className="p-5 border-t border-neutral-100 bg-neutral-50 space-y-3">
+              {appliedCoupon && (
+                <div className="flex justify-between items-center text-xs text-emerald-800 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
+                  <div className="flex items-center space-x-1.5 font-bold">
+                    <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Coupon '{appliedCoupon}'</span>
+                  </div>
+                  <span className="font-extrabold text-emerald-700">-₹{Number(couponDiscount || 0).toFixed(2)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between text-sm">
                 <span className="text-neutral-600">Subtotal</span>
                 <span className="text-base font-bold text-neutral-900">
-                  ₹{subtotal.toFixed(2)}
+                  ₹{Math.max(0, subtotal - (couponDiscount || 0)).toFixed(2)}
                 </span>
               </div>
               <p className="text-[11px] text-neutral-500">

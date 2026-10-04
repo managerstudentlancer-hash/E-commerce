@@ -24,6 +24,7 @@ import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useSettings } from '../../context/SettingsContext';
 import MobileNav from './MobileNav';
+import SearchModal from './SearchModal';
 
 const searchCategories = [
   'All Categories',
@@ -95,7 +96,7 @@ const Header = () => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { settings } = useSettings();
   const { itemCount, openCart } = useCart();
-  const { wishlistCount } = useWishlist?.() || { wishlistCount: 0 };
+  const { wishlistCount } = useWishlist();
   const navigate = useNavigate();
   const location = useLocation();
   const searchInputRef = useRef(null);
@@ -343,36 +344,14 @@ const Header = () => {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setSearchOpen(!searchOpen)}
+                onClick={() => setSearchOpen(true)}
                 aria-label="Search products"
                 className="w-9 h-9 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-700 hover:text-black transition-colors"
               >
                 <Search className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
               </button>
 
-              {/* Clean Inline Search Popup */}
-              {searchOpen && (
-                <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border border-neutral-200 p-2.5 z-50 animate-fade-in">
-                  <form onSubmit={handleSearchSubmit} className="flex items-center bg-neutral-50 rounded-xl px-3 py-2 border border-neutral-200">
-                    <Search className="w-4 h-4 text-neutral-400 mr-2 flex-shrink-0" />
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search store catalog..."
-                      className="w-full bg-transparent text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setSearchOpen(false)}
-                      className="text-neutral-400 hover:text-black ml-1"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </form>
-                </div>
-              )}
+              <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
             </div>
 
             {/* 2. Account / Sign In Icon Button */}

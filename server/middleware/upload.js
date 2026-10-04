@@ -1,39 +1,69 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// In-Memory Storage: No files are permanently written to server filesystem
+const storage = multer.memoryStorage();
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename(req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
-  },
-});
+// Allowed file extensions
+const ALLOWED_IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+const ALLOWED_VIDEO_EXTS = ['.mp4', '.webm', '.mov', '.mkv'];
+const ALLOWED_ALL_EXTS = [...ALLOWED_IMAGE_EXTS, ...ALLOWED_VIDEO_EXTS];
 
-const fileFilter = (req, file, cb) => {
-  // Security: SVG is explicitly disallowed to prevent Stored XSS / XML External Entity attacks
-  const allowedTypes = /jpeg|jpg|png|webp|gif/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase().replace('.', ''));
-  const mimetype = /image\/(jpeg|jpg|png|webp|gif)/.test(file.mimetype);
+const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_VIDEO_MIMES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska'];
+const ALLOWED_ALL_MIMES = [...ALLOWED_IMAGE_MIMES, ...ALLOWED_VIDEO_MIMES];
 
-  if (extname && mimetype) {
+const mediaFileFilter = (req, file, cb) => {
+  // SVG, HTML, PHP, EXE, JS strictly disallowed to prevent Stored XSS / RCE attacks
+  const ext = path.extname(file.originalname || '').toLowerCase();
+  const mimetype = (file.mimetype || '').toLowerCase();
+
+  const isExtValid = ALLOWED_ALL_EXTS.includes(ext);
+  const isMimeValid = ALLOWED_ALL_MIMES.includes(mimetype) || mimetype.startsWith('video/') || mimetype.startsWith('image/');
+
+  if (isExtValid && isMimeValid) {
     return cb(null, true);
-  } else {
-    cb(new Error('Security violation: Only safe raster image files (JPEG, PNG, WEBP, GIF) are permitted.'));
   }
+
+  return cb(
+    new Error(
+      'Security violation: Invalid file format. Only safe images (JPEG, PNG, WEBP, GIF) and videos (MP4, WEBM, MOV) are permitted.'
+    ),
+    false
+  );
 };
 
+const imageOnlyFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname || '').toLowerCase();
+  const mimetype = (file.mimetype || '').toLowerCase();
+
+  if (ALLOWED_IMAGE_EXTS.includes(ext) && ALLOWED_IMAGE_MIMES.includes(mimetype)) {
+    return cb(null, true);
+  }
+
+  return cb(
+    new Error('Security violation: Only safe raster image files (JPEG, PNG, WEBP, GIF) are permitted.'),
+    false
+  );
+};
+
+// General upload handler supporting media up to 60MB (images & videos)
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB safe limit
-  fileFilter,
+  limits: {
+    fileSize: 60 * 1024 * 1024, // 60MB limit to support product videos
+    files: 10,
+  },
+  fileFilter: mediaFileFilter,
+});
+
+upload.imageOnly = multer({
+  storage,
+  limits: {
+    fileSize: 15 * 1024 * 1024,
+    files: 10,
+  },
+  fileFilter: imageOnlyFilter,
 });
 
 module.exports = upload;

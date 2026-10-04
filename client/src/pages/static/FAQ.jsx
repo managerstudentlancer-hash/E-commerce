@@ -21,8 +21,8 @@ const faqCategories = [
     icon: Truck,
     questions: [
       {
-        q: 'How fast is UK delivery, and what are the shipping costs?',
-        a: 'We offer complimentary Next-Day Tracked Delivery on all UK orders over £50 via DPD Priority and Royal Mail Tracked 24. For orders under £50, standard delivery is £3.99. Orders placed before 2:00 PM GMT Monday to Friday are dispatched the same day from our London distribution center.',
+        q: 'How fast is Pan-India delivery, and what are the shipping costs?',
+        a: 'We offer complimentary Express Delivery on all orders over ₹499 via Delhivery, BlueDart, and Ekart. For orders under ₹499, standard tracked delivery is ₹49. Orders placed before 2:00 PM IST Monday to Saturday are dispatched the same day from our national logistics hubs.',
       },
       {
         q: 'Do you ship internationally?',

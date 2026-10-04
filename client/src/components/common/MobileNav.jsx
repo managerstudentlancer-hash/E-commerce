@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { X, ChevronRight, User, Heart, ShoppingBag, ShieldCheck, Package, Mail, Phone, Gift, Store } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, X, ChevronRight, User, Heart, ShoppingBag, ShieldCheck, Package, Mail, Phone, Gift, Store } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -24,6 +24,16 @@ const MobileNav = ({ isOpen, onClose }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const { wishlistCount } = useWishlist();
   const { settings } = useSettings();
+  const [mobileSearchQuery, setMobileSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleMobileSearch = (e) => {
+    e.preventDefault();
+    if (mobileSearchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(mobileSearchQuery.trim())}`);
+      onClose();
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -56,6 +66,29 @@ const MobileNav = ({ isOpen, onClose }) => {
             >
               <X className="w-5 h-5" />
             </button>
+          </div>
+
+          {/* Mobile Search Bar */}
+          <div className="p-4 border-b border-neutral-100 bg-neutral-50/50">
+            <form onSubmit={handleMobileSearch} className="flex items-center bg-white rounded-full px-3.5 py-2 border border-neutral-200 shadow-2xs">
+              <Search className="w-4 h-4 text-neutral-400 mr-2 flex-shrink-0" />
+              <input
+                type="text"
+                value={mobileSearchQuery}
+                onChange={(e) => setMobileSearchQuery(e.target.value)}
+                placeholder="Search products, brands, categories..."
+                className="w-full bg-transparent text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none"
+              />
+              {mobileSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setMobileSearchQuery('')}
+                  className="text-neutral-400 hover:text-black ml-1 text-xs"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </form>
           </div>
 
           {/* Navigation Links */}

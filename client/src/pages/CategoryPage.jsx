@@ -212,10 +212,10 @@ const CATEGORY_HIERARCHY = {
 
 const PRICE_PRESETS = [
   { id: 'all', label: 'All Prices' },
-  { id: 'under-50', label: 'Under $50', min: 0, max: 50 },
-  { id: '50-100', label: '$50 - $100', min: 50, max: 100 },
-  { id: '100-200', label: '$100 - $200', min: 100, max: 200 },
-  { id: '200-plus', label: '$200 & Above', min: 200, max: 99999 },
+  { id: 'under-999', label: 'Under ₹999', min: 0, max: 999 },
+  { id: '999-1999', label: '₹999 - ₹1,999', min: 999, max: 1999 },
+  { id: '1999-3499', label: '₹1,999 - ₹3,499', min: 1999, max: 3499 },
+  { id: '3499-plus', label: '₹3,499 & Above', min: 3499, max: 99999 },
 ];
 
 const RATING_FILTERS = [
@@ -364,6 +364,13 @@ const CategoryPage = () => {
       const res = await api.categories.getBySlug(slug, params);
       if (res.success) {
         setCategory(res.category);
+        if (res.category?.name) {
+          document.title = `${res.category.name} | VEXIVO Collection`;
+          const metaDesc = document.querySelector('meta[name="description"]');
+          if (metaDesc) {
+            metaDesc.setAttribute('content', res.category.description || `Shop the latest ${res.category.name} products at VEXIVO.`);
+          }
+        }
         if (res.availableBrands) setAvailableBrands(res.availableBrands);
         if (res.availableSubcategories) setAvailableSubcategories(res.availableSubcategories);
 
@@ -644,7 +651,7 @@ const CategoryPage = () => {
                   <div className="pt-2 flex items-center space-x-2">
                     <input
                       type="number"
-                      placeholder="Min $"
+                      placeholder="Min ₹"
                       value={minPriceInput}
                       onChange={(e) => {
                         setMinPriceInput(e.target.value);
@@ -655,7 +662,7 @@ const CategoryPage = () => {
                     <span className="text-neutral-400">to</span>
                     <input
                       type="number"
-                      placeholder="Max $"
+                      placeholder="Max ₹"
                       value={maxPriceInput}
                       onChange={(e) => {
                         setMaxPriceInput(e.target.value);
@@ -874,7 +881,7 @@ const CategoryPage = () => {
                     <span>
                       Price:{' '}
                       {minPriceInput || maxPriceInput
-                        ? `$${minPriceInput || '0'} - $${maxPriceInput || '∞'}`
+                        ? `₹${minPriceInput || '0'} - ₹${maxPriceInput || '∞'}`
                         : PRICE_PRESETS.find((p) => p.id === selectedPricePreset)?.label}
                     </span>
                     <X

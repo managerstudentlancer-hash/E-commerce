@@ -9,7 +9,10 @@ const {
   updateProduct,
   deleteProduct,
   getMySellerProducts,
+  uploadProductMedia,
   uploadProductImage,
+  deleteProductMedia,
+  deleteProductImage,
 } = require('../controllers/productController');
 
 const { protect } = require('../middleware/auth');
@@ -73,15 +76,14 @@ router
   .post(protect, createProduct);
 
 // ==========================================
-// AUTHENTICATED IMAGE UPLOAD
+// AUTHENTICATED IMAGE & MEDIA UPLOADS
 // ==========================================
-
-router.post(
-  '/upload-image',
-  protect,
-  upload.single('image'),
-  uploadProductImage
-);
+router.post('/upload-image', protect, upload.single('image'), uploadProductMedia || uploadProductImage);
+router.post('/upload-images', protect, upload.array('images', 10), uploadProductMedia);
+router.post('/upload-video', protect, upload.single('video'), uploadProductMedia);
+router.post('/upload-media', protect, upload.single('media'), uploadProductMedia);
+router.delete('/delete-image', protect, deleteProductImage);
+router.delete('/delete-media', protect, deleteProductMedia);
 
 // ==========================================
 // SELLER'S OWN PRODUCTS
