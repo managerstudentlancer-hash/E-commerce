@@ -6,6 +6,7 @@ const Collection = require('../models/Collection');
 const Banner = require('../models/Banner');
 const Coupon = require('../models/Coupon');
 const Review = require('../models/Review');
+const Order = require('../models/Order');
 
 const categoriesData = [
   {
@@ -20921,6 +20922,7 @@ const seedAll = async () => {
       Banner.deleteMany(),
       Coupon.deleteMany(),
       Review.deleteMany(),
+      Order.deleteMany(),
     ]);
 
     console.log('[VEXIVO Seed] Collections cleared. Seeding fresh VEXIVO catalog with 308 products...');
@@ -20967,7 +20969,28 @@ const seedAll = async () => {
         },
       ],
     });
-    console.log('[VEXIVO Seed] Seeded Admin & Customer accounts.');
+        const deliveryUser = await User.create({
+      name: 'Vikram Singh (Express Delivery)',
+      email: 'delivery@vexivo.com',
+      passwordHash: 'DeliveryPass123!',
+      role: 'delivery_partner',
+      phone: '+919876543219',
+      deliveryProfile: {
+        status: 'ACTIVE',
+        vehicleType: 'Electric 2-Wheeler (Ather 450X)',
+        vehicleNumber: 'RJ-14-EA-9921',
+        licenseNumber: 'DL-RJ14-2022-004921',
+        isOnline: true,
+        isApproved: true,
+        city: 'Jaipur',
+        serviceZones: ['Mansarovar', 'Sitapura', 'Malviya Nagar', 'Jaipur Central', 'Vaishali Nagar'],
+        rating: 4.95,
+        totalDeliveries: 128,
+        earnings: 6400,
+        kycStatus: 'verified',
+      },
+    });
+    console.log('[VEXIVO Seed] Seeded Admin, Customer & Delivery Partner accounts.');
 
     // 2. Seed Categories
     const categories = await Category.insertMany(categoriesData);
@@ -21034,12 +21057,102 @@ const seedAll = async () => {
     await Review.insertMany(sampleReviews);
     console.log('[VEXIVO Seed] Seeded verified customer reviews.');
 
+    // 8. Seed Demo Orders for Delivery Partner Workflow
+    await Order.create([
+      {
+        orderNumber: 'VEX-ORD-DEL-001',
+        user: customerUser._id,
+        items: [
+          {
+            product: products[0]._id,
+            name: products[0].name,
+            price: products[0].price,
+            quantity: 1,
+            image: products[0].images && products[0].images[0] ? products[0].images[0] : '',
+            seller: products[0].seller || adminUser._id,
+            sellerName: products[0].sellerName || 'VEXIVO Official',
+          },
+        ],
+        subtotal: products[0].price,
+        discount: 0,
+        shipping: 0,
+        tax: 0,
+        total: products[0].price,
+        shippingAddress: {
+          firstName: 'Arpit',
+          lastName: 'Sharma',
+          address: 'Flat 402, Royal Palms, Malviya Nagar',
+          city: 'Jaipur',
+          state: 'Rajasthan',
+          postalCode: '302017',
+          country: 'India',
+          phone: '+919876543210',
+        },
+        paymentMethod: 'Cash on Delivery',
+        paymentStatus: 'pending',
+        orderStatus: 'delivery_partner_assigned',
+        deliveryPartner: deliveryUser._id,
+        deliveryPartnerName: deliveryUser.name,
+        deliveryPartnerPhone: deliveryUser.phone,
+        deliveryDetails: {
+          deliveryStatus: 'assigned',
+          pickupOtp: '4521',
+          deliveryOtp: '7890',
+          assignedAt: new Date(),
+          estimatedDelivery: new Date(Date.now() + 45 * 60 * 1000),
+          specialInstructions: 'Please call before ringing the doorbell',
+        },
+      },
+      {
+        orderNumber: 'VEX-ORD-DEL-002',
+        user: customerUser._id,
+        items: [
+          {
+            product: products[1]._id,
+            name: products[1].name,
+            price: products[1].price,
+            quantity: 2,
+            image: products[1].images && products[1].images[0] ? products[1].images[0] : '',
+            seller: products[1].seller || adminUser._id,
+            sellerName: products[1].sellerName || 'VEXIVO Official',
+          },
+        ],
+        subtotal: products[1].price * 2,
+        discount: 0,
+        shipping: 0,
+        tax: 0,
+        total: products[1].price * 2,
+        shippingAddress: {
+          firstName: 'Rohan',
+          lastName: 'Mehta',
+          address: 'Plot 18, Swej Farm Road, Sodala',
+          city: 'Jaipur',
+          state: 'Rajasthan',
+          postalCode: '302019',
+          country: 'India',
+          phone: '+919829012345',
+        },
+        paymentMethod: 'Prepaid (UPI / Card)',
+        paymentStatus: 'paid',
+        orderStatus: 'processing',
+        deliveryPartner: null,
+        deliveryDetails: {
+          deliveryStatus: 'unassigned',
+          pickupOtp: '1122',
+          deliveryOtp: '3344',
+          estimatedDelivery: new Date(Date.now() + 2 * 3600 * 1000),
+        },
+      },
+    ]);
+    console.log('[VEXIVO Seed] Seeded Demo Orders for Delivery Fleet testing.');
+
     console.log('======================================================');
     console.log('🎉 VEXIVO DATABASE SEEDING COMPLETE!');
     console.log(`📦 Total Products Seeded: ${products.length}`);
     console.log(`🏷️  Categories Seeded: ${categories.length}`);
     console.log('👤 Admin: admin@vexivo.com | AdminPass123!');
     console.log('👤 Customer: arpit123@gmail.com | Arpit123!');
+    console.log('🛵 Delivery: delivery@vexivo.com | DeliveryPass123!');
     console.log('======================================================');
 
     if (require.main === module) {
