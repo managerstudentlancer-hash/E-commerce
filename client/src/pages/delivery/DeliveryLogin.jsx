@@ -681,30 +681,6 @@ const DeliveryLogin = () => {
               </div>
             )}
 
-            {/* Quick Demo Credentials Fill Card */}
-            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-emerald-400 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" /> Demo Delivery Partner
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginIdentifier('delivery@vexivo.com');
-                    setLoginPassword('DeliveryPass123!');
-                    setLoginError('');
-                  }}
-                  className="px-2.5 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[10px] uppercase tracking-wider transition-all active:scale-95"
-                >
-                  Auto Fill
-                </button>
-              </div>
-              <div className="text-slate-300 space-y-0.5 font-mono text-[11px]">
-                <p>Email: <span className="text-white">delivery@vexivo.com</span></p>
-                <p>Password: <span className="text-white">DeliveryPass123!</span></p>
-              </div>
-            </div>
-
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
@@ -716,7 +692,7 @@ const DeliveryLogin = () => {
                     required
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
-                    placeholder="delivery@vexivo.com or 9876543210"
+                    placeholder="Enter email or mobile number"
                     className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-950 border border-white/10 text-white placeholder-slate-500 text-xs font-medium focus:border-emerald-500 focus:outline-none"
                   />
                   <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
