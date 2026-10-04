@@ -90,6 +90,34 @@
   animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes bannerProgress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-banner-progress {
+  animation: bannerProgress 10000ms linear forwards;
+}
+
+@keyframes bannerSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-banner-slide {
+  animation: bannerSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 @keyframes pulseSubtle {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.85; }

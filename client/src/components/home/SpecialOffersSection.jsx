@@ -27,7 +27,7 @@ const SpecialOffersSection = ({ products = [] }) => {
           </div>
 
           <Link
-            to="/collection/special-offers"
+            to="/offers"
             className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-neutral-900 hover:text-[#C4301C] transition-colors py-2 px-4 rounded-full border border-neutral-200 hover:border-[#C4301C] self-start sm:self-auto"
           >
             <span>View All Deals</span>

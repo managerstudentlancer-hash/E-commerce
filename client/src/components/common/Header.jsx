@@ -29,18 +29,24 @@ const searchCategories = [
   'All Categories',
   'Women Wear',
   'Men Wear',
-  'Kids Wear',
-  'Shoes',
   'Beauty',
-  'Jewellery',
-  'Bags',
-  'Hats',
-  'Vision Care',
-  'Pets Care',
-  'Toys',
-  'Health & Fitness',
-  'Electronics',
-  'Home & Living',
+  'Fragrances',
+  'Skin Care',
+  'Fine Jewellery',
+  'Bags & Luggage',
+  'Shoes & Footwear',
+  'Sunglasses',
+  'Furniture',
+  'Home Decoration',
+  'Kitchen Accessories',
+  'Groceries',
+  'Laptops',
+  'Smartphones',
+  'Tablets',
+  'Mobile Accessories',
+  'Sports Accessories',
+  'Motorcycles',
+  'Vehicles',
 ];
 
 const categorySlugMap = {
@@ -48,17 +54,34 @@ const categorySlugMap = {
   'Men Wear': 'men-wear',
   'Mens Wear': 'men-wear',
   'Kids Wear': 'kids-wear',
-  'Shoes': 'shoes',
+  'Shoes': 'womens-shoes',
+  'Shoes & Footwear': 'womens-shoes',
   'Beauty': 'beauty',
-  'Jewellery': 'jewellery',
-  'Bags': 'bags',
+  'Fragrances': 'fragrances',
+  'Skin Care': 'skin-care',
+  'Jewellery': 'womens-jewellery',
+  'Fine Jewellery': 'womens-jewellery',
+  'Bags': 'womens-bags',
+  'Bags & Luggage': 'womens-bags',
   'Hats': 'hats',
-  'Vision Care': 'vision-care',
+  'Vision Care': 'sunglasses',
+  'Sunglasses': 'sunglasses',
   'Pets Care': 'pets-care',
   'Toys': 'toys',
-  'Health & Fitness': 'health-fitness',
-  'Electronics': 'electronics',
-  'Home & Living': 'home-living',
+  'Health & Fitness': 'sports-accessories',
+  'Sports Accessories': 'sports-accessories',
+  'Electronics': 'smartphones',
+  'Laptops': 'laptops',
+  'Smartphones': 'smartphones',
+  'Tablets': 'tablets',
+  'Mobile Accessories': 'mobile-accessories',
+  'Home & Living': 'furniture',
+  'Furniture': 'furniture',
+  'Home Decoration': 'home-decoration',
+  'Kitchen Accessories': 'kitchen-accessories',
+  'Groceries': 'groceries',
+  'Motorcycles': 'motorcycle',
+  'Vehicles': 'vehicle',
 };
 
 const Header = () => {
@@ -205,7 +228,7 @@ const Header = () => {
               onMouseEnter={() => setActiveDropdown('categories')}
               onMouseLeave={() => setActiveDropdown(null)}
             >
-              <button className="flex items-center space-x-1 hover:text-black transition-colors focus:outline-none">
+              <button className="flex items-center space-x-1 hover:text-black transition-colors focus:outline-none cursor-pointer">
                 <span>Categories</span>
                 <ChevronDown className="w-3.5 h-3.5 text-neutral-400 transition-transform duration-200" />
               </button>
@@ -408,6 +431,27 @@ const Header = () => {
                   >
                     <Heart className="w-4 h-4 text-neutral-500" />
                     <span>Wishlist</span>
+                  </Link>
+
+                  <Link
+                    to="/account?tab=support"
+                    className="flex items-center space-x-2.5 px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-black rounded-xl transition-colors"
+                  >
+                    <Headphones className="w-4 h-4 text-neutral-500" />
+                    <span>24x7 Customer Care</span>
+                  </Link>
+
+                  <Link
+                    to="/offers"
+                    className="flex items-center justify-between px-3 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50 hover:text-black rounded-xl transition-colors group/offers"
+                  >
+                    <div className="flex items-center space-x-2.5">
+                      <Gift className="w-4 h-4 text-rose-500 transition-transform group-hover/offers:scale-110" />
+                      <span>Offers &amp; Gift Cards</span>
+                    </div>
+                    <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-rose-50 text-rose-600 border border-rose-100">
+                      NEW
+                    </span>
                   </Link>
 
                   {/* Customer / Seller Mode Toggle */}

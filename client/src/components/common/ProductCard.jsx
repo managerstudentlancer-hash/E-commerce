@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Check, Eye } from 'lucide-react';
+import { Heart, ShoppingBag, Check, Eye, Star } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import QuickViewModal from './QuickViewModal';
@@ -205,16 +205,17 @@ const ProductCard = ({ product, index = 0, dealBadge = 'Big Billion Days Price',
 
       {/* Flipkart Style Product Details Section */}
       <div className="p-2.5 sm:p-3 flex flex-col flex-1 bg-white">
-        {/* Sponsored Label */}
-        {isSponsored && (
-          <span className="text-[11px] text-neutral-400 font-medium leading-none mb-1">
-            Sponsored
-          </span>
-        )}
-
-        {/* Brand Name */}
-        <div className="text-[12px] font-bold text-neutral-600 uppercase tracking-wide truncate mb-0.5">
-          {brandName}
+        {/* Brand, Category & Rating Header Row */}
+        <div className="flex items-center justify-between gap-1 mb-1">
+          <div className="text-[12px] font-bold text-neutral-600 uppercase tracking-wide truncate">
+            {brandName}
+          </div>
+          {Number(product.rating) > 0 && (
+            <div className="inline-flex items-center space-x-0.5 bg-[#388e3c] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-xs flex-shrink-0 shadow-2xs">
+              <span>{Number(product.rating).toFixed(1)}</span>
+              <Star className="w-2.5 h-2.5 fill-current text-white" />
+            </div>
+          )}
         </div>
 
         {/* Product Title */}
@@ -241,14 +242,19 @@ const ProductCard = ({ product, index = 0, dealBadge = 'Big Billion Days Price',
           )}
         </div>
 
-        {/* Deal Badge (Flipkart Lavender Badge) */}
-        {dealBadge && (
-          <div className="mt-1.5">
-            <span className="inline-block bg-[#F4E8FF] text-[#6B21A8] font-bold text-[11px] px-1.5 py-0.5 rounded-xs leading-tight">
+        {/* Category & Deal Badge Row */}
+        <div className="flex items-center space-x-1.5 mt-1.5 flex-wrap gap-y-1">
+          {dealBadge && (
+            <span className="inline-block bg-[#F4E8FF] text-[#6B21A8] font-bold text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded-xs leading-tight">
               {dealBadge}
             </span>
-          </div>
-        )}
+          )}
+          {product.category && (
+            <span className="inline-block bg-neutral-100 text-neutral-600 font-semibold text-[10px] px-1.5 py-0.5 rounded-xs leading-tight">
+              {product.category}
+            </span>
+          )}
+        </div>
 
         {/* Available Sizes Row */}
         {showSizes && (

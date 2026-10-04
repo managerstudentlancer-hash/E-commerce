@@ -5,16 +5,15 @@ import ProductCard from '../common/ProductCard';
 import api from '../../services/api';
 
 const tabConfigs = [
-  { id: 'women-wear', label: "Women's Fashion", subtitle: 'Dresses, Tops, Skirts & Modern Tailoring' },
-  { id: 'men-wear', label: "Men's Fashion", subtitle: 'Shirts, T-Shirts, Trousers & Jackets' },
-  { id: 'shoes', label: "Shoes & Footwear", subtitle: 'Sneakers, Boots, Sandals & Flats' },
-  { id: 'electronics', label: "Electronics", subtitle: 'Acoustic Headphones, Keyboards & Gadgets' },
-  { id: 'beauty', label: "Beauty & Skincare", subtitle: 'Skincare, Makeup & Beauty Essentials' },
+  { id: 'shoes', label: "Shoes & Footwear", subtitle: 'Sneakers, Boots, Sandals & Designer Flats' },
+  { id: 'bags', label: "Bags & Accessories", subtitle: 'Leather Totes, Crossbody Bags & Travel Goods' },
+  { id: 'beauty', label: "Beauty & Skincare", subtitle: 'Skincare, Fragrances & Beauty Essentials' },
   { id: 'home-living', label: "Home & Living", subtitle: 'Sculptural Decor, Furniture & Ambient Lighting' },
+  { id: 'electronics', label: "Electronics & Audio", subtitle: 'Acoustic Headphones, Keyboards & Gadgets' },
 ];
 
 const FeaturedCollectionTabs = () => {
-  const [activeTab, setActiveTab] = useState('women-wear');
+  const [activeTab, setActiveTab] = useState('shoes');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
 

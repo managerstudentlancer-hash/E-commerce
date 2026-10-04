@@ -2,17 +2,20 @@ const mongoose = require('mongoose');
 
 const bannerSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    subtitle: { type: String, default: '' },
-    highlight: { type: String, default: '' },
-    image: { type: String, required: true },
-    mobileImage: { type: String, default: '' },
-    buttonText: { type: String, default: 'Shop Now' },
-    buttonLink: { type: String, default: '/shop' },
+    title: { type: String, required: true, trim: true },
+    subtitle: { type: String, default: '', trim: true },
+    highlight: { type: String, default: '', trim: true },
+    tag: { type: String, default: '', trim: true },
+    productBadge: { type: String, default: '', trim: true },
+    image: { type: String, required: true, trim: true },
+    mobileImage: { type: String, default: '', trim: true },
+    buttonText: { type: String, default: 'Shop Now', trim: true },
+    buttonLink: { type: String, default: '/shop', trim: true },
     position: {
       type: String,
-      enum: ['hero', 'promotional', 'split', 'footer-banner'],
+      enum: ['hero', 'promotional', 'split', 'dual-left', 'dual-right', 'footer-banner'],
       default: 'hero',
+      index: true,
     },
     active: { type: Boolean, default: true },
     sortOrder: { type: Number, default: 0 },

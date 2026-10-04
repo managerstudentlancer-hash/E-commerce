@@ -24,6 +24,8 @@ import {
   Radio,
   HelpCircle,
   Loader2,
+  Gift,
+  Headphones,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -35,8 +37,10 @@ const adminNavItems = [
   { name: 'Orders', path: '/admin/orders', icon: ShoppingCart, badge: 'Live' },
   { name: 'Customers', path: '/admin/customers', icon: Users, badge: null },
   { name: 'Users & Roles', path: '/admin/users', icon: Users, badge: null },
+  { name: '24/7 Customer Care', path: '/admin/support', icon: Headphones, badge: 'Live' },
   { name: 'Inventory', path: '/admin/inventory', icon: Boxes, badge: 'Stock' },
   { name: 'Coupons', path: '/admin/coupons', icon: Tag, badge: null },
+  { name: 'Offers & Deals', path: '/admin/offers', icon: Gift, badge: 'Live' },
   { name: 'Reviews', path: '/admin/reviews', icon: Star, badge: null },
   { name: 'Banners', path: '/admin/banners', icon: ImageIcon, badge: null },
   { name: 'Brand Logo', path: '/admin/logo', icon: Sparkles, badge: 'Live' },

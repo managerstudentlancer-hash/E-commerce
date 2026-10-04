@@ -71,6 +71,8 @@ export const api = {
     setDefaultAddress: (id) => request(`/auth/addresses/${id}/default`, { method: 'PUT' }),
     activateSeller: (sellerData) => request('/auth/activate-seller', { method: 'POST', body: JSON.stringify(sellerData) }),
     changePassword: (passwords) => request('/auth/password', { method: 'PUT', body: JSON.stringify(passwords) }),
+    forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+    resetPassword: (data) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify(data) }),
   },
 
   // Products
@@ -98,6 +100,7 @@ export const api = {
     create: (cat) => request('/categories', { method: 'POST', body: JSON.stringify(cat) }),
     update: (id, cat) => request(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(cat) }),
     delete: (id) => request(`/categories/${id}`, { method: 'DELETE' }),
+    syncDummy: () => request('/categories/sync-dummy', { method: 'POST' }),
   },
 
   // Collections
@@ -231,13 +234,21 @@ export const api = {
     uploadImage: (formData) => request('/admin/upload', { method: 'POST', body: formData }),
   },
 
-  // Support / Customer Care
+  // Support / 24*7 Customer Care
   support: {
+    submitInquiry: (data) => request('/support/inquiry', { method: 'POST', body: JSON.stringify(data) }),
     createTicket: (data) => request('/support/tickets', { method: 'POST', body: JSON.stringify(data) }),
     getMyTickets: () => request('/support/tickets'),
     getById: (id) => request(`/support/tickets/${id}`),
     reply: (id, message) => request(`/support/tickets/${id}/reply`, { method: 'POST', body: JSON.stringify({ message }) }),
     close: (id) => request(`/support/tickets/${id}/close`, { method: 'PUT' }),
+    getAdminTickets: (params) => {
+      const query = params ? `?${new URLSearchParams(Object.entries(params).filter(([_, v]) => v != null && v !== '')).toString()}` : '';
+      return request(`/support/admin/tickets${query}`);
+    },
+    updateTicketAdmin: (id, data) => request(`/support/admin/tickets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteTicketAdmin: (id) => request(`/support/admin/tickets/${id}`, { method: 'DELETE' }),
+    adminReply: (id, message) => request(`/support/admin/tickets/${id}/reply`, { method: 'POST', body: JSON.stringify({ message }) }),
   },
 
   // Notifications
@@ -245,6 +256,30 @@ export const api = {
     getAll: () => request('/notifications'),
     markRead: (id) => request(`/notifications/${id}/read`, { method: 'PUT' }),
     markAllRead: () => request('/notifications/read-all', { method: 'PUT' }),
+  },
+
+  // Offers & Gift Cards
+  offers: {
+    getAll: (section) => request(`/offers${section && section !== 'all' ? `?section=${section}` : ''}`),
+    getAdminAll: (section) => request(`/offers/admin/all${section && section !== 'all' ? `?section=${section}` : ''}`),
+    create: (data) => request('/offers', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => request(`/offers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    toggle: (id) => request(`/offers/${id}/toggle`, { method: 'PATCH' }),
+    delete: (id) => request(`/offers/${id}`, { method: 'DELETE' }),
+    resetDefault: () => request('/offers/reset-default', { method: 'POST' }),
+  },
+
+  // AI Assistant
+  ai: {
+    chat: (payload) => request('/ai/chat', { method: 'POST', body: JSON.stringify(payload) }),
+    getWelcome: () => request('/ai/welcome'),
+    cancelOrder: (orderId, reason) =>
+      request('/ai/cancel-order', { method: 'POST', body: JSON.stringify({ orderId, reason }) }),
+    returnOrder: (orderId, payload) =>
+      request('/ai/return-order', {
+        method: 'POST',
+        body: JSON.stringify({ orderId, ...(typeof payload === 'string' ? { reason: payload } : payload) }),
+      }),
   },
 };
 

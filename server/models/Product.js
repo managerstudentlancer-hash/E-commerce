@@ -25,6 +25,24 @@ const productSchema = new mongoose.Schema(
     category: { type: String, required: true },
     categorySlug: { type: String, default: '' },
     subcategory: { type: String, default: '' },
+
+    gender: {
+      type: String,
+      enum: ['women', 'men', 'unisex'],
+      default: 'unisex',
+      index: true,
+    },
+
+    source: {
+      type: String,
+      default: 'manual',
+    },
+
+    sourceProductId: {
+      type: Number,
+      default: null,
+    },
+
     collectionSlug: { type: String, default: '' },
     brand: { type: String, default: 'VEXIVO' },
     sellerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },

@@ -23,8 +23,13 @@ connectDB().then(async () => {
       console.log(`[VEXIVO] Database count is ${count} (< 60). Running catalog auto-seed...`);
       await seedAll();
     }
+    const { importDummyProducts } = require('./services/dummyProductService');
+    const dummyRes = await importDummyProducts();
+    console.log(`[VEXIVO] DummyJSON sync completed: ${dummyRes.imported} imported, ${dummyRes.updated} updated`);
+    const { seedSarees } = require('./seed/sareeSeed');
+    await seedSarees();
   } catch (err) {
-    console.warn('[VEXIVO] Auto-seed check notice:', err.message);
+    console.warn('[VEXIVO] Auto-seed/dummy-import check notice:', err.message);
   }
 });
 
@@ -76,9 +81,10 @@ app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/banners', require('./routes/bannerRoutes'));
 app.use('/api/site-settings', require('./routes/settingsRoutes'));
 app.use('/api/newsletter', require('./routes/newsletterRoutes'));
-app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/offers', require('./routes/offerRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes'));
 
 // Reseed endpoint for instant sync
 app.get('/api/seed', async (req, res) => {

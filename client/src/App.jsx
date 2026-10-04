@@ -21,6 +21,7 @@ import ProductDetail from './pages/ProductDetail';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import SearchResults from './pages/SearchResults';
+import OffersPage from './pages/OffersPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -54,10 +55,12 @@ import AdminCollections from './pages/admin/AdminCollections';
 import AdminCustomers from './pages/admin/AdminCustomers';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminCoupons from './pages/admin/AdminCoupons';
+import AdminOffers from './pages/admin/AdminOffers';
 import AdminReviews from './pages/admin/AdminReviews';
 import AdminBanners from './pages/admin/AdminBanners';
 import AdminLogo from './pages/admin/AdminLogo';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminSupport from './pages/admin/AdminSupport';
 
 import MobileStickyBar from './components/common/MobileStickyBar';
 
@@ -92,6 +95,7 @@ const App = () => {
                   <Route path="/collection/:slug" element={<CollectionPage />} />
                   <Route path="/product/:slug" element={<ProductDetail />} />
                   <Route path="/search" element={<SearchResults />} />
+                  <Route path="/offers" element={<OffersPage />} />
                   <Route path="/cart" element={<CartPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/login" element={<Login />} />
@@ -144,7 +148,9 @@ const App = () => {
                   <Route path="inventory" element={<AdminInventory />} />
                   <Route path="collections" element={<AdminCollections />} />
                   <Route path="users" element={<AdminUsers />} />
+                  <Route path="support" element={<AdminSupport />} />
                   <Route path="coupons" element={<AdminCoupons />} />
+                  <Route path="offers" element={<AdminOffers />} />
                   <Route path="reviews" element={<AdminReviews />} />
                   <Route path="banners" element={<AdminBanners />} />
                   <Route path="logo" element={<AdminLogo />} />

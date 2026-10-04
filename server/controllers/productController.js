@@ -17,7 +17,11 @@ const getProducts = async (req, res, next) => {
   try {
     const {
       category,
+      categorySlug,
       collection,
+      collectionSlug,
+      gender,
+      subcategory,
       minPrice,
       maxPrice,
       search,
@@ -46,17 +50,85 @@ const getProducts = async (req, res, next) => {
       andConditions.push({ stock: { $gt: 10 } });
     }
 
-    if (category) {
-      andConditions.push({
-        $or: [
-          { categorySlug: category.toLowerCase() },
-          { category: new RegExp(category, 'i') },
-        ],
-      });
+    const fashionCategoryAliases = {
+      'women-dresses': ['womens-dresses', 'tops', 'women-dresses'],
+      'womens-dresses': ['womens-dresses', 'tops', 'women-dresses'],
+      'women-shoes': ['womens-shoes', 'women-shoes'],
+      'womens-shoes': ['womens-shoes', 'women-shoes'],
+      'women-bags': ['womens-bags', 'women-bags'],
+      'womens-bags': ['womens-bags', 'women-bags'],
+      'women-jewellery': ['womens-jewellery', 'women-jewellery', 'womens-jewelry', 'women-jewelry'],
+      'womens-jewellery': ['womens-jewellery', 'women-jewellery', 'womens-jewelry', 'women-jewelry'],
+      'women-watches': ['womens-watches', 'women-watches'],
+      'womens-watches': ['womens-watches', 'women-watches'],
+      'women-tops': ['tops', 'women-tops'],
+      'tops': ['tops', 'women-tops'],
+      'men-shirts': ['mens-shirts', 'men-shirts'],
+      'mens-shirts': ['mens-shirts', 'men-shirts'],
+      'men-shoes': ['mens-shoes', 'men-shoes'],
+      'mens-shoes': ['mens-shoes', 'men-shoes'],
+      'men-watches': ['mens-watches', 'men-watches'],
+      'mens-watches': ['mens-watches', 'men-watches'],
+    };
+
+    const targetCategory = category || categorySlug;
+    if (targetCategory) {
+      const catLower = targetCategory.toLowerCase().trim();
+      if (catLower === 'women-wear' || catLower === 'women' || catLower === "women's wear") {
+        andConditions.push({ gender: 'women' });
+      } else if (catLower === 'men-wear' || catLower === 'men' || catLower === "men's wear") {
+        andConditions.push({ gender: 'men' });
+      } else if (fashionCategoryAliases[catLower]) {
+        const aliasList = fashionCategoryAliases[catLower];
+        andConditions.push({
+          $or: [
+            { category: { $in: aliasList } },
+            { categorySlug: { $in: aliasList } },
+            { collectionSlug: { $in: aliasList } },
+            { subcategory: { $in: aliasList } },
+          ],
+        });
+      } else {
+        andConditions.push({
+          $or: [
+            { categorySlug: catLower },
+            { category: new RegExp(`^${targetCategory}$`, 'i') },
+            { collectionSlug: catLower },
+            { subcategory: new RegExp(`^${targetCategory}$`, 'i') },
+          ],
+        });
+      }
     }
 
-    if (collection) {
-      andConditions.push({ collectionSlug: collection.toLowerCase() });
+    const targetCol = collection || collectionSlug;
+    if (targetCol) {
+      const colLower = targetCol.toLowerCase().trim();
+      if (fashionCategoryAliases[colLower]) {
+        const aliasList = fashionCategoryAliases[colLower];
+        andConditions.push({
+          $or: [
+            { collectionSlug: { $in: aliasList } },
+            { category: { $in: aliasList } },
+            { categorySlug: { $in: aliasList } },
+          ],
+        });
+      } else {
+        andConditions.push({
+          $or: [
+            { collectionSlug: colLower },
+            { categorySlug: colLower },
+            { category: new RegExp(`^${targetCol}$`, 'i') },
+          ],
+        });
+      }
+    }
+
+    if (gender && gender !== 'all') {
+      andConditions.push({ gender: gender.toLowerCase() });
+    }
+
+    if (subcategory && subcategory !== 'all') {
+      andConditions.push({ subcategory: new RegExp(`^${subcategory}$`, 'i') });
     }
 
     if (featured === 'true') andConditions.push({ featured: true });

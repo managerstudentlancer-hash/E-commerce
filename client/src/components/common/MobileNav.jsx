@@ -1,26 +1,21 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X, ChevronRight, User, Heart, ShoppingBag, ShieldCheck, Package, Mail, Phone } from 'lucide-react';
+import { X, ChevronRight, User, Heart, ShoppingBag, ShieldCheck, Package, Mail, Phone, Gift, Store } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useSettings } from '../../context/SettingsContext';
 
 const navigationLinks = [
   { name: 'New In (Spring/Summer 26)', href: '/collection/new-arrivals', badge: 'LIVE', isHighlight: true },
-  { name: 'Women Wear', href: '/category/women-wear' },
-  { name: 'Men Wear', href: '/category/men-wear' },
-  { name: 'Kids Wear', href: '/category/kids-wear' },
-  { name: 'Shoes & Footwear', href: '/category/shoes' },
-  { name: 'Beauty & Parfum', href: '/category/beauty' },
-  { name: 'Fine Jewellery', href: '/category/jewellery' },
-  { name: 'Bags & Luggage', href: '/category/bags' },
-  { name: 'Hats & Headwear', href: '/category/hats' },
-  { name: 'Vision Care', href: '/category/vision-care' },
-  { name: 'Pets Care', href: '/category/pets-care' },
-  { name: 'Toys & Games', href: '/category/toys' },
-  { name: 'Health & Fitness', href: '/category/health-fitness' },
-  { name: 'Electronics & Audio', href: '/category/electronics' },
-  { name: 'Home & Living', href: '/category/home-living' },
+  { name: "Women's Dresses", href: '/collection/women-dresses' },
+  { name: "Women's Shoes & Heels", href: '/collection/women-shoes' },
+  { name: "Women's Bags & Luggage", href: '/collection/women-bags' },
+  { name: "Women's Fine Jewellery", href: '/collection/women-jewellery' },
+  { name: "Women's Luxury Watches", href: '/collection/women-watches' },
+  { name: "Men's Shirts", href: '/collection/men-shirts' },
+  { name: "Men's Shoes", href: '/collection/men-shoes' },
+  { name: "Men's Watches", href: '/collection/men-watches' },
+  { name: 'All Departments / Categories', href: '/shop' },
   { name: 'Bestsellers Archive', href: '/collection/bestsellers' },
   { name: 'Seasonal Sale', href: '/collection/special-offers', badge: 'UP TO 40%', isSale: true },
 ];
@@ -108,6 +103,20 @@ const MobileNav = ({ isOpen, onClose }) => {
                     {wishlistCount}
                   </span>
                 )}
+              </Link>
+
+              <Link
+                to="/offers"
+                onClick={onClose}
+                className="flex items-center justify-between py-2.5 text-sm font-medium text-neutral-700 hover:text-black"
+              >
+                <div className="flex items-center space-x-3">
+                  <Gift className="w-4 h-4 text-rose-500" />
+                  <span>Offers &amp; Gift Cards</span>
+                </div>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100 uppercase">
+                  New
+                </span>
               </Link>
 
               {isAuthenticated ? (
