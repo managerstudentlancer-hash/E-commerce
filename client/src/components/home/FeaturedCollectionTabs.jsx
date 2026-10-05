@@ -1,131 +1,75 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import ProductCard from '../common/ProductCard';
 import api from '../../services/api';
 
-const tabDefinitions = [
-  { id: 'women', label: "Women's Elegance", categorySlug: 'women' },
-  { id: 'men', label: "Men's Tailoring", categorySlug: 'men' },
-  { id: 'shoes', label: 'Shoes & Footwear', categorySlug: 'shoes' },
-  { id: 'bags', label: 'Tuscan Leather Bags', categorySlug: 'bags' },
-  { id: 'audio', label: 'Acoustic Audio & Tech', categorySlug: 'electronics' },
+const tabConfigs = [
+  { id: 'shoes', label: "Shoes & Footwear", subtitle: 'Sneakers, Boots, Sandals & Designer Flats' },
+  { id: 'bags', label: "Bags & Accessories", subtitle: 'Leather Totes, Crossbody Bags & Travel Goods' },
+  { id: 'beauty', label: "Beauty & Skincare", subtitle: 'Skincare, Fragrances & Beauty Essentials' },
+  { id: 'home-living', label: "Home & Living", subtitle: 'Sculptural Decor, Furniture & Ambient Lighting' },
+  { id: 'electronics', label: "Electronics & Audio", subtitle: 'Acoustic Headphones, Keyboards & Gadgets' },
 ];
 
-/* ─── Fires once when the element enters the viewport ─── */
-function useInView(ref, threshold = 0.15) {
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    if (!ref.current) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          observer.disconnect();
-        }
-      },
-      { threshold }
-    );
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [ref, threshold]);
-  return inView;
-}
-
 const FeaturedCollectionTabs = () => {
-  const [activeTab, setActiveTab] = useState('women');
-  const [productsByTab, setProductsByTab] = useState({});
+  const [activeTab, setActiveTab] = useState('shoes');
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [gridKey, setGridKey] = useState(0);
 
-  const sectionRef = useRef(null);
-  const inView = useInView(sectionRef);
-
-  const currentTabDef = tabDefinitions.find((t) => t.id === activeTab) || tabDefinitions[0];
+  const currentTab = tabConfigs.find((t) => t.id === activeTab) || tabConfigs[0];
 
   useEffect(() => {
-    // Fetch products for the active tab from MongoDB if not already fetched
-    const fetchTabProducts = async () => {
-      if (productsByTab[activeTab]?.length > 0) return;
+    let isCancelled = false;
+    const fetchProducts = async () => {
       setLoading(true);
       try {
-        const res = await api.products.getAll({
-          category: currentTabDef.categorySlug,
-          limit: 8,
-        });
-        if (res.success && res.products && res.products.length > 0) {
-          setProductsByTab((prev) => ({
-            ...prev,
-            [activeTab]: res.products,
-          }));
+        const res = await api.categories.getBySlug(activeTab, { limit: 8 });
+        if (!isCancelled && res.success && res.products) {
+          setProducts(res.products.slice(0, 8));
         }
       } catch (err) {
-        console.warn(`Failed to fetch products for tab ${activeTab}:`, err.message);
+        console.error('Failed to load category products:', err);
       } finally {
-        setLoading(false);
+        if (!isCancelled) setLoading(false);
       }
     };
-
-    fetchTabProducts();
-  }, [activeTab, currentTabDef.categorySlug, productsByTab]);
+    fetchProducts();
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeTab]);
 
   const handleTabChange = (id) => {
-    setActiveTab(id);
-    setGridKey((k) => k + 1);
+    if (id !== activeTab) {
+      setActiveTab(id);
+    }
   };
 
-  const currentProducts = productsByTab[activeTab] || [];
-
-  // per-element stagger delays (ms) for header row
-  const delays = [0, 80, 160, 240];
-
-  const fadeUp = (delay) => ({
-    opacity: inView ? 1 : 0,
-    transform: inView ? 'translateY(0)' : 'translateY(2rem)',
-    transition: `opacity 0.55s cubic-bezier(0,0,0.3,1) ${delay}ms, transform 0.55s cubic-bezier(0,0,0.3,1) ${delay}ms`,
-  });
-
   return (
-    <section ref={sectionRef} className="py-12 sm:py-16 bg-white border-b border-neutral-100">
+    <section className="py-10 sm:py-14 bg-white border-b border-neutral-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
-          <div
-            className="inline-flex items-center space-x-1.5 text-xs font-bold uppercase tracking-widest text-neutral-500 mb-2"
-            style={fadeUp(delays[0])}
-          >
+          <div className="inline-flex items-center space-x-1.5 text-xs font-bold uppercase tracking-widest text-neutral-500 mb-2">
             <Sparkles className="w-3.5 h-3.5 text-purple-600" />
             <span>Featured Collections</span>
           </div>
-
-          <h2
-            className="text-2xl sm:text-4xl font-extrabold tracking-tight text-neutral-900"
-            style={fadeUp(delays[1])}
-          >
+          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-neutral-900">
             Curated Wardrobe &amp; Living
           </h2>
-
-          <p
-            className="text-neutral-500 text-xs sm:text-sm mt-1"
-            style={fadeUp(delays[2])}
-          >
-            Discover iconic tailoring, luxury leather, and acoustic innovations tailored to British standards.
+          <p className="text-neutral-500 text-xs sm:text-sm mt-1">
+            Discover iconic tailoring, luxury leather, and lifestyle essentials crafted to the finest standards.
           </p>
-
-          {/* Tab buttons row */}
-          <div
-            className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 mt-6"
-            style={fadeUp(delays[3])}
-          >
-            {tabDefinitions.map((tab) => {
+          <div className="flex items-center sm:justify-center overflow-x-auto no-scrollbar gap-2 sm:gap-2.5 mt-6 py-1 px-1">
+            {tabConfigs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
-                  className={`px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
+                  className={`flex-shrink-0 px-4 sm:px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
                     isActive
-                      ? 'bg-black text-white shadow-md'
+                      ? 'bg-black text-white shadow-md scale-105'
                       : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 hover:text-black'
                   }`}
                 >
@@ -136,32 +80,29 @@ const FeaturedCollectionTabs = () => {
           </div>
         </div>
 
-        {/* Product Grid */}
-        <div
-          key={gridKey}
-          className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-6"
-        >
-          {currentProducts.slice(0, 8).map((item, idx) => (
-            <div
-              key={item._id || item.id || idx}
-              style={{
-                opacity: 0,
-                transform: 'translateY(2rem)',
-                animation: `featuredCardIn 0.55s cubic-bezier(0,0,0.3,1) ${320 + idx * 80}ms forwards`,
-              }}
-            >
-              <ProductCard product={item} />
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="min-h-[260px] flex flex-col justify-center items-center space-y-2">
+            <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
+            <p className="text-xs text-neutral-400 font-medium">Loading {currentTab.label} products...</p>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="py-12 text-center bg-neutral-50 rounded-2xl border border-neutral-100">
+            <p className="text-sm font-bold text-neutral-800">No products found in {currentTab.label}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
+            {products.map((item, idx) => (
+              <ProductCard key={item._id || item.id || idx} product={item} index={idx} />
+            ))}
+          </div>
+        )}
 
-        {/* View All Category Link */}
-        <div className="mt-12 text-center" style={fadeUp(650)}>
+        <div className="mt-10 text-center">
           <Link
-            to={`/category/${currentTabDef.categorySlug}`}
+            to={`/category/${activeTab}`}
             className="btn-pill-dark px-8 py-3 text-xs uppercase tracking-wider inline-flex items-center space-x-2"
           >
-            <span>Explore All {currentTabDef.label}</span>
+            <span>Explore All {currentTab.label}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

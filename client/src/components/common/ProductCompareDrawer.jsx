@@ -87,11 +87,11 @@ const ProductCompareDrawer = ({ compareList = [], onRemove, onClear, isOpen, onC
                 {/* Pricing */}
                 <div>
                   <span className="text-sm font-extrabold text-[#C4301C]">
-                    £{item.price?.toFixed(2)}
+                    ₹{item.price?.toFixed(2)}
                   </span>
                   {item.compareAtPrice > item.price && (
                     <span className="text-xs text-neutral-600 line-through ml-1.5">
-                      £{item.compareAtPrice?.toFixed(2)}
+                      ₹{item.compareAtPrice?.toFixed(2)}
                     </span>
                   )}
                 </div>

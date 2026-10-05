@@ -10,7 +10,7 @@ const heroSlides = [
     subtitle: 'Timeless tailored silhouettes cut from breathable organic cotton and linen.',
     image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1200&q=85',
     buttonText: 'Explore',
-    buttonLink: '/category/women',
+    buttonLink: '/category/women-wear',
   },
   {
     id: 2,
@@ -19,16 +19,16 @@ const heroSlides = [
     subtitle: 'Sculpted evening wear with deep velvet luster and precision Italian seams.',
     image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1200&q=85',
     buttonText: 'Discover',
-    buttonLink: '/category/women',
+    buttonLink: '/category/women-wear',
   },
   {
     id: 3,
-    tag: 'FLAGSHIP ACOUSTICS',
-    title: 'Star Loop ANC Earbuds',
-    subtitle: 'Studio-grade acoustic resolution with 40-hour playtime and spatial depth.',
-    image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=1200&q=85',
-    buttonText: 'Shop Audio',
-    buttonLink: '/category/electronics',
+    tag: 'FLAGSHIP WELLNESS',
+    title: 'Health & Fitness Gear',
+    subtitle: 'Precision resistance training and athletic studio equipment.',
+    image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=85',
+    buttonText: 'Shop Fitness',
+    buttonLink: '/category/health-fitness',
   },
 ];
 
@@ -39,7 +39,7 @@ const sideCards = [
     title: 'Casual Suit Sets',
     subtitle: 'Contemporary double-breasted blazer and pleat-front trousers.',
     image: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?auto=format&fit=crop&w=800&q=80',
-    link: '/category/women',
+    link: '/category/women-wear',
     buttonText: 'Shop Suits',
   },
   {
@@ -48,7 +48,7 @@ const sideCards = [
     title: 'French-Style Linen Dresses',
     subtitle: 'Romantic lantern sleeves with delicate floral heritage embroidery.',
     image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
-    link: '/category/women',
+    link: '/category/women-wear',
     buttonText: 'Explore Dresses',
   },
 ];

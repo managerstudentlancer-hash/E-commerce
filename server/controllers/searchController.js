@@ -1,18 +1,21 @@
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 
+const escapeRegex = (str = '') => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // @desc Unified search & autocomplete
 // @route GET /api/search
 const search = async (req, res, next) => {
   try {
-    const { q = '' } = req.query;
+    const { q = '', category = '' } = req.query;
     const queryStr = q.trim();
+    const categoryStr = category.trim();
 
-    if (!queryStr) {
+    if (!queryStr && (!categoryStr || categoryStr === 'All Categories')) {
       // Return popular categories and trending suggestions
       const categories = await Category.find({ status: 'active' }).limit(6).select('name slug');
       const popularProducts = await Product.find({ status: 'active', bestseller: true })
-        .limit(4)
+        .limit(8)
         .select('name slug price compareAtPrice thumbnail category');
 
       return res.json({
@@ -24,20 +27,56 @@ const search = async (req, res, next) => {
       });
     }
 
-    const regex = new RegExp(queryStr, 'i');
+    const andConditions = [{ status: 'active' }];
 
-    const products = await Product.find({
-      $or: [{ name: regex }, { description: regex }, { tags: regex }, { brand: regex }],
-      status: 'active',
-    })
-      .limit(8)
-      .select('name slug price compareAtPrice thumbnail category discount rating');
+    if (queryStr) {
+      const safeQuery = escapeRegex(queryStr);
+      const regex = new RegExp(safeQuery, 'i');
+      andConditions.push({
+        $or: [
+          { name: regex },
+          { description: regex },
+          { tags: regex },
+          { brand: regex },
+          { category: regex },
+          { subcategory: regex },
+          { sku: regex },
+        ],
+      });
+    }
 
-    const categories = await Category.find({
-      $or: [{ name: regex }, { description: regex }],
-      status: 'active',
-    })
-      .limit(4)
+    if (categoryStr && categoryStr !== 'All Categories') {
+      const safeCat = escapeRegex(categoryStr);
+      const catRegex = new RegExp(safeCat, 'i');
+      const catSlug = categoryStr.toLowerCase().replace(/\s+/g, '-');
+      andConditions.push({
+        $or: [
+          { category: catRegex },
+          { categorySlug: catSlug },
+          { subcategory: catRegex },
+        ],
+      });
+    }
+
+    const products = await Product.find({ $and: andConditions })
+      .limit(24)
+      .select('name slug price compareAtPrice thumbnail category discount rating sku');
+
+    let catQuery = { status: 'active' };
+    if (categoryStr && categoryStr !== 'All Categories') {
+      const safeCat = escapeRegex(categoryStr);
+      catQuery.$or = [
+        { name: new RegExp(safeCat, 'i') },
+        { slug: categoryStr.toLowerCase().replace(/\s+/g, '-') },
+      ];
+    } else if (queryStr) {
+      const safeQuery = escapeRegex(queryStr);
+      const regex = new RegExp(safeQuery, 'i');
+      catQuery.$or = [{ name: regex }, { description: regex }];
+    }
+
+    const categories = await Category.find(catQuery)
+      .limit(6)
       .select('name slug image');
 
     // Extract autocomplete keyword suggestions
@@ -52,6 +91,7 @@ const search = async (req, res, next) => {
     res.json({
       success: true,
       query: queryStr,
+      category: categoryStr,
       count: products.length,
       suggestions,
       categories,

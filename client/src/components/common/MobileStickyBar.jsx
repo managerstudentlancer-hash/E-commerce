@@ -11,8 +11,8 @@ const MobileStickyBar = () => {
   const { wishlistCount } = useWishlist();
   const { isAuthenticated } = useAuth();
 
-  // Hide on admin routes or checkout
-  if (location.pathname.startsWith('/admin') || location.pathname === '/checkout') {
+  // Hide on admin routes, delivery routes, or checkout
+  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/delivery') || location.pathname === '/checkout') {
     return null;
   }
 

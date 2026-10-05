@@ -2,12 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Star,
   CheckCircle2,
-  XCircle,
   Trash2,
   Loader2,
-  Check,
-  X,
-  MessageSquare,
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
@@ -16,11 +12,7 @@ import api from '../../services/api';
 const AdminReviews = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [actionLoading, setActionLoading] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
-
-  // Delete Confirm
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   useEffect(() => {
@@ -46,39 +38,17 @@ const AdminReviews = () => {
     }
   };
 
-  const handleUpdateStatus = async (id, status) => {
-    setActionLoading(id);
-    try {
-      const res = await api.reviews.updateStatus(id, status);
-      if (res.success) {
-        setReviews((prev) =>
-          prev.map((r) => (r._id === id ? { ...r, status } : r))
-        );
-        showToast(`Review marked as ${status.toUpperCase()}`);
-      }
-    } catch (err) {
-      showToast(err.message || 'Failed to update review status');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   const handleDeleteReview = async () => {
     if (!deleteConfirmId) return;
     try {
       await api.reviews.delete(deleteConfirmId);
       setReviews((prev) => prev.filter((r) => r._id !== deleteConfirmId));
       setDeleteConfirmId(null);
-      showToast('Review removed permanently');
+      showToast('Review removed permanently and product rating updated');
     } catch (err) {
       showToast(err.message || 'Failed to delete review');
     }
   };
-
-  const filteredReviews = reviews.filter((r) => {
-    if (statusFilter === 'all') return true;
-    return r.status === statusFilter;
-  });
 
   return (
     <div className="space-y-6 text-slate-100">
@@ -93,34 +63,20 @@ const AdminReviews = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-extrabold uppercase tracking-wider mb-2">
+            <Sparkles className="w-3 h-3" />
+            <span>Instant Auto-Publish Active</span>
+          </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-            Customer Reviews &amp; Testimonial Moderation
+            Customer Reviews &amp; Testimonials
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Audit customer ratings, filter verified buyer feedback, and approve public endorsements.
+            All reviews submitted by users are automatically published directly to products in real-time. No admin approval required.
           </p>
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex items-center space-x-1.5 p-1 bg-white/5 rounded-2xl border border-white/5 self-start sm:self-auto">
-          {[
-            { id: 'all', label: 'All Reviews' },
-            { id: 'approved', label: 'Approved' },
-            { id: 'pending', label: 'Pending' },
-            { id: 'rejected', label: 'Rejected' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setStatusFilter(tab.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                statusFilter === tab.id
-                  ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/20'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="text-xs font-bold text-slate-400 bg-white/5 px-4 py-2 rounded-2xl border border-white/5">
+          Total Reviews: <span className="text-white font-extrabold">{reviews.length}</span>
         </div>
       </div>
 
@@ -131,13 +87,13 @@ const AdminReviews = () => {
             <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
             <p className="text-xs text-slate-400 font-bold">Querying customer testimonials...</p>
           </div>
-        ) : filteredReviews.length === 0 ? (
+        ) : reviews.length === 0 ? (
           <div className="p-16 text-center text-xs text-slate-400">
-            No customer reviews found matching this filter.
+            No customer reviews submitted yet.
           </div>
         ) : (
           <div className="divide-y divide-white/5">
-            {filteredReviews.map((rev) => (
+            {reviews.map((rev) => (
               <div
                 key={rev._id}
                 className="p-6 flex flex-col md:flex-row md:items-start justify-between gap-5 hover:bg-white/[0.02] transition-colors"
@@ -158,7 +114,7 @@ const AdminReviews = () => {
                         <span>by {rev.userName}</span>
                         {rev.verifiedPurchase && (
                           <span className="inline-flex items-center text-emerald-400 font-bold text-[10px]">
-                            <ShieldCheck className="w-3 h-3 ml-1 mr-0.5 text-emerald-400" /> Verified Buyer
+                            <ShieldCheck className="w-3 h-3 ml-1 mr-0.5 text-emerald-400" /> Verified Customer
                           </span>
                         )}
                       </p>
@@ -195,51 +151,19 @@ const AdminReviews = () => {
                   </p>
                 </div>
 
-                {/* Status Badge & Action Controls */}
+                {/* Status Badge & Delete Control */}
                 <div className="flex items-center md:flex-col md:items-end justify-between md:justify-start gap-3">
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                      rev.status === 'approved'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : rev.status === 'rejected'
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                    }`}
-                  >
-                    {rev.status}
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Auto-Published
                   </span>
 
-                  <div className="flex items-center space-x-1.5">
-                    {rev.status !== 'approved' && (
-                      <button
-                        onClick={() => handleUpdateStatus(rev._id, 'approved')}
-                        disabled={actionLoading === rev._id}
-                        className="p-2 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors"
-                        title="Approve Review"
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-
-                    {rev.status !== 'rejected' && (
-                      <button
-                        onClick={() => handleUpdateStatus(rev._id, 'rejected')}
-                        disabled={actionLoading === rev._id}
-                        className="p-2 rounded-xl bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30 transition-colors"
-                        title="Reject Review"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => setDeleteConfirmId(rev._id)}
-                      className="p-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-colors"
-                      title="Delete Review"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => setDeleteConfirmId(rev._id)}
+                    className="p-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-colors"
+                    title="Delete Review"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -257,7 +181,7 @@ const AdminReviews = () => {
           <div className="relative w-full max-w-sm bg-[#0F172A] p-6 rounded-3xl shadow-2xl space-y-4 z-10 border border-white/10">
             <h3 className="text-base font-extrabold text-white">Delete Customer Review</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Are you sure you want to delete this customer review permanently?
+              Are you sure you want to delete this customer review permanently? Product rating will automatically re-calculate.
             </p>
             <div className="pt-2 flex justify-end space-x-2.5">
               <button

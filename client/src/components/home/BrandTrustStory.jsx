@@ -11,13 +11,13 @@ const pillars = [
   {
     title: "Why People Shop with Us",
     description:
-      "We eliminate intermediaries to bring atelier-grade materials directly to your doorstep. Over 18,000 UK and international customers rely on our transparent pricing, genuine customer feedback, and strict quality verification.",
+      "We eliminate intermediaries to bring atelier-grade materials directly to your doorstep. Over 18,000 customers across India rely on our transparent pricing, genuine customer feedback, and strict quality verification.",
     icon: Award,
   },
   {
     title: "Shopping That Just Works",
     description:
-      "Enjoy complimentary UK Tracked Next-Day Delivery on orders over £50, seamless 1-click Express Checkout with Apple Pay & Google Pay, and prepaid 30-day hassle-free returns with zero hidden restocking fees.",
+      "Enjoy complimentary Pan-India Express Delivery on orders over ₹499, seamless 1-click Express Checkout with UPI & Cards, and prepaid 30-day hassle-free returns with zero hidden restocking fees.",
     icon: Truck,
   },
   {

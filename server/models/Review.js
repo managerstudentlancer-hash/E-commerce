@@ -10,6 +10,8 @@ const reviewSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     comment: { type: String, required: true },
     verifiedPurchase: { type: Boolean, default: true },
+    likes: { type: Number, default: 0 },
+    likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     status: { type: String, enum: ['approved', 'pending', 'rejected'], default: 'approved' },
   },
   { timestamps: true }

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const path = require('path');
 
 let isConnected = false;
 let mongodInstance = null;
@@ -20,8 +21,17 @@ const connectDB = async () => {
     console.log(`[VEXIVO DB] Initializing embedded MongoDB engine...`);
 
     try {
+      const os = require('os');
+      const fs = require('fs');
       const { MongoMemoryServer } = require('mongodb-memory-server');
-      mongodInstance = await MongoMemoryServer.create();
+      const uniqueDbPath = path.join(os.tmpdir(), `mongo-mem-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`);
+      fs.mkdirSync(uniqueDbPath, { recursive: true });
+
+      mongodInstance = await MongoMemoryServer.create({
+        instance: {
+          dbPath: uniqueDbPath,
+        },
+      });
       const uri = mongodInstance.getUri();
       const conn = await mongoose.connect(uri);
       isConnected = true;

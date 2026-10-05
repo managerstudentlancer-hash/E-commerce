@@ -27,7 +27,7 @@ const SpecialOffersSection = ({ products = [] }) => {
           </div>
 
           <Link
-            to="/collection/special-offers"
+            to="/offers"
             className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-neutral-900 hover:text-[#C4301C] transition-colors py-2 px-4 rounded-full border border-neutral-200 hover:border-[#C4301C] self-start sm:self-auto"
           >
             <span>View All Deals</span>
@@ -37,8 +37,8 @@ const SpecialOffersSection = ({ products = [] }) => {
 
         {/* 4-Column Product Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
-          {offerProducts.map((product) => (
-            <ProductCard key={product._id || product.id} product={product} />
+          {offerProducts.map((product, idx) => (
+            <ProductCard key={product._id || product.id || idx} product={product} index={idx} />
           ))}
         </div>
       </div>

@@ -7,11 +7,13 @@ const {
   createCategory,
   updateCategory,
   deleteCategory,
+  syncDummyCatalog,
 } = require('../controllers/categoryController');
 const { protect, adminOnly } = require('../middleware/auth');
 
 router.get('/', getCategories);
 router.get('/all', protect, adminOnly, getAllCategoriesAdmin);
+router.post('/sync-dummy', protect, adminOnly, syncDummyCatalog);
 router.get('/:slug', getCategoryBySlug);
 router.post('/', protect, adminOnly, createCategory);
 router.put('/:id', protect, adminOnly, updateCategory);

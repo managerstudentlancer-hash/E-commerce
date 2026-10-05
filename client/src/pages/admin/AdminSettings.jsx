@@ -15,6 +15,9 @@ import {
   ShieldCheck,
   Sparkles,
   Radio,
+  UploadCloud,
+  Trash2,
+  Image as ImageIcon,
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -25,10 +28,12 @@ const AdminSettings = () => {
   const { refreshSettings } = useSettings();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
   const [formData, setFormData] = useState({
     siteName: 'VEXIVO',
+    logo: '',
     announcementText: '',
     contactEmail: 'concierge@vexivo.com',
     contactPhone: '+44 20 7946 0991',
@@ -54,6 +59,7 @@ const AdminSettings = () => {
         const s = res.settings;
         setFormData({
           siteName: s.siteName || 'VEXIVO',
+          logo: s.logo || '',
           announcementText: s.announcementText || '',
           contactEmail: s.contactInfo?.email || 'concierge@vexivo.com',
           contactPhone: s.contactInfo?.phone || '+44 20 7946 0991',
@@ -69,12 +75,44 @@ const AdminSettings = () => {
     }
   };
 
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image file size must be less than 5MB');
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const data = new FormData();
+      data.append('image', file);
+      data.append('folder', 'banners');
+      data.append('entityId', 'logo');
+      const res = await api.admin.uploadImage(data);
+      if (res.success && res.url) {
+        setFormData((prev) => ({ ...prev, logo: res.url }));
+        showToast('Logo image uploaded successfully! Click Save to apply.');
+      } else {
+        showToast(res.message || 'Logo upload failed');
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to upload logo image');
+    } finally {
+      setUploadingLogo(false);
+      // Reset input value so same file can be re-selected if needed
+      e.target.value = '';
+    }
+  };
+
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
       const payload = {
         siteName: formData.siteName,
+        logo: formData.logo,
         announcementText: formData.announcementText,
         contactInfo: {
           email: formData.contactEmail,
@@ -154,12 +192,133 @@ const AdminSettings = () => {
         </div>
 
         {/* 2. Storefront Identity & Top Announcement Bar */}
-        <div className="admin-card p-6 rounded-3xl space-y-4">
+        <div className="admin-card p-6 rounded-3xl space-y-5">
           <div className="flex items-center space-x-2.5 pb-3 border-b border-white/10">
             <Store className="w-4 h-4 text-cyan-400" />
             <h3 className="text-xs font-black uppercase tracking-widest text-white">
               Storefront Branding &amp; Top Ticker Announcement
             </h3>
+          </div>
+
+          {/* Brand Logo Upload & Preview */}
+          <div className="p-4 rounded-2xl bg-slate-900/60 border border-white/10 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <ImageIcon className="w-4 h-4 text-cyan-400" />
+                <label className="text-xs font-bold uppercase text-slate-200">
+                  Custom Brand Logo (Header &amp; Mobile Navigation)
+                </label>
+              </div>
+              {formData.logo && (
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, logo: '' })}
+                  className="text-[11px] font-bold text-rose-400 hover:text-rose-300 flex items-center space-x-1"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Reset to Default Brandmark</span>
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              {/* File Upload Box */}
+              <div>
+                <label
+                  className={`relative flex flex-col items-center justify-center p-5 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${
+                    uploadingLogo
+                      ? 'border-cyan-500/50 bg-cyan-500/5'
+                      : 'border-white/20 hover:border-cyan-400/60 bg-white/[0.02] hover:bg-white/[0.04]'
+                  }`}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    disabled={uploadingLogo}
+                    className="sr-only"
+                  />
+                  {uploadingLogo ? (
+                    <div className="flex flex-col items-center space-y-2 py-2">
+                      <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+                      <span className="text-xs font-bold text-cyan-300">Uploading new logo...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center space-y-2 py-2 text-center">
+                      <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                        <UploadCloud className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-white hover:text-cyan-300">
+                          Click to upload logo image
+                        </span>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          PNG, JPG, SVG, WebP (Transparent PNG / SVG recommended, max 5MB)
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </label>
+
+                {/* Direct URL Fallback */}
+                <div className="mt-2.5">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">Or Paste Image URL:</span>
+                  <input
+                    type="url"
+                    value={formData.logo}
+                    onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                    placeholder="https://example.com/logo.png or /uploads/..."
+                    className="w-full mt-1 px-3 py-2 text-xs rounded-xl admin-input font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Live Preview Box */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold uppercase text-slate-400">Live Preview:</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* On Light Background (like Storefront Header) */}
+                  <div className="p-3 bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center min-h-[90px] text-center">
+                    <span className="text-[9px] font-bold uppercase text-slate-400 mb-1.5">Storefront Header (Light)</span>
+                    {formData.logo ? (
+                      <img
+                        src={formData.logo}
+                        alt="Logo Preview Light"
+                        className="max-h-8 max-w-[120px] object-contain"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="flex items-center space-x-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                        <span className="text-xs font-black tracking-tight text-neutral-900 lowercase">
+                          {formData.siteName || 'vexivo'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* On Dark Background (like Admin / Footer) */}
+                  <div className="p-3 bg-slate-950 rounded-xl border border-white/10 flex flex-col items-center justify-center min-h-[90px] text-center">
+                    <span className="text-[9px] font-bold uppercase text-slate-400 mb-1.5">Dark Background</span>
+                    {formData.logo ? (
+                      <img
+                        src={formData.logo}
+                        alt="Logo Preview Dark"
+                        className="max-h-8 max-w-[120px] object-contain"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="flex items-center space-x-1.5">
+                        <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                        <span className="text-xs font-black tracking-tight text-white uppercase">
+                          {formData.siteName || 'VEXIVO'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -184,7 +343,7 @@ const AdminSettings = () => {
                 type="text"
                 value={formData.announcementText}
                 onChange={(e) => setFormData({ ...formData, announcementText: e.target.value })}
-                placeholder="✨ FREE UK NEXT-DAY DELIVERY OVER £50 | CODE VEX10"
+                placeholder="✨ FREE PAN-INDIA DELIVERY OVER ₹499 | CODE VEX10"
                 className="w-full px-4 py-3 rounded-2xl admin-input"
               />
             </div>
@@ -266,7 +425,7 @@ const AdminSettings = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
               <label className="block font-bold uppercase text-slate-300 mb-1.5">
-                Free UK Next-Day Delivery Threshold (£)
+                Free Pan-India Delivery Threshold (₹)
               </label>
               <input
                 type="number"

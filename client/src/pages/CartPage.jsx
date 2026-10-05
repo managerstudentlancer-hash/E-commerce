@@ -11,36 +11,52 @@ const CartPage = () => {
     removeFromCart,
     subtotal,
     freeShippingRemaining,
-    freeShippingProgress,
+    appliedCoupon,
+    couponDiscount,
+    applyCoupon,
+    removeCoupon,
   } = useCart();
 
   const navigate = useNavigate();
   const [couponCode, setCouponCode] = useState('');
-  const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponError, setCouponError] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState('');
+  const [couponSuccess, setCouponSuccess] = useState('');
   const [isValidating, setIsValidating] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
 
-  const shippingCost = subtotal >= 50 || items.length === 0 ? 0 : 3.99;
-  const grandTotal = Math.max(0, subtotal - couponDiscount + shippingCost);
+  // Load available coupons for user guidance
+  React.useEffect(() => {
+    api.coupons
+      .getAvailable()
+      .then((res) => {
+        if (res.success && res.coupons) {
+          setAvailableCoupons(res.coupons);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
-  const handleApplyCoupon = async (e) => {
-    e.preventDefault();
-    if (!couponCode.trim()) return;
+  const shippingCost = subtotal >= 499 || items.length === 0 ? 0 : 49;
+  const grandTotal = Math.max(0, subtotal - (couponDiscount || 0) + shippingCost);
+
+  const handleApplyCoupon = async (e, directCode = null) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const targetCode = directCode || couponCode;
+    if (!targetCode.trim()) return;
     setCouponError('');
+    setCouponSuccess('');
     setIsValidating(true);
 
     try {
-      const res = await api.coupons.validate(couponCode.trim(), subtotal);
-      if (res.success && res.valid) {
-        setCouponDiscount(res.discount);
-        setAppliedCoupon(res.code);
+      const res = await applyCoupon(targetCode.trim(), subtotal);
+      if (res.success) {
+        setCouponSuccess(res.message || `Coupon '${res.code}' applied!`);
         setCouponCode('');
       } else {
         setCouponError(res.message || 'Invalid coupon code');
       }
     } catch (err) {
-      setCouponError(err.message || 'Invalid coupon code');
+      setCouponError(err.message || 'Failed to apply coupon');
     } finally {
       setIsValidating(false);
     }
@@ -75,9 +91,9 @@ const CartPage = () => {
               <div className="flex justify-between text-xs font-semibold text-neutral-700 mb-1.5">
                 <span>
                   {freeShippingRemaining === 0 ? (
-                    <strong className="text-[#0D8756]">🎉 Qualified for Complimentary UK Delivery!</strong>
+                    <strong className="text-[#0D8756]">🎉 Qualified for Free Pan-India Delivery!</strong>
                   ) : (
-                    <>Add £{freeShippingRemaining.toFixed(2)} more for Free Next-Day UK Delivery</>
+                    <>Add ₹{freeShippingRemaining.toFixed(2)} more for Free Pan-India Express Delivery</>
                   )}
                 </span>
                 <span>{freeShippingProgress}%</span>
@@ -121,7 +137,12 @@ const CartPage = () => {
                     </div>
 
                     {item.variant && (
-                      <p className="text-xs text-neutral-500 mt-0.5">Option: {item.variant}</p>
+                      <div className="mt-1">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-800 bg-neutral-100 border border-neutral-200/80 px-2.5 py-0.5 rounded-md">
+                          <span className="text-neutral-500 font-normal">Size:</span>
+                          <span className="font-bold text-black">{item.variant}</span>
+                        </span>
+                      </div>
                     )}
 
                     <div className="mt-4 flex items-center justify-between">
@@ -143,7 +164,7 @@ const CartPage = () => {
                       </div>
 
                       <span className="text-sm sm:text-base font-extrabold text-neutral-900">
-                        £{(item.price * item.quantity).toFixed(2)}
+                        ₹{((Number(item.price) || 0) * (item.quantity || 1)).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -166,61 +187,122 @@ const CartPage = () => {
               </h2>
 
               {/* Coupon Form */}
-              <form onSubmit={handleApplyCoupon} className="space-y-2">
-                <label className="block text-xs font-bold uppercase text-neutral-600">
-                  Promo Code
-                </label>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. VEX10"
-                    className="flex-1 px-4 py-2.5 rounded-full border border-neutral-200 text-xs uppercase font-medium focus:outline-none focus:border-black"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isValidating}
-                    className="btn-pill-dark px-5 py-2.5 text-xs uppercase"
-                  >
-                    Apply
-                  </button>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-700 flex items-center space-x-1.5">
+                    <Tag className="w-3.5 h-3.5 text-neutral-500" />
+                    <span>Promo / Discount Code</span>
+                  </label>
+                  {appliedCoupon && (
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="text-[11px] font-bold text-red-600 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
-                {couponError && (
-                  <p className="text-xs text-[#C4301C] font-medium">{couponError}</p>
-                )}
-                {appliedCoupon && (
-                  <div className="flex items-center space-x-1.5 text-xs text-[#0D8756] font-bold">
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Coupon '{appliedCoupon}' applied (-£{couponDiscount.toFixed(2)})</span>
+
+                {appliedCoupon ? (
+                  <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-xs text-emerald-800">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <div>
+                        <span className="font-bold">Code '{appliedCoupon}' Active</span>
+                        <p className="text-[11px] text-emerald-700">Instant savings of ₹{couponDiscount.toFixed(2)}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="px-2.5 py-1 text-[10px] font-bold uppercase rounded-full bg-emerald-100 text-emerald-900 hover:bg-emerald-200 transition-colors"
+                    >
+                      Remove
+                    </button>
                   </div>
+                ) : (
+                  <form onSubmit={handleApplyCoupon} className="space-y-2">
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="e.g. AUTUMN30"
+                        className="flex-1 px-4 py-2.5 rounded-full border border-neutral-200 text-xs uppercase font-medium focus:outline-none focus:border-black font-mono"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isValidating || !couponCode.trim()}
+                        className="btn-pill-dark px-5 py-2.5 text-xs uppercase disabled:opacity-50"
+                      >
+                        {isValidating ? 'Checking...' : 'Apply'}
+                      </button>
+                    </div>
+
+                    {couponError && (
+                      <p className="text-xs text-[#C4301C] font-semibold">{couponError}</p>
+                    )}
+                    {couponSuccess && (
+                      <p className="text-xs text-[#0D8756] font-semibold">{couponSuccess}</p>
+                    )}
+
+                    {/* Available Offers Quick Pick */}
+                    <div className="pt-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1.5">
+                        Available Offers (Click to Apply):
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(availableCoupons.length > 0 ? availableCoupons.slice(0, 4) : [
+                          { code: 'AUTUMN30', description: '30% OFF' },
+                          { code: 'WELCOME20', description: '20% OFF' },
+                          { code: 'VEX10', description: '10% OFF' },
+                          { code: 'FREESHIP', description: 'Free Delivery' },
+                        ]).map((c) => (
+                          <button
+                            key={c.code}
+                            type="button"
+                            onClick={() => handleApplyCoupon(null, c.code)}
+                            className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-white border border-neutral-200 text-neutral-700 hover:border-black hover:text-black hover:bg-neutral-100 transition-colors flex items-center space-x-1"
+                          >
+                            <span>🏷️ {c.code}</span>
+                            {c.value && (
+                              <span className="text-neutral-500 font-normal">
+                                ({c.type === 'percentage' ? `${c.value}%` : `₹${c.value}`})
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </form>
                 )}
-              </form>
+              </div>
 
               {/* Breakdown */}
               <div className="space-y-3 pt-2 text-xs text-neutral-600 border-t border-neutral-200">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-bold text-neutral-900">£{subtotal.toFixed(2)}</span>
+                  <span className="font-bold text-neutral-900">₹{subtotal.toFixed(2)}</span>
                 </div>
 
                 {couponDiscount > 0 && (
                   <div className="flex justify-between text-[#0D8756] font-bold">
                     <span>Discount</span>
-                    <span>-£{couponDiscount.toFixed(2)}</span>
+                    <span>-₹{couponDiscount.toFixed(2)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between">
-                  <span>Estimated UK Delivery</span>
+                  <span>Pan-India Delivery</span>
                   <span className="font-bold text-neutral-900">
-                    {shippingCost === 0 ? 'FREE' : `£${shippingCost.toFixed(2)}`}
+                    {shippingCost === 0 ? 'FREE' : `₹${shippingCost.toFixed(2)}`}
                   </span>
                 </div>
 
                 <div className="flex justify-between text-base font-extrabold text-neutral-900 pt-3 border-t border-neutral-200">
                   <span>Total</span>
-                  <span>£{grandTotal.toFixed(2)}</span>
+                  <span>₹{grandTotal.toFixed(2)}</span>
                 </div>
               </div>
 

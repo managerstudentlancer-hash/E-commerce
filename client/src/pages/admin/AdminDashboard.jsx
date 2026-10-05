@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  PoundSterling,
+  IndianRupee,
   ShoppingCart,
   Users,
   Package,
@@ -26,8 +26,10 @@ import {
   Filter,
 } from 'lucide-react';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminDashboard = () => {
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -177,7 +179,41 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="space-y-8 animate-fade-in text-slate-100">
+    <div className="space-y-6 sm:space-y-8 animate-fade-in text-slate-100">
+      {/* Personalized Welcome Banner with Registered Admin's Name */}
+      <div className="bg-gradient-to-r from-cyan-950/40 via-indigo-950/30 to-purple-950/20 p-6 rounded-3xl border border-cyan-500/25 shadow-xl backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center space-x-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 p-[2px] shadow-lg shadow-cyan-500/20 flex-shrink-0">
+            <div className="w-full h-full bg-[#0C111D] rounded-[14px] flex items-center justify-center font-black text-xl text-cyan-300">
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-xl sm:text-2xl font-black text-white">
+                Welcome back, {user?.name || 'Administrator'}! 👋
+              </h1>
+              <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-[10px] font-extrabold uppercase">
+                Master Admin
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Logged in with account: <span className="font-mono text-slate-200">{user?.email}</span> • Real-time telemetry, store metrics, and control active.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2 text-xs">
+          <button
+            onClick={handleRefresh}
+            className="px-4 py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 flex items-center space-x-2 transition-all active:scale-95"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-cyan-400' : ''}`} />
+            <span>Refresh Telemetry</span>
+          </button>
+        </div>
+      </div>
+
       {/* Top Header & Fast Action Launchpad */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 bg-gradient-to-r from-white/[0.04] via-white/[0.02] to-transparent p-6 rounded-3xl border border-white/10 shadow-xl backdrop-blur-xl">
         <div className="space-y-1">
@@ -196,10 +232,10 @@ const AdminDashboard = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5">
           <Link
             to="/admin/products"
-            className="px-4 py-2.5 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-extrabold flex items-center space-x-2 transition-all shadow-lg shadow-cyan-500/20 active:scale-95"
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-extrabold flex items-center justify-center space-x-1.5 sm:space-x-2 transition-all shadow-lg shadow-cyan-500/20 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Add Product</span>
@@ -207,7 +243,7 @@ const AdminDashboard = () => {
 
           <Link
             to="/admin/coupons"
-            className="px-4 py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10 flex items-center space-x-2 transition-all active:scale-95"
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10 flex items-center justify-center space-x-1.5 sm:space-x-2 transition-all active:scale-95"
           >
             <Tag className="w-3.5 h-3.5 text-amber-400" />
             <span>New Coupon</span>
@@ -215,7 +251,7 @@ const AdminDashboard = () => {
 
           <Link
             to="/admin/banners"
-            className="px-4 py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10 flex items-center space-x-2 transition-all active:scale-95"
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10 flex items-center justify-center space-x-1.5 sm:space-x-2 transition-all active:scale-95"
           >
             <ImageIcon className="w-3.5 h-3.5 text-purple-400" />
             <span>Banners</span>
@@ -224,7 +260,7 @@ const AdminDashboard = () => {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="px-4 py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold border border-white/10 flex items-center space-x-2 transition-all"
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold border border-white/10 flex items-center justify-center space-x-1.5 sm:space-x-2 transition-all active:scale-95"
             title="Sync live MongoDB metrics"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${refreshing ? 'animate-spin' : ''}`} />
@@ -234,118 +270,118 @@ const AdminDashboard = () => {
       </div>
 
       {/* 6 Luxury Glowing KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5 sm:gap-4">
         {/* Total Sales */}
-        <div className="admin-card p-5 rounded-3xl flex flex-col justify-between group hover:border-emerald-500/40 relative overflow-hidden">
+        <div className="admin-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col justify-between group hover:border-emerald-500/40 relative overflow-hidden">
           <div className="absolute -right-6 -top-6 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-colors" />
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
               Gross Revenue
             </span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 glow-emerald">
-              <PoundSterling className="w-4 h-4" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 glow-emerald">
+              <IndianRupee className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="mt-4">
-            <p className="text-xl font-black text-white tracking-tight font-mono">
-              £{(s.totalRevenue || 0).toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+          <div className="mt-2.5 sm:mt-4">
+            <p className="text-base sm:text-xl font-black text-white tracking-tight font-mono">
+              ₹{(s.totalRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </p>
-            <span className="text-[10px] text-emerald-400 font-bold flex items-center mt-1">
-              <TrendingUp className="w-3 h-3 mr-1" /> All-Time Volume
+            <span className="text-[9px] sm:text-[10px] text-emerald-400 font-bold flex items-center mt-0.5 sm:mt-1">
+              <TrendingUp className="w-3 h-3 mr-1" /> Volume
             </span>
           </div>
         </div>
 
         {/* Total Orders */}
-        <div className="admin-card p-5 rounded-3xl flex flex-col justify-between group hover:border-cyan-500/40 relative overflow-hidden">
+        <div className="admin-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col justify-between group hover:border-cyan-500/40 relative overflow-hidden">
           <div className="absolute -right-6 -top-6 w-20 h-20 bg-cyan-500/10 rounded-full blur-xl group-hover:bg-cyan-500/20 transition-colors" />
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
               Total Orders
             </span>
-            <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 glow-cyan">
-              <ShoppingCart className="w-4 h-4" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 glow-cyan">
+              <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="mt-4">
-            <p className="text-xl font-black text-white tracking-tight font-mono">{s.totalOrders || 0}</p>
-            <span className="text-[10px] text-cyan-300 font-semibold mt-1 block">
+          <div className="mt-2.5 sm:mt-4">
+            <p className="text-base sm:text-xl font-black text-white tracking-tight font-mono">{s.totalOrders || 0}</p>
+            <span className="text-[9px] sm:text-[10px] text-cyan-300 font-semibold mt-0.5 sm:mt-1 block">
               Recorded orders
             </span>
           </div>
         </div>
 
         {/* Average Order Value (AOV) */}
-        <div className="admin-card p-5 rounded-3xl flex flex-col justify-between group hover:border-purple-500/40 relative overflow-hidden">
+        <div className="admin-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col justify-between group hover:border-purple-500/40 relative overflow-hidden">
           <div className="absolute -right-6 -top-6 w-20 h-20 bg-purple-500/10 rounded-full blur-xl group-hover:bg-purple-500/20 transition-colors" />
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
               Avg Order Value
             </span>
-            <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 glow-purple">
-              <Activity className="w-4 h-4" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 glow-purple">
+              <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="mt-4">
-            <p className="text-xl font-black text-white tracking-tight font-mono">£{averageOrderValue}</p>
-            <span className="text-[10px] text-purple-300 font-bold flex items-center mt-1">
-              <ArrowUpRight className="w-3 h-3 mr-0.5" /> AOV Efficiency
+          <div className="mt-2.5 sm:mt-4">
+            <p className="text-base sm:text-xl font-black text-white tracking-tight font-mono">₹{averageOrderValue}</p>
+            <span className="text-[9px] sm:text-[10px] text-purple-300 font-bold flex items-center mt-0.5 sm:mt-1">
+              <ArrowUpRight className="w-3 h-3 mr-0.5" /> AOV
             </span>
           </div>
         </div>
 
         {/* Total Products */}
-        <div className="admin-card p-5 rounded-3xl flex flex-col justify-between group hover:border-indigo-500/40 relative overflow-hidden">
+        <div className="admin-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col justify-between group hover:border-indigo-500/40 relative overflow-hidden">
           <div className="absolute -right-6 -top-6 w-20 h-20 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/20 transition-colors" />
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
               Active SKUs
             </span>
-            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-              <Package className="w-4 h-4" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="mt-4">
-            <p className="text-xl font-black text-white tracking-tight font-mono">{s.totalProducts || 0}</p>
-            <span className="text-[10px] text-slate-400 font-medium mt-1 block">
+          <div className="mt-2.5 sm:mt-4">
+            <p className="text-base sm:text-xl font-black text-white tracking-tight font-mono">{s.totalProducts || 0}</p>
+            <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 sm:mt-1 block">
               Marketplace items
             </span>
           </div>
         </div>
 
         {/* Pending Orders */}
-        <div className="admin-card p-5 rounded-3xl flex flex-col justify-between group hover:border-amber-500/40 relative overflow-hidden">
+        <div className="admin-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col justify-between group hover:border-amber-500/40 relative overflow-hidden">
           <div className="absolute -right-6 -top-6 w-20 h-20 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-colors" />
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
               Pending Orders
             </span>
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 glow-amber">
-              <Clock className="w-4 h-4" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 glow-amber">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="mt-4">
-            <p className="text-xl font-black text-amber-400 tracking-tight font-mono">{s.pendingOrdersCount || 0}</p>
-            <span className="text-[10px] text-amber-200 font-medium mt-1 block">
+          <div className="mt-2.5 sm:mt-4">
+            <p className="text-base sm:text-xl font-black text-amber-400 tracking-tight font-mono">{s.pendingOrdersCount || 0}</p>
+            <span className="text-[9px] sm:text-[10px] text-amber-200 font-medium mt-0.5 sm:mt-1 block">
               Fulfillment queue
             </span>
           </div>
         </div>
 
         {/* Low Stock Alerts */}
-        <div className="admin-card p-5 rounded-3xl flex flex-col justify-between group hover:border-rose-500/40 relative overflow-hidden">
+        <div className="admin-card p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col justify-between group hover:border-rose-500/40 relative overflow-hidden">
           <div className="absolute -right-6 -top-6 w-20 h-20 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition-colors" />
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
               Low Stock Alerts
             </span>
-            <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 glow-rose">
-              <AlertTriangle className="w-4 h-4" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 glow-rose">
+              <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="mt-4">
-            <p className="text-xl font-black text-rose-400 tracking-tight font-mono">{s.lowStockCount || 0}</p>
-            <span className="text-[10px] text-rose-300 font-medium mt-1 block">
+          <div className="mt-2.5 sm:mt-4">
+            <p className="text-base sm:text-xl font-black text-rose-400 tracking-tight font-mono">{s.lowStockCount || 0}</p>
+            <span className="text-[9px] sm:text-[10px] text-rose-300 font-medium mt-0.5 sm:mt-1 block">
               Under 10 units
             </span>
           </div>
@@ -441,7 +477,7 @@ const AdminDashboard = () => {
           <div>
             <p className="text-[10px] uppercase font-bold text-slate-400">Period Total Revenue</p>
             <p className="text-lg font-black text-emerald-400 font-mono mt-0.5">
-              £{totalPeriodRevenue.toFixed(2)}
+              ₹{totalPeriodRevenue.toFixed(2)}
             </p>
           </div>
           <div>
@@ -453,13 +489,13 @@ const AdminDashboard = () => {
           <div>
             <p className="text-[10px] uppercase font-bold text-slate-400">Period Avg Basket</p>
             <p className="text-lg font-black text-purple-300 font-mono mt-0.5">
-              £{averageOrderValue}
+              ₹{averageOrderValue}
             </p>
           </div>
           <div>
             <p className="text-[10px] uppercase font-bold text-slate-400">Peak Velocity</p>
             <p className="text-lg font-black text-amber-300 font-mono mt-0.5">
-              £{maxSales.toFixed(2)} / day
+              ₹{maxSales.toFixed(2)} / day
             </p>
           </div>
         </div>
@@ -483,7 +519,7 @@ const AdminDashboard = () => {
                 <div className="flex justify-between items-center text-slate-300">
                   <span>Revenue:</span>
                   <span className="font-black text-emerald-400 font-mono text-sm">
-                    £{hoveredPoint.data.sales.toFixed(2)}
+                    ₹{hoveredPoint.data.sales.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-slate-300">
@@ -649,7 +685,7 @@ const AdminDashboard = () => {
         <div className="flex flex-wrap items-center justify-center gap-6 pt-2 border-t border-white/5 text-xs text-slate-400 font-semibold">
           <div className="flex items-center space-x-2">
             <span className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400" />
-            <span>Gross Revenue (£)</span>
+            <span>Gross Revenue (₹)</span>
           </div>
           {chartType === 'dual' && (
             <div className="flex items-center space-x-2">
@@ -659,7 +695,7 @@ const AdminDashboard = () => {
           )}
           <div className="flex items-center space-x-2">
             <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
-            <span>Baseline Volume (£0.00)</span>
+            <span>Baseline Volume (₹0.00)</span>
           </div>
         </div>
       </div>
@@ -712,7 +748,7 @@ const AdminDashboard = () => {
                         <span className="text-[10px] text-slate-400 font-mono">({cat.count} items)</span>
                       </div>
                       <div className="text-right flex items-center space-x-3">
-                        <span className="text-[11px] text-slate-400 font-mono">Avg £{cat.avgPrice}</span>
+                        <span className="text-[11px] text-slate-400 font-mono">Avg ₹{cat.avgPrice}</span>
                         <span className="font-black font-mono text-cyan-300">{cat.percentage}%</span>
                       </div>
                     </div>
@@ -867,7 +903,7 @@ const AdminDashboard = () => {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-xs font-black text-emerald-400 font-mono">
-                      £{prod.revenue?.toFixed(2)}
+                      ₹{prod.revenue?.toFixed(2)}
                     </p>
                   </div>
                 </div>

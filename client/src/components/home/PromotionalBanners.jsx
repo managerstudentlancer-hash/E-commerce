@@ -1,31 +1,41 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles, Flame, Clock } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
-const promoCards = [
+const defaultPromoCards = [
   {
     id: 1,
-    title: 'Wide Leg Pants',
-    subtitle: 'High-Rise Knife Pleats & Fluid Drape',
+    title: "Women's Collection",
+    subtitle: 'Silk Blouses, Trench Coats & Tailored Trousers',
     tag: 'TRENDING NOW',
     tagBg: 'bg-[#C4301C]',
-    image: 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=800&q=80',
-    link: '/category/women',
-    btnText: 'Shop Pants',
+    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
+    link: '/category/women-wear',
+    btnText: 'Shop Women',
   },
   {
     id: 2,
-    title: 'Casual Shoes — Coming Soon!',
-    subtitle: 'Italian Nappa Leather & Minimalist Runners',
-    tag: 'NEW DROP',
-    tagBg: 'bg-[#0D8756]',
-    image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80',
-    link: '/category/shoes',
-    btnText: 'View Footwear',
+    title: "Men's Fashion",
+    subtitle: 'Oxford Cotton Shirts, Tailored Suits & Overcoats',
+    tag: 'NEW IN',
+    tagBg: 'bg-blue-600',
+    image: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80',
+    link: '/category/men-wear',
+    btnText: 'Shop Men',
   },
   {
     id: 3,
-    title: 'Luxury Bag Collection',
+    title: 'Shoes & Footwear',
+    subtitle: 'Italian Calfskin Sneakers, Boots & Loafers',
+    tag: 'FOOTWEAR EDIT',
+    tagBg: 'bg-[#0D8756]',
+    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80',
+    link: '/category/shoes',
+    btnText: 'Shop Shoes',
+  },
+  {
+    id: 4,
+    title: 'Luxury Bags & Leather',
     subtitle: 'Tuscan Full-Grain Totes & Saddle Bags',
     tag: 'BESTSELLERS',
     tagBg: 'bg-black',
@@ -34,55 +44,71 @@ const promoCards = [
     btnText: 'Explore Bags',
   },
   {
-    id: 4,
-    title: 'Baby Growing Collection',
-    subtitle: '100% Hypoallergenic Organic Bamboo Rompers',
-    tag: 'GIFT EDIT',
-    tagBg: 'bg-purple-600',
-    image: 'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=800&q=80',
-    link: '/category/kids',
-    btnText: 'Shop Petite',
+    id: 5,
+    title: 'Beauty & Skincare',
+    subtitle: 'Resurfacing Serums, Botanical Skincare & Makeup',
+    tag: 'PURE GLOW',
+    tagBg: 'bg-rose-500',
+    image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+    link: '/category/beauty',
+    btnText: 'Shop Beauty',
+  },
+  {
+    id: 6,
+    title: 'Fine Jewellery & Watches',
+    subtitle: '18K Vermeil Gold, Freshwater Pearls & Timepieces',
+    tag: 'PRECIOUS EDIT',
+    tagBg: 'bg-amber-600',
+    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80',
+    link: '/category/jewellery',
+    btnText: 'Shop Jewellery',
   },
 ];
 
 const PromotionalBanners = ({ banners: customBanners }) => {
-  const cards = customBanners && customBanners.length > 0 ? customBanners : promoCards;
+  const cards = customBanners && customBanners.length > 0 ? customBanners : defaultPromoCards;
 
   return (
     <section className="py-10 sm:py-14 bg-white border-b border-neutral-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Shaporoo 1:1 grid_banner Header */}
+        {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
           <span className="text-xs font-bold uppercase tracking-widest text-neutral-500 block mb-1">
-            Our Best Winter Products
+            Our Curated Departments
           </span>
           <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-neutral-900">
-            Winter <strong className="font-extrabold text-black">Products</strong>
+            Shop By <strong className="font-extrabold text-[#C4301C]">Category</strong>
           </h2>
+          <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+            Explore authentic luxury across our premier marketplace departments.
+          </p>
         </div>
 
-        {/* 4-Card Bento Grid (Matches Shaporoo grid-banner) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* Bento Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
           {cards.map((card, idx) => (
             <div
               key={card._id || card.id || idx}
-              className="group relative rounded-3xl overflow-hidden min-h-[380px] sm:min-h-[420px] flex flex-col justify-between p-6 shadow-sm border border-neutral-100 transition-all duration-300 hover:shadow-[0_16px_36px_rgba(0,0,0,0.08)]"
+              className="group relative rounded-3xl overflow-hidden min-h-[340px] sm:min-h-[380px] flex flex-col justify-between p-6 shadow-sm border border-neutral-100 transition-all duration-300 hover:shadow-[0_16px_36px_rgba(0,0,0,0.12)]"
             >
-              {/* Background Image with 1:1 Shaporoo 0.85s material zoom */}
+              {/* Background Image */}
               <img
                 src={card.image}
                 alt={card.title}
                 onError={(e) => {
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80';
+                  e.currentTarget.src =
+                    'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80';
                 }}
-                className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-[850ms] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] group-hover:scale-[1.06]"
+                className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-[850ms] [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10 pointer-events-none" />
 
               {/* Top Tag */}
               <div className="relative z-10">
                 <span
-                  className={`inline-block px-3 py-1 rounded-full text-white text-[10px] font-extrabold uppercase tracking-widest shadow-md ${card.tagBg || 'bg-[#C4301C]'}`}
+                  className={`inline-block px-3 py-1 rounded-full text-white text-[10px] font-extrabold uppercase tracking-widest shadow-md ${
+                    card.tagBg || 'bg-[#C4301C]'
+                  }`}
                 >
                   {card.tag || card.highlight || 'TRENDING'}
                 </span>
@@ -90,18 +116,18 @@ const PromotionalBanners = ({ banners: customBanners }) => {
 
               {/* Bottom Content */}
               <div className="relative z-10 text-white space-y-1.5">
-                <h3 className="text-xl font-extrabold tracking-tight leading-tight text-white group-hover:text-amber-200 transition-colors">
+                <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight leading-tight text-white group-hover:text-amber-200 transition-colors">
                   {card.title}
                 </h3>
                 <p className="text-xs text-neutral-200 line-clamp-2 leading-relaxed font-normal">
-                  {card.subtitle}
+                  {card.subtitle || card.description}
                 </p>
                 <div className="pt-2">
                   <Link
                     to={card.buttonLink || card.link || '/shop'}
                     className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-full bg-white/95 text-black hover:bg-white text-xs font-bold uppercase tracking-wider shadow-md hover:scale-105 active:scale-95 transition-all"
                   >
-                    <span>{card.buttonText || card.btnText || 'Explore'}</span>
+                    <span>{card.buttonText || card.btnText || 'Shop Now'}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>

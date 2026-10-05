@@ -4,23 +4,23 @@ import { Truck, RotateCcw, ShieldCheck, Headphones } from 'lucide-react';
 const badges = [
   {
     icon: Truck,
-    title: 'Complimentary UK Delivery',
-    description: 'Free next-day shipping on orders over £50 across England, Scotland, Wales & NI.',
+    title: 'Complimentary Pan-India Delivery',
+    description: 'Free express shipping on orders over ₹499 across all Indian states & Union Territories.',
   },
   {
     icon: RotateCcw,
     title: '30-Day Hassle-Free Returns',
-    description: 'Not quite perfect? Return or exchange with pre-paid royal mail return labels.',
+    description: 'Not quite perfect? Return or exchange with complimentary doorstep reverse pickup.',
   },
   {
     icon: ShieldCheck,
     title: 'Lifetime Quality Guarantee',
-    description: 'Every audio instrument and leather piece is backed by our rigorous craft warranty.',
+    description: 'Every audio instrument and lifestyle piece is backed by our rigorous craft warranty.',
   },
   {
     icon: Headphones,
     title: 'Dedicated Client Concierge',
-    description: 'Our London specialist team is available 6 days a week for styling & technical advice.',
+    description: 'Our customer support specialist team is available 6 days a week for styling & order assistance.',
   },
 ];
 

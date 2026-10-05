@@ -1,16 +1,39 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { X, ChevronRight, User, Heart, ShoppingBag, ShieldCheck, Mail, Phone } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, X, ChevronRight, User, Heart, ShoppingBag, ShieldCheck, Package, Mail, Phone, Gift, Store } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useSettings } from '../../context/SettingsContext';
-import { useCategories } from '../../context/CategoryContext';
+
+const navigationLinks = [
+  { name: 'New In (Spring/Summer 26)', href: '/collection/new-arrivals', badge: 'LIVE', isHighlight: true },
+  { name: "Women's Dresses", href: '/collection/women-dresses' },
+  { name: "Women's Shoes & Heels", href: '/collection/women-shoes' },
+  { name: "Women's Bags & Luggage", href: '/collection/women-bags' },
+  { name: "Women's Fine Jewellery", href: '/collection/women-jewellery' },
+  { name: "Women's Luxury Watches", href: '/collection/women-watches' },
+  { name: "Men's Shirts", href: '/collection/men-shirts' },
+  { name: "Men's Shoes", href: '/collection/men-shoes' },
+  { name: "Men's Watches", href: '/collection/men-watches' },
+  { name: 'All Departments / Categories', href: '/shop' },
+  { name: 'Bestsellers Archive', href: '/collection/bestsellers' },
+  { name: 'Seasonal Sale', href: '/collection/special-offers', badge: 'UP TO 40%', isSale: true },
+];
 
 const MobileNav = ({ isOpen, onClose }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const { wishlistCount } = useWishlist();
   const { settings } = useSettings();
-  const { categories } = useCategories();
+  const [mobileSearchQuery, setMobileSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleMobileSearch = (e) => {
+    e.preventDefault();
+    if (mobileSearchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(mobileSearchQuery.trim())}`);
+      onClose();
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -25,9 +48,17 @@ const MobileNav = ({ isOpen, onClose }) => {
           {/* Header */}
           <div className="p-5 border-b border-neutral-100 flex items-center justify-between">
             <Link to="/" onClick={onClose} className="flex items-center space-x-2">
-              <span className="text-xl font-extrabold tracking-tighter text-neutral-900 uppercase">
-                {settings.siteName || 'VEXIVO'}
-              </span>
+              {settings?.logo ? (
+                <img
+                  src={settings.logo}
+                  alt={settings?.siteName || 'VEXIVO'}
+                  className="h-7 w-auto max-w-[140px] object-contain"
+                />
+              ) : (
+                <span className="text-xl font-extrabold tracking-tighter text-neutral-900">
+                  {settings?.siteName || 'VEXIVO'}
+                </span>
+              )}
             </Link>
             <button
               onClick={onClose}
@@ -37,38 +68,54 @@ const MobileNav = ({ isOpen, onClose }) => {
             </button>
           </div>
 
+          {/* Mobile Search Bar */}
+          <div className="p-4 border-b border-neutral-100 bg-neutral-50/50">
+            <form onSubmit={handleMobileSearch} className="flex items-center bg-white rounded-full px-3.5 py-2 border border-neutral-200 shadow-2xs">
+              <Search className="w-4 h-4 text-neutral-400 mr-2 flex-shrink-0" />
+              <input
+                type="text"
+                value={mobileSearchQuery}
+                onChange={(e) => setMobileSearchQuery(e.target.value)}
+                placeholder="Search products, brands, categories..."
+                className="w-full bg-transparent text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none"
+              />
+              {mobileSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setMobileSearchQuery('')}
+                  className="text-neutral-400 hover:text-black ml-1 text-xs"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </form>
+          </div>
+
           {/* Navigation Links */}
           <div className="flex-1 overflow-y-auto px-5 py-4 divide-y divide-neutral-100">
             <div className="space-y-1 pb-4">
-              <Link
-                to="/collection/new-arrivals"
-                onClick={onClose}
-                className="flex items-center justify-between py-3 text-sm font-semibold text-neutral-800 hover:text-black transition-colors"
-              >
-                <span>New In (Spring/Summer 26)</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-[#0D8756] text-white">
-                  LIVE
-                </span>
-              </Link>
-              <Link
-                to="/collection/special-offers"
-                onClick={onClose}
-                className="flex items-center justify-between py-3 text-sm font-bold text-[#C4301C] hover:text-black transition-colors"
-              >
-                <span>Special Offers & Sale</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-[#C4301C] text-white">
-                  SALE
-                </span>
-              </Link>
-              {categories.map((cat) => (
+              {navigationLinks.map((link) => (
                 <Link
-                  key={cat.slug}
-                  to={`/category/${cat.slug}`}
+                  key={link.name}
+                  to={link.href}
                   onClick={onClose}
-                  className="flex items-center justify-between py-3 text-sm font-semibold text-neutral-800 hover:text-black transition-colors capitalize"
+                  className="flex items-center justify-between py-3 text-sm font-semibold text-neutral-800 hover:text-black transition-colors"
                 >
-                  <span>{cat.name}</span>
-                  <ChevronRight className="w-4 h-4 text-neutral-400" />
+                  <span className={link.isSale ? 'text-[#C4301C] font-bold' : ''}>
+                    {link.name}
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    {link.badge && (
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                          link.isSale ? 'bg-[#C4301C] text-white' : 'bg-[#0D8756] text-white'
+                        }`}
+                      >
+                        {link.badge}
+                      </span>
+                    )}
+                    <ChevronRight className="w-4 h-4 text-neutral-400" />
+                  </div>
                 </Link>
               ))}
             </div>
@@ -91,35 +138,131 @@ const MobileNav = ({ isOpen, onClose }) => {
                 )}
               </Link>
 
+              <Link
+                to="/offers"
+                onClick={onClose}
+                className="flex items-center justify-between py-2.5 text-sm font-medium text-neutral-700 hover:text-black"
+              >
+                <div className="flex items-center space-x-3">
+                  <Gift className="w-4 h-4 text-rose-500" />
+                  <span>Offers &amp; Gift Cards</span>
+                </div>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100 uppercase">
+                  New
+                </span>
+              </Link>
+
               {isAuthenticated ? (
                 <>
+                  <div className="p-3 bg-neutral-50 rounded-2xl mb-1">
+                    <p className="text-xs font-bold text-neutral-900 truncate">{user?.name}</p>
+                    <p className="text-[11px] text-neutral-500 truncate">{user?.email}</p>
+                    <span className={`inline-block mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                      user?.role === 'admin'
+                        ? 'bg-purple-100 text-purple-700'
+                        : user?.isSeller
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {user?.role === 'admin' ? 'Admin' : user?.isSeller ? 'Verified Seller' : 'Verified Shopper'}
+                    </span>
+                  </div>
+
                   <Link
                     to="/account"
                     onClick={onClose}
-                    className="flex items-center space-x-3 py-2.5 text-sm font-medium text-neutral-700 hover:text-black"
+                    className="flex items-center space-x-3 py-2 text-sm font-medium text-neutral-700 hover:text-black"
                   >
                     <User className="w-4 h-4 text-neutral-500" />
-                    <span>My Account ({user?.name?.split(' ')[0]})</span>
+                    <span>My Account</span>
                   </Link>
-                  {user?.role === 'admin' && (
-                    <Link
-                      to="/admin"
-                      onClick={onClose}
-                      className="flex items-center space-x-3 py-2.5 text-sm font-semibold text-[#C4301C]"
-                    >
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Admin Control Center</span>
-                    </Link>
+
+                  {user?.role === 'admin' ? (
+                    <>
+                      <Link
+                        to="/admin"
+                        onClick={onClose}
+                        className="flex items-center space-x-3 py-2 text-sm font-bold text-[#C4301C] hover:bg-red-50 rounded-xl px-2 -mx-2"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-[#C4301C]" />
+                        <span>Admin Dashboard</span>
+                      </Link>
+                      <Link
+                        to="/admin/products"
+                        onClick={onClose}
+                        className="flex items-center space-x-3 py-2 text-sm font-medium text-neutral-700 hover:text-black px-2 -mx-2"
+                      >
+                        <Package className="w-4 h-4 text-neutral-500" />
+                        <span>Manage Products</span>
+                      </Link>
+                      <Link
+                        to="/admin/users"
+                        onClick={onClose}
+                        className="flex items-center space-x-3 py-2 text-sm font-medium text-neutral-700 hover:text-black px-2 -mx-2"
+                      >
+                        <User className="w-4 h-4 text-neutral-500" />
+                        <span>Manage Users</span>
+                      </Link>
+                    </>
+                  ) : user?.isSeller ? (
+                    <>
+                      <Link
+                        to="/account/seller"
+                        onClick={onClose}
+                        className="flex items-center space-x-3 py-2 text-sm font-bold text-purple-700 hover:bg-purple-50 rounded-xl px-2 -mx-2"
+                      >
+                        <Package className="w-4 h-4 text-purple-600" />
+                        <span>Seller Dashboard</span>
+                      </Link>
+                      <Link
+                        to="/account?tab=orders"
+                        onClick={onClose}
+                        className="flex items-center space-x-3 py-2 text-sm font-medium text-neutral-700 hover:text-black"
+                      >
+                        <ShoppingBag className="w-4 h-4 text-neutral-500" />
+                        <span>My Purchases</span>
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/account?tab=orders"
+                        onClick={onClose}
+                        className="flex items-center space-x-3 py-2 text-sm font-medium text-neutral-700 hover:text-black"
+                      >
+                        <ShoppingBag className="w-4 h-4 text-neutral-500" />
+                        <span>My Orders</span>
+                      </Link>
+                      <Link
+                        to="/account?tab=coupons"
+                        onClick={onClose}
+                        className="flex items-center space-x-3 py-2 text-sm font-medium text-neutral-700 hover:text-black"
+                      >
+                        <Package className="w-4 h-4 text-neutral-500" />
+                        <span>Available Coupons</span>
+                      </Link>
+                      <Link
+                        to="/become-a-seller"
+                        onClick={onClose}
+                        className="flex items-center space-x-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50 rounded-xl px-2 -mx-2"
+                      >
+                        <Store className="w-4 h-4 text-amber-600" />
+                        <span>Become a Seller</span>
+                      </Link>
+                    </>
                   )}
-                  <button
-                    onClick={() => {
-                      logout();
-                      onClose();
-                    }}
-                    className="w-full text-left py-2.5 text-xs text-neutral-500 hover:text-red-600 font-medium"
-                  >
-                    Sign Out
-                  </button>
+
+                  <div className="pt-2 border-t border-neutral-100">
+                    <button
+                      onClick={() => {
+                        logout();
+                        onClose();
+                      }}
+                      className="w-full text-left py-2 text-xs text-red-600 hover:text-red-700 font-bold"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
                 </>
               ) : (
                 <div className="pt-2 flex flex-col gap-2">
@@ -146,11 +289,11 @@ const MobileNav = ({ isOpen, onClose }) => {
           <div className="p-5 bg-neutral-50 border-t border-neutral-100 text-xs text-neutral-500 space-y-2">
             <div className="flex items-center space-x-2">
               <Phone className="w-3.5 h-3.5" />
-              <span>{settings.contactInfo?.phone || '+44 20 7946 0991'}</span>
+              <span>+91 80000 12345</span>
             </div>
             <div className="flex items-center space-x-2">
               <Mail className="w-3.5 h-3.5" />
-              <span>{settings.contactInfo?.email || 'concierge@vexivo.com'}</span>
+              <span>support@vexivo.com</span>
             </div>
           </div>
         </div>

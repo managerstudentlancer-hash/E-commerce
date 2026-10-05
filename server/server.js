@@ -23,24 +23,58 @@ connectDB().then(async () => {
       console.log(`[VEXIVO] Database count is ${count} (< 60). Running catalog auto-seed...`);
       await seedAll();
     }
+    const { importDummyProducts } = require('./services/dummyProductService');
+    const dummyRes = await importDummyProducts();
+    console.log(`[VEXIVO] DummyJSON sync completed: ${dummyRes.imported} imported, ${dummyRes.updated} updated`);
+    const { seedSarees } = require('./seed/sareeSeed');
+    await seedSarees();
+    const initDeliveryPartner = require('./config/initDeliveryPartner');
+    await initDeliveryPartner();
+    const { seedAiKnowledge } = require('./seed/aiKnowledgeSeed');
+    await seedAiKnowledge();
   } catch (err) {
-    console.warn('[VEXIVO] Auto-seed check notice:', err.message);
+    console.warn('[VEXIVO] Auto-seed/dummy-import check notice:', err.message);
   }
 });
 
-// Middleware
+const {
+  setSecurityHeaders,
+  globalRateLimiter,
+  sanitizeAuthInputs,
+  xssProtection,
+  hppProtection,
+} = require('./middleware/securityMiddleware');
+
+// Security: Hide server framework signature
+app.disable('x-powered-by');
+
+// Security & Header Fortification
+app.use(setSecurityHeaders);
+app.use(globalRateLimiter);
+
+// Secure CORS
 app.use(cors({
   origin: process.env.CLIENT_URL || ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
 }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Payload Body Limiting (Mitigate Buffer Overflow & ReDoS)
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+// Anti-Injection & Anti-XSS Sanitization Pipeline
+app.use(sanitizeAuthInputs);
+app.use(xssProtection);
+app.use(hppProtection);
 
 // Static directory for uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+const { protect, adminOnly } = require('./middleware/auth');
+
 // API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/collections', require('./routes/collectionRoutes'));
@@ -49,18 +83,30 @@ app.use('/api/wishlist', require('./routes/wishlistRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/coupons', require('./routes/couponRoutes'));
 app.use('/api/reviews', require('./routes/reviewRoutes'));
-app.use('/api/products/:productId/reviews', require('./routes/reviewRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/banners', require('./routes/bannerRoutes'));
 app.use('/api/site-settings', require('./routes/settingsRoutes'));
 app.use('/api/newsletter', require('./routes/newsletterRoutes'));
-app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/support', require('./routes/supportRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/offers', require('./routes/offerRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/admin/ai', require('./routes/adminAiRoutes'));
+app.use('/api/delivery', require('./routes/deliveryRoutes'));
+app.use('/api/logistics', require('./routes/logisticsRoutes'));
 
-// Reseed endpoint for instant sync (admin-only protected)
-const { protect, adminOnly } = require('./middleware/auth');
-app.get('/api/seed', protect, adminOnly, async (req, res) => {
+// Administrative Reseed endpoints (Strictly Admin Protected — completely restricted from public / guest / customer / seller access)
+app.all(['/api/seed', '/api/admin/seed'], protect, adminOnly, async (req, res) => {
   try {
+    if (process.env.NODE_ENV === 'production' && req.headers['x-confirm-reseed'] !== 'CONFIRM_SEED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Destructive reseed in production requires explicit x-confirm-reseed: CONFIRM_SEED header.',
+      });
+    }
     await seedAll();
+    const initDeliveryPartner = require('./config/initDeliveryPartner');
+    await initDeliveryPartner();
     const total = await Product.countDocuments();
     res.json({ success: true, message: `Catalog seeded! Total products: ${total}` });
   } catch (err) {
@@ -68,13 +114,21 @@ app.get('/api/seed', protect, adminOnly, async (req, res) => {
   }
 });
 
-app.get('/api/seed-catalog', async (req, res) => {
+app.all(['/api/seed-catalog', '/api/admin/seed-catalog'], protect, adminOnly, async (req, res) => {
   try {
+    if (process.env.NODE_ENV === 'production' && req.headers['x-confirm-reseed'] !== 'CONFIRM_SEED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Destructive reseed in production requires explicit x-confirm-reseed: CONFIRM_SEED header.',
+      });
+    }
     delete require.cache[require.resolve('./seed/seedData')];
     delete require.cache[require.resolve('./seed/bagsData')];
     delete require.cache[require.resolve('./seed/shoesData')];
     const { seedAll: freshSeedAll } = require('./seed/seedData');
     await freshSeedAll();
+    const initDeliveryPartner = require('./config/initDeliveryPartner');
+    await initDeliveryPartner();
     const total = await Product.countDocuments();
     const bagCount = await Product.countDocuments({ categorySlug: 'bags' });
     const shoeCount = await Product.countDocuments({ categorySlug: 'shoes' });
@@ -116,10 +170,10 @@ if (fs.existsSync(clientDist)) {
 app.use(errorHandler);
 
 // Start server
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`====================================================`);
   console.log(`🚀 VEXIVO Server running in ${process.env.NODE_ENV || 'development'} mode`);
-  console.log(`🌐 API Live at: http://localhost:${PORT}`);
+  console.log(`🌐 API Live at: http://127.0.0.1:${PORT}`);
   console.log(`🛡️  Zero Python: Verified Node.js Runtime`);
   console.log(`====================================================`);
 });

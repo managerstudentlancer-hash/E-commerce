@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Tag } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 
 const CartDrawer = () => {
@@ -13,6 +13,8 @@ const CartDrawer = () => {
     subtotal,
     freeShippingRemaining,
     freeShippingProgress,
+    appliedCoupon,
+    couponDiscount,
   } = useCart();
 
   if (!isCartOpen) return null;
@@ -49,10 +51,10 @@ const CartDrawer = () => {
             <div className="text-xs font-medium text-neutral-700 mb-1.5 flex justify-between">
               <span>
                 {freeShippingRemaining === 0 ? (
-                  <strong className="text-[#0D8756]">🎉 You have unlocked Free UK Delivery!</strong>
+                  <strong className="text-[#0D8756]">🎉 You have unlocked Free Delivery across India!</strong>
                 ) : (
                   <>
-                    Add <strong className="text-black">£{freeShippingRemaining.toFixed(2)}</strong> more for Free UK Delivery
+                    Add <strong className="text-black">₹{freeShippingRemaining.toFixed(2)}</strong> more for Free Delivery
                   </>
                 )}
               </span>
@@ -112,12 +114,15 @@ const CartDrawer = () => {
                         </button>
                       </div>
                       {item.variant && (
-                        <p className="text-xs text-neutral-500 mt-0.5 font-medium">
-                          Variant: {item.variant}
-                        </p>
+                        <div className="mt-1">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-800 bg-neutral-100 border border-neutral-200/80 px-2 py-0.5 rounded-md">
+                            <span className="text-neutral-500 font-normal">Size:</span>
+                            <span className="font-bold text-black">{item.variant}</span>
+                          </span>
+                        </div>
                       )}
                       <p className="text-sm font-bold text-neutral-900 mt-1">
-                        £{item.price.toFixed(2)}
+                        ₹{(Number(item.price) || 0).toFixed(2)}
                       </p>
                     </div>
 
@@ -148,10 +153,20 @@ const CartDrawer = () => {
           {/* Drawer Footer */}
           {items.length > 0 && (
             <div className="p-5 border-t border-neutral-100 bg-neutral-50 space-y-3">
+              {appliedCoupon && (
+                <div className="flex justify-between items-center text-xs text-emerald-800 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
+                  <div className="flex items-center space-x-1.5 font-bold">
+                    <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Coupon '{appliedCoupon}'</span>
+                  </div>
+                  <span className="font-extrabold text-emerald-700">-₹{Number(couponDiscount || 0).toFixed(2)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between text-sm">
                 <span className="text-neutral-600">Subtotal</span>
                 <span className="text-base font-bold text-neutral-900">
-                  £{subtotal.toFixed(2)}
+                  ₹{Math.max(0, subtotal - (couponDiscount || 0)).toFixed(2)}
                 </span>
               </div>
               <p className="text-[11px] text-neutral-500">

@@ -16,17 +16,25 @@ import {
   Filter,
   Sparkles,
   Eye,
-  Layers,
   Star,
+  Upload,
+  Play,
 } from 'lucide-react';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { getCategoryFallback } from '../../utils/imageHelper';
+
+import { useSearchParams } from 'react-router-dom';
 
 const AdminProducts = () => {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const initialCategory = searchParams.get('category') || 'all';
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState(initialCategory);
   const [stockFilter, setStockFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,9 +55,12 @@ const AdminProducts = () => {
   // Form State
   const [formData, setFormData] = useState({
     name: '',
+    brand: 'VEXIVO',
+    rating: 4.8,
+    numReviews: 0,
     price: '',
     compareAtPrice: '',
-    category: 'Women',
+    category: 'Women Wear',
     subcategory: '',
     sku: '',
     stock: 50,
@@ -70,17 +81,134 @@ const AdminProducts = () => {
   }, []);
 
   useEffect(() => {
-    fetchProducts();
-  }, [categoryFilter, stockFilter, statusFilter, currentPage, searchTerm]);
+    const urlCat = searchParams.get('category');
+    if (urlCat) {
+      setCategoryFilter(urlCat);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!authLoading) {
+      fetchProducts();
+    }
+  }, [categoryFilter, stockFilter, statusFilter, currentPage, searchTerm, authLoading]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3500);
   };
 
+  const [isUploadingThumb, setIsUploadingThumb] = useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+
+  const handleThumbnailUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!isAuthenticated || authLoading) {
+      setFormError('Authentication required: Administrator session is still verifying or expired.');
+      return;
+    }
+
+    const data = new FormData();
+    data.append('image', file);
+    data.append('folder', 'products');
+    if (editingProduct?._id) data.append('productId', editingProduct._id);
+    setIsUploadingThumb(true);
+    setFormError('');
+    try {
+      const res = await api.admin.uploadImage(data);
+      if (res.success && res.url) {
+        setFormData((prev) => ({ ...prev, thumbnail: res.url }));
+        showToast('Product cover uploaded to Supabase Storage!');
+      }
+    } catch (err) {
+      if (err.status === 401 || err.message?.toLowerCase().includes('authorized') || err.message?.toLowerCase().includes('token')) {
+        setFormError('Session expired. Please re-login to upload images. Your form data is saved.');
+      } else {
+        setFormError(err.message || 'Image upload failed');
+      }
+    } finally {
+      setIsUploadingThumb(false);
+    }
+  };
+
+  const handleGalleryUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!isAuthenticated || authLoading) {
+      setFormError('Authentication required: Administrator session is still verifying or expired.');
+      return;
+    }
+
+    const data = new FormData();
+    data.append('image', file);
+    data.append('folder', 'products');
+    if (editingProduct?._id) data.append('productId', editingProduct._id);
+    setIsUploadingGallery(true);
+    setFormError('');
+    try {
+      const res = await api.admin.uploadImage(data);
+      if (res.success && res.url) {
+        setFormData((prev) => ({
+          ...prev,
+          imagesText: prev.imagesText ? `${prev.imagesText}\n${res.url}` : res.url,
+        }));
+        showToast('Gallery image uploaded to Supabase Storage!');
+      }
+    } catch (err) {
+      if (err.status === 401 || err.message?.toLowerCase().includes('authorized') || err.message?.toLowerCase().includes('token')) {
+        setFormError('Session expired. Please re-login to upload images. Your form data is saved.');
+      } else {
+        setFormError(err.message || 'Image upload failed');
+      }
+    } finally {
+      setIsUploadingGallery(false);
+    }
+  };
+
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!isAuthenticated || authLoading) {
+      setFormError('Authentication required: Administrator session is still verifying or expired.');
+      return;
+    }
+
+    const data = new FormData();
+    data.append('image', file);
+    data.append('video', file);
+    data.append('folder', 'products');
+    if (editingProduct?._id) data.append('productId', editingProduct._id);
+    setIsUploadingVideo(true);
+    setFormError('');
+    try {
+      const res = await api.admin.uploadVideo(data);
+      if (res.success && res.url) {
+        setFormData((prev) => ({
+          ...prev,
+          videoUrl: res.url,
+        }));
+        showToast('Product video uploaded to Supabase Storage (product-media)!');
+      }
+    } catch (err) {
+      if (err.status === 401 || err.message?.toLowerCase().includes('authorized') || err.message?.toLowerCase().includes('token')) {
+        setFormError('Session expired. Please re-login to upload video. Your form data is saved.');
+      } else {
+        setFormError(err.message || 'Video upload failed');
+      }
+    } finally {
+      setIsUploadingVideo(false);
+    }
+  };
+
   const fetchCategories = async () => {
     try {
-      const res = await api.categories.getAll();
+      const res = await api.categories.getAllAdmin();
       if (res.success) {
         setCategories(res.categories || []);
       }
@@ -131,6 +259,9 @@ const AdminProducts = () => {
 
       setFormData({
         name: prod.name || '',
+        brand: prod.brand || 'VEXIVO',
+        rating: prod.rating !== undefined ? prod.rating : 4.8,
+        numReviews: prod.numReviews !== undefined ? prod.numReviews : 0,
         price: prod.price || '',
         compareAtPrice: prod.compareAtPrice || '',
         category: prod.category || 'Women',
@@ -141,6 +272,7 @@ const AdminProducts = () => {
         shortDescription: prod.shortDescription || '',
         thumbnail: prod.thumbnail || prod.images?.[0] || '',
         imagesText: (prod.images || []).join('\n'),
+        videoUrl: prod.videos?.[0] || prod.media?.find((m) => m.type === 'video')?.url || '',
         sizesText: sizes,
         colorsText: colors,
         bestseller: !!prod.bestseller,
@@ -152,6 +284,9 @@ const AdminProducts = () => {
       setEditingProduct(null);
       setFormData({
         name: '',
+        brand: 'VEXIVO',
+        rating: 4.8,
+        numReviews: 0,
         price: '',
         compareAtPrice: '',
         category: categories[0]?.name || 'Women',
@@ -162,6 +297,7 @@ const AdminProducts = () => {
         shortDescription: '',
         thumbnail: '',
         imagesText: '',
+        videoUrl: '',
         sizesText: 'S, M, L, XL',
         colorsText: 'Black, White',
         bestseller: false,
@@ -177,6 +313,11 @@ const AdminProducts = () => {
     e.preventDefault();
     if (!formData.name || !formData.price || !formData.description) {
       setFormError('Please enter product title, price, and description');
+      return;
+    }
+
+    if (!isAuthenticated || authLoading) {
+      setFormError('Authentication required: Administrator session is still verifying or expired.');
       return;
     }
 
@@ -217,8 +358,30 @@ const AdminProducts = () => {
         }
       }
 
+      const mediaItems = [
+        ...images.map((img, idx) => ({
+          type: 'image',
+          url: img,
+          displayOrder: idx,
+          isPrimary: idx === 0,
+        })),
+        ...(formData.videoUrl
+          ? [
+              {
+                type: 'video',
+                url: formData.videoUrl,
+                displayOrder: images.length,
+                isPrimary: false,
+              },
+            ]
+          : []),
+      ];
+
       const payload = {
         name: formData.name,
+        brand: formData.brand ? formData.brand.trim() : 'VEXIVO',
+        rating: Number(formData.rating || 4.8),
+        numReviews: Number(formData.numReviews || 0),
         price: Number(formData.price),
         compareAtPrice: Number(formData.compareAtPrice || 0),
         category: formData.category,
@@ -229,6 +392,8 @@ const AdminProducts = () => {
         shortDescription: formData.shortDescription,
         thumbnail: formData.thumbnail || images[0] || '',
         images: images.length > 0 ? images : [formData.thumbnail].filter(Boolean),
+        videos: formData.videoUrl ? [formData.videoUrl] : [],
+        media: mediaItems,
         options,
         bestseller: formData.bestseller,
         newArrival: formData.newArrival,
@@ -247,7 +412,11 @@ const AdminProducts = () => {
       setIsModalOpen(false);
       fetchProducts();
     } catch (err) {
-      setFormError(err.message || 'Failed to save product');
+      if (err.status === 401 || err.message?.toLowerCase().includes('authorized') || err.message?.toLowerCase().includes('token')) {
+        setFormError('Session expired. Please re-login to save products. Your form data is saved.');
+      } else {
+        setFormError(err.message || 'Failed to save product');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -255,6 +424,10 @@ const AdminProducts = () => {
 
   const handleDeleteProduct = async () => {
     if (!deleteConfirmId) return;
+    if (!isAuthenticated || authLoading) {
+      showToast('Authentication required: Administrator session expired.');
+      return;
+    }
     setIsDeleting(true);
     try {
       await api.products.delete(deleteConfirmId);
@@ -392,13 +565,122 @@ const AdminProducts = () => {
             <p className="text-xs text-slate-400 font-bold">Querying catalog inventory...</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-white/[0.03] border-b border-white/10 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+          <div>
+            {/* Mobile Products Card View (Screens < md) */}
+            <div className="md:hidden divide-y divide-white/5">
+              {products.length === 0 ? (
+                <div className="py-16 text-center text-slate-400 text-xs">
+                  No products match your selected search or filter criteria.
+                </div>
+              ) : (
+                products.map((prod) => {
+                  const isLow = prod.stock <= 10 && prod.stock > 0;
+                  const isOut = prod.stock <= 0;
+                  return (
+                    <div key={prod._id} className="p-4 space-y-3 hover:bg-white/[0.02] transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={prod.thumbnail || prod.images?.[0] || getCategoryFallback(prod.category)}
+                          alt=""
+                          onError={(e) => {
+                            e.currentTarget.src = getCategoryFallback(prod.category);
+                          }}
+                          className="w-14 h-14 object-cover rounded-xl bg-slate-900 border border-white/10 flex-shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-white text-xs line-clamp-1">
+                            {prod.name}
+                          </p>
+                          <div className="flex items-center space-x-1.5 mt-1 flex-wrap gap-1">
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {prod.sku || 'SKU-PENDING'}
+                            </span>
+                            <span className="text-[9px] px-2 py-0.5 rounded-md bg-white/5 text-slate-300 font-semibold">
+                              {prod.category}
+                            </span>
+                            {prod.brand && (
+                              <span className="text-[9px] px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 font-semibold">
+                                {prod.brand}
+                              </span>
+                            )}
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 font-bold flex items-center space-x-0.5">
+                              <span>★</span>
+                              <span>{prod.rating || 4.8}</span>
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <span className="font-black text-cyan-300 font-mono text-sm">
+                              ₹{prod.price?.toLocaleString('en-IN')}
+                            </span>
+                            {prod.compareAtPrice > prod.price && (
+                              <>
+                                <span className="text-[10px] text-slate-500 line-through">
+                                  ₹{prod.compareAtPrice?.toLocaleString('en-IN')}
+                                </span>
+                                <span className="text-[10px] text-emerald-400 font-bold">
+                                  -{Math.round(((prod.compareAtPrice - prod.price) / prod.compareAtPrice) * 100)}%
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs">
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase font-mono ${
+                              isOut
+                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                : isLow
+                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            }`}
+                          >
+                            {isOut ? 'Out of Stock' : `${prod.stock} in stock`}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                              prod.status === 'active'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : 'bg-white/5 text-slate-400 border border-white/10'
+                            }`}
+                          >
+                            {prod.status}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleOpenModal(prod)}
+                            className="p-2 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-colors"
+                            title="Edit product"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(prod._id)}
+                            className="p-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 transition-colors"
+                            title="Delete product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table View (Screens >= md) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-white/[0.03] border-b border-white/10 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="py-4 px-6">Product Details</th>
                   <th className="py-4 px-4">Department</th>
-                  <th className="py-4 px-4">Price (£)</th>
+                  <th className="py-4 px-4">Price (₹)</th>
                   <th className="py-4 px-4">Stock Health</th>
                   <th className="py-4 px-4">Storefront Status</th>
                   <th className="py-4 px-6 text-right">Actions</th>
@@ -420,17 +702,34 @@ const AdminProducts = () => {
                         <td className="py-4 px-6">
                           <div className="flex items-center space-x-3.5">
                             <img
-                              src={prod.thumbnail || prod.images?.[0] || ''}
+                              src={prod.thumbnail || prod.images?.[0] || getCategoryFallback(prod.category)}
                               alt=""
+                              onError={(e) => {
+                                e.currentTarget.src = getCategoryFallback(prod.category);
+                              }}
                               className="w-12 h-12 object-cover rounded-2xl bg-slate-900 border border-white/10 flex-shrink-0 group-hover:scale-105 transition-transform"
                             />
                             <div>
                               <p className="font-bold text-white line-clamp-1 group-hover:text-cyan-300 transition-colors">
                                 {prod.name}
                               </p>
-                              <div className="flex items-center space-x-2 mt-0.5">
+                              <div className="flex items-center space-x-2 mt-0.5 flex-wrap gap-1">
                                 <span className="text-[10px] text-slate-400 font-mono">
                                   {prod.sku || 'SKU-PENDING'}
+                                </span>
+                                {prod.source === 'dummyjson' && (
+                                  <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                    DummyJSON
+                                  </span>
+                                )}
+                                {prod.brand && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/25">
+                                    {prod.brand}
+                                  </span>
+                                )}
+                                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/25 flex items-center space-x-0.5">
+                                  <span>★</span>
+                                  <span>{prod.rating || 4.8}</span>
                                 </span>
                                 {prod.bestseller && (
                                   <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -449,11 +748,16 @@ const AdminProducts = () => {
                         </td>
 
                         <td className="py-4 px-4 font-black text-white font-mono text-sm">
-                          £{prod.price?.toFixed(2)}
+                          ₹{prod.price?.toLocaleString('en-IN')}
                           {prod.compareAtPrice > prod.price && (
-                            <span className="text-[10px] text-slate-500 line-through ml-2 font-normal">
-                              £{prod.compareAtPrice.toFixed(2)}
-                            </span>
+                            <>
+                              <span className="text-[10px] text-slate-500 line-through ml-2 font-normal">
+                                ₹{prod.compareAtPrice?.toLocaleString('en-IN')}
+                              </span>
+                              <span className="text-[10px] text-emerald-400 font-bold ml-1.5">
+                                ({Math.round(((prod.compareAtPrice - prod.price) / prod.compareAtPrice) * 100)}% off)
+                              </span>
+                            </>
                           )}
                         </td>
 
@@ -506,7 +810,8 @@ const AdminProducts = () => {
               </tbody>
             </table>
           </div>
-        )}
+        </div>
+      )}
 
         {/* Pagination Footer */}
         <div className="p-4 sm:p-5 border-t border-white/10 flex items-center justify-between text-xs text-slate-400 font-bold bg-white/[0.02]">
@@ -584,7 +889,7 @@ const AdminProducts = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div>
                   <label className="block font-bold uppercase text-slate-300 mb-1.5">
-                    Price (£) *
+                    Price (₹) *
                   </label>
                   <input
                     type="number"
@@ -598,7 +903,7 @@ const AdminProducts = () => {
                 </div>
                 <div>
                   <label className="block font-bold uppercase text-slate-300 mb-1.5">
-                    Compare Price (£)
+                    Compare Price / MRP (₹)
                   </label>
                   <input
                     type="number"
@@ -621,6 +926,25 @@ const AdminProducts = () => {
                     className="w-full px-4 py-3 rounded-2xl admin-input font-mono font-bold"
                   />
                 </div>
+
+                {/* Live Discount Calculator Preview */}
+                {Number(formData.compareAtPrice) > Number(formData.price) && Number(formData.price) > 0 ? (
+                  <div className="col-span-1 sm:col-span-3 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex items-center space-x-2">
+                      <span className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 font-black font-mono">
+                        {Math.round(((Number(formData.compareAtPrice) - Number(formData.price)) / Number(formData.compareAtPrice)) * 100)}% OFF
+                      </span>
+                      <span>Active Discount Badge (Automatically filters on category pages)</span>
+                    </span>
+                    <span className="text-[11px] font-mono text-emerald-300">
+                      Customer saves ₹{(Number(formData.compareAtPrice) - Number(formData.price)).toFixed(2)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="col-span-1 sm:col-span-3 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 text-[11px] flex items-center justify-between">
+                    <span>💡 Tip: Set <strong>Compare Price</strong> higher than <strong>Price</strong> to automatically calculate and activate discount filters & badges.</span>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -680,6 +1004,63 @@ const AdminProducts = () => {
                 </div>
               </div>
 
+              {/* Brand, Rating & Review Count Controls (Filters & Display) */}
+              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-cyan-400 flex items-center space-x-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Brand, Rating & Reviews Control (Filters)</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400">Controls rating stars & brand filter tags</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  <div>
+                    <label className="block font-bold uppercase text-slate-300 mb-1.5 text-[11px]">
+                      Brand Name (Brand Filter)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.brand}
+                      onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                      placeholder="VEXIVO, ZARA, NIKE, etc."
+                      className="w-full px-4 py-3 rounded-2xl admin-input font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold uppercase text-slate-300 mb-1.5 text-[11px] flex items-center space-x-1">
+                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                      <span>Rating (1.0 - 5.0)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="5"
+                      step="0.1"
+                      value={formData.rating}
+                      onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
+                      placeholder="4.8"
+                      className="w-full px-4 py-3 rounded-2xl admin-input font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold uppercase text-slate-300 mb-1.5 text-[11px]">
+                      Verified Review Count
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.numReviews}
+                      onChange={(e) => setFormData({ ...formData, numReviews: e.target.value })}
+                      placeholder="24"
+                      className="w-full px-4 py-3 rounded-2xl admin-input font-mono font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Sizes and Colors */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
@@ -710,31 +1091,150 @@ const AdminProducts = () => {
               </div>
 
               {/* Images */}
-              <div>
-                <label className="block font-bold uppercase text-slate-300 mb-1.5">
-                  Primary Thumbnail Image URL *
-                </label>
-                <input
-                  type="url"
-                  required
-                  value={formData.thumbnail}
-                  onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
-                />
-              </div>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block font-bold uppercase text-slate-300">
+                      Primary Thumbnail Image *
+                    </label>
+                    <label className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 cursor-pointer flex items-center space-x-1 bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/20">
+                      {isUploadingThumb ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Uploading to Supabase...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Upload File from Device</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploadingThumb}
+                        onChange={handleThumbnailUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <input
+                    type="url"
+                    required
+                    value={formData.thumbnail}
+                    onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+                    placeholder="https://... or upload from your device above"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
+                  />
+                  {formData.thumbnail && (
+                    <div className="mt-2 flex items-center space-x-3 bg-white/5 p-2 rounded-xl border border-white/10">
+                      <img
+                        src={formData.thumbnail}
+                        alt="Thumbnail Preview"
+                        className="w-12 h-14 object-cover rounded-lg bg-slate-800"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] text-white font-bold truncate">Cover Image Attached</p>
+                        <p className="text-[10px] text-slate-400 font-mono truncate">{formData.thumbnail}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-              <div>
-                <label className="block font-bold uppercase text-slate-300 mb-1.5">
-                  Additional Carousel Images (one URL per line)
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.imagesText}
-                  onChange={(e) => setFormData({ ...formData, imagesText: e.target.value })}
-                  placeholder="https://images.unsplash.com/photo-2...&#10;https://images.unsplash.com/photo-3..."
-                  className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
-                />
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block font-bold uppercase text-slate-300">
+                      Additional Carousel Images (one URL per line)
+                    </label>
+                    <label className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 cursor-pointer flex items-center space-x-1 bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/20">
+                      {isUploadingGallery ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Uploading to Supabase...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Upload to Carousel</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploadingGallery}
+                        onChange={handleGalleryUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <textarea
+                    rows={2}
+                    value={formData.imagesText}
+                    onChange={(e) => setFormData({ ...formData, imagesText: e.target.value })}
+                    placeholder="https://images.unsplash.com/...&#10;https://...supabase.co/..."
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
+                  />
+                </div>
+
+                {/* Product Video (Supabase Storage product-media) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block font-bold uppercase text-slate-300">
+                      Product Video (Optional MP4, WEBM, MOV)
+                    </label>
+                    <label className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 cursor-pointer flex items-center space-x-1 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                      {isUploadingVideo ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Uploading to Supabase...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-3.5 h-3.5 fill-emerald-400" />
+                          <span>Upload Video File</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                        disabled={isUploadingVideo}
+                        onChange={handleVideoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <input
+                    type="url"
+                    value={formData.videoUrl}
+                    onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                    placeholder="https://...supabase.co/.../videos/...mp4 (or upload file above)"
+                    className="w-full px-4 py-3 rounded-2xl admin-input font-mono"
+                  />
+                  {formData.videoUrl && (
+                    <div className="mt-2.5 bg-white/5 p-3 rounded-xl border border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Play className="w-4 h-4 fill-emerald-400 text-emerald-400" />
+                          <span className="text-[11px] text-white font-bold">Supabase Product Video Ready</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, videoUrl: '' }))}
+                          className="text-[10px] text-rose-400 hover:text-rose-300 font-bold px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20"
+                        >
+                          Remove Video
+                        </button>
+                      </div>
+                      <video
+                        src={formData.videoUrl}
+                        controls
+                        preload="metadata"
+                        className="w-full max-h-48 rounded-lg bg-black object-contain border border-white/10"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Description */}

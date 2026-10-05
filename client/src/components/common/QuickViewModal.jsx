@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { X, Star, ShoppingBag, Check, Heart, ArrowRight } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
+import { getCategoryFallback, resolveImageUrl } from '../../utils/imageHelper';
 
 const QuickViewModal = ({ product, isOpen, onClose }) => {
   const [selectedImg, setSelectedImg] = useState(0);
@@ -13,9 +14,11 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
 
   if (!isOpen || !product) return null;
 
-  const images = (product.images && product.images.length > 0)
+  const fallbackImg = getCategoryFallback(product.category, product.categorySlug);
+  const rawImages = (product.images && product.images.length > 0)
     ? product.images
-    : [product.thumbnail || product.image || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80'];
+    : [product.thumbnail || product.image || fallbackImg];
+  const images = rawImages.map((img) => resolveImageUrl(img, product.category, product.categorySlug));
 
   const inWishlist = isInWishlist(product._id || product.id);
 
@@ -93,17 +96,17 @@ const QuickViewModal = ({ product, isOpen, onClose }) => {
               {/* Price */}
               <div className="flex items-baseline space-x-2 pt-1">
                 <span className="text-xl font-extrabold text-[#C4301C]">
-                  £{product.price?.toFixed(2)}
+                  ₹{product.price?.toFixed(2)}
                 </span>
                 {product.compareAtPrice > product.price && (
                   <span className="text-sm text-neutral-600 line-through">
-                    £{product.compareAtPrice?.toFixed(2)}
+                    ₹{product.compareAtPrice?.toFixed(2)}
                   </span>
                 )}
               </div>
 
               <p className="text-xs text-neutral-600 line-clamp-3 leading-relaxed">
-                {product.description || 'Authentic luxury lifestyle essential crafted with bespoke tailoring and premium finish. In stock and ready for UK tracked dispatch.'}
+                {product.description || 'Authentic luxury lifestyle essential crafted with bespoke tailoring and premium finish. In stock and ready for Pan-India express dispatch.'}
               </p>
             </div>
 

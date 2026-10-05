@@ -19,8 +19,8 @@ const Terms = () => {
         </p>
         <h3 className="text-base font-bold text-neutral-900 pt-4">2. Pricing & Currency</h3>
         <p>
-          All prices on the UK storefront are quoted in Great British Pounds (GBP £) and are inclusive of standard UK
-          Value Added Tax (VAT).
+          All prices on the storefront are quoted in Indian Rupees (INR ₹) and are inclusive of applicable Goods and
+          Services Tax (GST).
         </p>
       </div>
     </div>

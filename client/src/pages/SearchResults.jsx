@@ -7,6 +7,7 @@ import ProductCard from '../components/common/ProductCard';
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
+  const category = searchParams.get('category') || '';
 
   const [results, setResults] = useState({ products: [], categories: [], suggestions: [] });
   const [loading, setLoading] = useState(true);
@@ -15,7 +16,7 @@ const SearchResults = () => {
     const fetchSearch = async () => {
       setLoading(true);
       try {
-        const res = await api.search(query);
+        const res = await api.search(query, category);
         if (res.success) {
           setResults(res);
         }
@@ -27,19 +28,29 @@ const SearchResults = () => {
     };
 
     fetchSearch();
-  }, [query]);
+  }, [query, category]);
 
   if (loading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-3">
         <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
-        <p className="text-xs font-semibold text-neutral-500">Searching catalog for "{query}"...</p>
+        <p className="text-xs font-semibold text-neutral-500">
+          Searching catalog{query ? ` for "${query}"` : ''}{category ? ` in ${category}` : ''}...
+        </p>
       </div>
     );
   }
 
   const products = results.products || [];
   const categories = results.categories || [];
+
+  const titleText = query && category
+    ? `Search Results for "${query}" in ${category}`
+    : category
+    ? `Department: ${category}`
+    : query
+    ? `Search Results for "${query}"`
+    : 'All Products';
 
   return (
     <div className="bg-white min-h-screen py-10 sm:py-16">
@@ -52,7 +63,7 @@ const SearchResults = () => {
             <span className="text-black font-semibold">Search Results</span>
           </nav>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-neutral-900 tracking-tight">
-            Search Results for "{query}"
+            {titleText}
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 mt-1">
             Found {products.length} matching products and {categories.length} matching categories
@@ -96,8 +107,8 @@ const SearchResults = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {products.map((product) => (
-                <ProductCard key={product._id || product.id} product={product} />
+              {products.map((product, idx) => (
+                <ProductCard key={product._id || product.id} product={product} index={idx} />
               ))}
             </div>
           )}

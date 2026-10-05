@@ -9,7 +9,7 @@ import {
   Loader2,
   Calendar,
   Percent,
-  PoundSterling,
+  IndianRupee,
   CheckCircle2,
   AlertCircle,
   Sparkles,
@@ -235,16 +235,16 @@ const AdminCoupons = () => {
                         <td className="py-4 px-4 font-black text-emerald-400 font-mono text-sm">
                           {coupon.type === 'percentage'
                             ? `${coupon.value}% OFF`
-                            : `£${coupon.value?.toFixed(2)} FLAT`}
+                            : `₹${coupon.value?.toFixed(2)} FLAT`}
                         </td>
 
                         <td className="py-4 px-4 text-slate-300 font-mono">
-                          {coupon.minimumOrder > 0 ? `£${coupon.minimumOrder.toFixed(2)}` : 'No minimum'}
+                          {coupon.minimumOrder > 0 ? `₹${coupon.minimumOrder.toFixed(2)}` : 'No minimum'}
                         </td>
 
                         <td className="py-4 px-4 text-slate-300 font-mono">
                           {coupon.maximumDiscount > 0
-                            ? `£${coupon.maximumDiscount.toFixed(2)}`
+                            ? `₹${coupon.maximumDiscount.toFixed(2)}`
                             : 'Unlimited'}
                         </td>
 
@@ -362,7 +362,7 @@ const AdminCoupons = () => {
                     className="w-full px-4 py-3 rounded-2xl admin-input font-bold"
                   >
                     <option value="percentage" className="bg-slate-900 text-white">Percentage Discount (%)</option>
-                    <option value="fixed" className="bg-slate-900 text-white">Fixed Amount Discount (£)</option>
+                    <option value="fixed" className="bg-slate-900 text-white">Fixed Amount Discount (₹)</option>
                   </select>
                 </div>
 
@@ -385,7 +385,7 @@ const AdminCoupons = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block font-bold uppercase text-slate-300 mb-1.5">
-                    Min. Order Amount (£)
+                    Min. Order Amount (₹)
                   </label>
                   <input
                     type="number"
@@ -399,7 +399,7 @@ const AdminCoupons = () => {
 
                 <div>
                   <label className="block font-bold uppercase text-slate-300 mb-1.5">
-                    Max. Discount Cap (£)
+                    Max. Discount Cap (₹)
                   </label>
                   <input
                     type="number"

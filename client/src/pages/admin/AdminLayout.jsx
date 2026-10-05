@@ -23,6 +23,11 @@ import {
   Database,
   Radio,
   HelpCircle,
+  Loader2,
+  Gift,
+  Headphones,
+  Truck,
+  MapPin,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -32,19 +37,35 @@ const adminNavItems = [
   { name: 'Categories', path: '/admin/categories', icon: FolderTree, badge: null },
   { name: 'Collections', path: '/admin/collections', icon: Layers, badge: null },
   { name: 'Orders', path: '/admin/orders', icon: ShoppingCart, badge: 'Live' },
+  { name: 'Logistics & Hubs', path: '/admin/logistics', icon: MapPin, badge: 'Hubs' },
+  { name: 'Fleet Applications', path: '/admin/delivery-applications', icon: Truck, badge: 'Fleet' },
   { name: 'Customers', path: '/admin/customers', icon: Users, badge: null },
+  { name: 'Users & Roles', path: '/admin/users', icon: Users, badge: null },
+  { name: '24/7 Customer Care', path: '/admin/support', icon: Headphones, badge: 'Live' },
   { name: 'Inventory', path: '/admin/inventory', icon: Boxes, badge: 'Stock' },
   { name: 'Coupons', path: '/admin/coupons', icon: Tag, badge: null },
+  { name: 'Offers & Deals', path: '/admin/offers', icon: Gift, badge: 'Live' },
   { name: 'Reviews', path: '/admin/reviews', icon: Star, badge: null },
   { name: 'Banners', path: '/admin/banners', icon: ImageIcon, badge: null },
+  { name: 'Brand Logo', path: '/admin/logo', icon: Sparkles, badge: 'Live' },
+  { name: 'AI Assistant', path: '/admin/ai', icon: Sparkles, badge: 'AI' },
   { name: 'Settings', path: '/admin/settings', icon: Sliders, badge: null },
 ];
 
 const AdminLayout = () => {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // During auth check, show loading spinner
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-[#080B11]">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+      </div>
+    );
+  }
 
   // Role verification guard
   if (!user || user.role !== 'admin') {
@@ -122,8 +143,29 @@ const AdminLayout = () => {
           </Link>
         </div>
 
+        {/* Logged In Admin Identity Card */}
+        <div className="px-5 pt-3">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-cyan-500/15 via-indigo-500/10 to-transparent border border-cyan-500/30 flex items-center space-x-3 shadow-md">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 p-[1.5px] flex-shrink-0 shadow-lg shadow-cyan-500/20">
+              <div className="w-full h-full bg-[#0C111D] rounded-[14px] flex items-center justify-center font-black text-sm text-cyan-300">
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+              </div>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center space-x-1.5">
+                <p className="text-xs font-black text-white truncate">{user?.name || 'Administrator'}</p>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+              </div>
+              <p className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-wider mt-0.5">
+                Master Admin Portal
+              </p>
+              <p className="text-[10px] text-slate-400 truncate font-mono mt-0.5">{user?.email}</p>
+            </div>
+          </div>
+        </div>
+
         {/* Live Telemetry Pill */}
-        <div className="px-5 pt-4">
+        <div className="px-5 pt-2">
           <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="relative flex h-2.5 w-2.5">
@@ -258,18 +300,18 @@ const AdminLayout = () => {
 
             {/* Admin User Profile */}
             <div className="flex items-center space-x-3 pl-2 sm:pl-3 border-l border-white/10">
-              <div className="text-right hidden md:block">
-                <p className="text-xs font-extrabold text-white">{user.name}</p>
-                <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider flex items-center justify-end space-x-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>{user.role} Privilege</span>
+              <div className="text-right">
+                <p className="text-xs font-black text-white">{user?.name || 'Administrator'}</p>
+                <p className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-wider flex items-center justify-end space-x-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>{user?.role || 'admin'} Access</span>
                 </p>
               </div>
 
               <div className="relative group cursor-pointer">
                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 p-[1.5px] shadow-lg shadow-cyan-500/20">
                   <div className="w-full h-full bg-[#0C111D] rounded-[14px] flex items-center justify-center font-black text-sm text-cyan-300">
-                    {user.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                    {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
                   </div>
                 </div>
               </div>
@@ -278,10 +320,73 @@ const AdminLayout = () => {
         </header>
 
         {/* Dynamic Nested Route View */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar pb-24 lg:pb-8">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile App-Style Bottom Navigation for Admin (Only on Mobile Screens) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#0C111D]/95 backdrop-blur-xl border-t border-white/10 px-2 py-1 flex items-center justify-around shadow-2xl">
+        <Link
+          to="/admin"
+          className={`flex flex-col items-center justify-center py-1.5 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all ${
+            isNavActive('/admin')
+              ? 'text-cyan-400 font-black'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <LayoutDashboard className="w-4 h-4 mb-0.5" />
+          <span>Dashboard</span>
+        </Link>
+
+        <Link
+          to="/admin/products"
+          className={`flex flex-col items-center justify-center py-1.5 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all ${
+            isNavActive('/admin/products')
+              ? 'text-cyan-400 font-black'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Package className="w-4 h-4 mb-0.5" />
+          <span>Products</span>
+        </Link>
+
+        <Link
+          to="/admin/orders"
+          className={`flex flex-col items-center justify-center py-1.5 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all relative ${
+            isNavActive('/admin/orders')
+              ? 'text-cyan-400 font-black'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <div className="relative">
+            <ShoppingCart className="w-4 h-4 mb-0.5" />
+            <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          </div>
+          <span>Orders</span>
+        </Link>
+
+        <Link
+          to="/admin/logistics"
+          className={`flex flex-col items-center justify-center py-1.5 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all ${
+            isNavActive('/admin/logistics')
+              ? 'text-cyan-400 font-black'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <MapPin className="w-4 h-4 mb-0.5" />
+          <span>Hubs</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="flex flex-col items-center justify-center py-1.5 px-2 flex-1 rounded-xl text-[10px] font-bold text-slate-400 hover:text-white active:scale-95 transition-all"
+        >
+          <Menu className="w-4 h-4 mb-0.5" />
+          <span>More</span>
+        </button>
+      </nav>
 
       {/* Mobile Drawer */}
       {sidebarOpen && (
@@ -292,7 +397,7 @@ const AdminLayout = () => {
           />
           <div className="relative w-72 max-w-xs bg-[#0C111D] text-white h-full flex flex-col justify-between p-5 shadow-2xl z-10 border-r border-white/10">
             <div>
-              <div className="flex items-center justify-between pb-5 border-b border-white/10">
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center space-x-2.5">
                   <span className="text-lg font-black tracking-wider text-white">VEXIVO</span>
                   <span className="text-[9px] font-extrabold tracking-widest px-2 py-0.5 rounded-full bg-cyan-500 text-slate-950 font-black">
@@ -305,6 +410,18 @@ const AdminLayout = () => {
                 >
                   <X className="w-5 h-5" />
                 </button>
+              </div>
+
+              {/* Mobile Drawer Admin Info */}
+              <div className="p-3 my-3 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-cyan-500 text-slate-950 font-black flex items-center justify-center text-xs shadow-md">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-black text-white truncate">{user?.name || 'Administrator'}</p>
+                  <p className="text-[10px] text-emerald-400 font-bold uppercase">{user?.role} Session</p>
+                  <p className="text-[9px] text-slate-400 font-mono truncate">{user?.email}</p>
+                </div>
               </div>
 
               <nav className="space-y-1.5 pt-4 overflow-y-auto max-h-[calc(100vh-170px)] custom-scrollbar">
