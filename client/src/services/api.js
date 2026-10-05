@@ -380,10 +380,27 @@ export const api = {
     resetDefault: () => request('/offers/reset-default', { method: 'POST' }),
   },
 
-  // AI Assistant
+  // AI Assistant (Customer & Public APIs)
   ai: {
     chat: (payload) => request('/ai/chat', { method: 'POST', body: JSON.stringify(payload) }),
     getWelcome: () => request('/ai/welcome'),
+    searchProducts: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/ai/products/search${q ? `?${q}` : ''}`);
+    },
+    getProduct: (id) => request(`/ai/products/${id}`),
+    getCategories: () => request('/ai/categories'),
+    getOffers: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/ai/offers${q ? `?${q}` : ''}`);
+    },
+    getKnowledge: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/ai/knowledge${q ? `?${q}` : ''}`);
+    },
+    addToCart: (data) => request('/ai/cart/add', { method: 'POST', body: JSON.stringify(data) }),
+    addToWishlist: (data) => request('/ai/wishlist/add', { method: 'POST', body: JSON.stringify(data) }),
+    getUserOrders: () => request('/ai/orders'),
     cancelOrder: (orderId, reason) =>
       request('/ai/cancel-order', { method: 'POST', body: JSON.stringify({ orderId, reason }) }),
     returnOrder: (orderId, payload) =>
@@ -391,6 +408,39 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ orderId, ...(typeof payload === 'string' ? { reason: payload } : payload) }),
       }),
+  },
+
+  // Admin AI Management Suite
+  adminAi: {
+    getSettings: () => request('/admin/ai/settings'),
+    updateSettings: (data) => request('/admin/ai/settings', { method: 'PUT', body: JSON.stringify(data) }),
+    getKnowledge: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/admin/ai/knowledge${q ? `?${q}` : ''}`);
+    },
+    createKnowledge: (data) => request('/admin/ai/knowledge', { method: 'POST', body: JSON.stringify(data) }),
+    updateKnowledge: (id, data) => request(`/admin/ai/knowledge/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteKnowledge: (id) => request(`/admin/ai/knowledge/${id}`, { method: 'DELETE' }),
+    getFaqs: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/admin/ai/faqs${q ? `?${q}` : ''}`);
+    },
+    createFaq: (data) => request('/admin/ai/faqs', { method: 'POST', body: JSON.stringify(data) }),
+    updateFaq: (id, data) => request(`/admin/ai/faqs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteFaq: (id) => request(`/admin/ai/faqs/${id}`, { method: 'DELETE' }),
+    getConversations: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/admin/ai/conversations${q ? `?${q}` : ''}`);
+    },
+    getConversationById: (id) => request(`/admin/ai/conversations/${id}`),
+    getUnanswered: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/admin/ai/unanswered${q ? `?${q}` : ''}`);
+    },
+    resolveUnanswered: (id, data) =>
+      request(`/admin/ai/unanswered/${id}/resolve`, { method: 'POST', body: JSON.stringify(data) }),
+    deleteUnanswered: (id) => request(`/admin/ai/unanswered/${id}`, { method: 'DELETE' }),
+    getAnalytics: () => request('/admin/ai/analytics'),
   },
 
   // Multi-Stage Logistics & Fulfillment Workflow
@@ -421,7 +471,6 @@ export const api = {
     initiateReturn: (id, data) => request(`/logistics/shipments/${id}/return-initiate`, { method: 'PUT', body: JSON.stringify(data) }),
     updateReturn: (id, data) => request(`/logistics/shipments/${id}/return-update`, { method: 'PUT', body: JSON.stringify(data) }),
     adminOverride: (id, data) => request(`/logistics/shipments/${id}/admin-override`, { method: 'PUT', body: JSON.stringify(data) }),
-  },
   },
 };
 

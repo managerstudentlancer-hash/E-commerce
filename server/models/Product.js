@@ -144,4 +144,11 @@ productSchema.pre('save', function (next) {
   next();
 });
 
+// Indexes for AI search & catalog filtering performance
+productSchema.index({ status: 1, categorySlug: 1, price: 1 });
+productSchema.index({ status: 1, gender: 1, price: 1 });
+productSchema.index({ status: 1, rating: -1 });
+productSchema.index({ name: 'text', description: 'text', tags: 'text', category: 'text', subcategory: 'text' });
+
 module.exports = mongoose.models.Product || mongoose.model('Product', productSchema);
+

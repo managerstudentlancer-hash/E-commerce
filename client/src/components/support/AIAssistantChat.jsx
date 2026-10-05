@@ -31,12 +31,12 @@ import { useCart } from '../../context/CartContext';
 import api from '../../services/api';
 
 const DEFAULT_SUGGESTIONS = [
-  { label: '🛍️ Find Sarees', prompt: 'Show me sarees under ₹1500.' },
   { label: '📦 Track My Order', prompt: 'Where is my order?' },
-  { label: '🎁 Offers & Coupons', prompt: 'Any offers or coupons on sarees?' },
-  { label: '💎 Match Jewellery', prompt: 'Which jewellery goes with a saree?' },
-  { label: '↩️ Return / Refund', prompt: 'I want to return my order.' },
+  { label: '↩️ Return My Order', prompt: 'I want to return my order.' },
   { label: '💳 Payment Help', prompt: 'My payment failed.' },
+  { label: '🛍️ Find Products', prompt: 'Show me sarees under ₹1500.' },
+  { label: '🎁 Offers & Coupons', prompt: 'What offers and coupons are available?' },
+  { label: '✨ Talk About Shopping', prompt: 'What is trending right now?' },
 ];
 
 const ORDER_STEPS = ['pending', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
@@ -50,9 +50,9 @@ const AIAssistantChat = ({ onOpenTicketModal }) => {
     {
       id: 'welcome',
       sender: 'ai',
-      text: `Hi ${user?.name ? user.name.split(' ')[0] : 'there'}! 👋 I’m your **VEXIVO AI Assistant**.
+      text: `Hi ${user?.name ? user.name.split(' ')[0] : 'Member'}! 👋 I’m your **VEXIVO AI Customer Care Assistant**.
 
-I can automatically help you track orders in real-time, find products, apply discount coupons, and handle returns or cancellations directly in this chat!
+I’m available 24×7 to help with orders, returns, refunds, payments, delivery, products, offers and shopping.
 
 How can I help you today?`,
       timestamp: new Date(),
@@ -323,7 +323,10 @@ How can I help you today?`,
       {
         id: `welcome-${Date.now()}`,
         sender: 'ai',
-        text: `Hi ${user?.name ? user.name.split(' ')[0] : 'there'}! 👋 I’m your **VEXIVO AI Assistant**.
+        text: `Hi ${user?.name ? user.name.split(' ')[0] : 'Member'}! 👋 I’m your **VEXIVO AI Customer Care Assistant**.
+
+I’m available 24×7 to help with orders, returns, refunds, payments, delivery, products, offers and shopping.
+
 How can I help you today?`,
         timestamp: new Date(),
         data: null,
@@ -350,16 +353,16 @@ How can I help you today?`,
 
           <div>
             <div className="flex items-center space-x-2">
-              <h2 className="text-sm font-extrabold tracking-tight text-white">
-                VEXIVO AI Assistant
+              <h2 className="text-sm font-extrabold tracking-tight text-white flex items-center gap-1.5">
+                <span>✨ VEXIVO AI Customer Care</span>
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                PRO
+                AI
               </span>
             </div>
-            <p className="text-[11px] text-neutral-300 flex items-center space-x-1">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              <span>Available 24×7 • Live Auto-Resolution & Order Tracking</span>
+            <p className="text-[11px] text-neutral-300 flex items-center space-x-1.5 mt-0.5">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Available 24×7 · Instant Support & Shopping Help</span>
             </p>
           </div>
         </div>

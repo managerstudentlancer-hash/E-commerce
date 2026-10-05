@@ -30,6 +30,8 @@ connectDB().then(async () => {
     await seedSarees();
     const initDeliveryPartner = require('./config/initDeliveryPartner');
     await initDeliveryPartner();
+    const { seedAiKnowledge } = require('./seed/aiKnowledgeSeed');
+    await seedAiKnowledge();
   } catch (err) {
     console.warn('[VEXIVO] Auto-seed/dummy-import check notice:', err.message);
   }
@@ -89,6 +91,7 @@ app.use('/api/support', require('./routes/supportRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/offers', require('./routes/offerRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/admin/ai', require('./routes/adminAiRoutes'));
 app.use('/api/delivery', require('./routes/deliveryRoutes'));
 app.use('/api/logistics', require('./routes/logisticsRoutes'));
 

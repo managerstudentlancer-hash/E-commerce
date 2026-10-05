@@ -2224,14 +2224,14 @@ const AccountDashboard = () => {
                 <div className="pb-4 border-b border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h1 className="text-lg sm:text-xl font-extrabold text-neutral-900 tracking-tight flex items-center space-x-2">
-                      <span>24x7 Customer Care & AI Assistant</span>
+                      <span>24×7 Customer Care · VEXIVO AI</span>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-gradient-to-r from-amber-400 to-yellow-500 text-neutral-900 shadow-sm flex items-center space-x-1">
                         <Sparkles className="w-2.5 h-2.5 fill-neutral-900" />
                         <span>AI POWERED</span>
                       </span>
                     </h1>
                     <p className="text-xs text-neutral-400 mt-0.5">
-                      Intelligent shopping recommendations, real-time order tracking, hassle-free returns, and live support tickets
+                      Instant order tracking, 1-click returns &amp; refunds, payment support, product discovery, offers, and 24×7 live AI concierge
                     </p>
                   </div>
 

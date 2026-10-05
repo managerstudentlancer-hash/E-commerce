@@ -48,6 +48,7 @@ const adminNavItems = [
   { name: 'Reviews', path: '/admin/reviews', icon: Star, badge: null },
   { name: 'Banners', path: '/admin/banners', icon: ImageIcon, badge: null },
   { name: 'Brand Logo', path: '/admin/logo', icon: Sparkles, badge: 'Live' },
+  { name: 'AI Assistant', path: '/admin/ai', icon: Sparkles, badge: 'AI' },
   { name: 'Settings', path: '/admin/settings', icon: Sliders, badge: null },
 ];
 

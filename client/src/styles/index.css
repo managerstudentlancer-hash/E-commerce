@@ -281,6 +281,35 @@
   animation-play-state: paused;
 }
 
+/* Instagram Reels / Continuous Moving Category Reel */
+@keyframes categoryReel {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+.animate-category-reel {
+  display: flex;
+  flex-shrink: 0;
+  animation: categoryReel 45s linear infinite;
+  will-change: transform;
+}
+
+@media (max-width: 640px) {
+  .animate-category-reel {
+    animation-duration: 35s;
+  }
+}
+
+.group\/section:hover .animate-category-reel,
+.category-reel-wrapper:hover .animate-category-reel,
+.animate-category-reel:hover {
+  animation-play-state: paused;
+}
+
 /* Category-Specific Product Card Animations (14 Visibly Unique Visual Interactions) */
 
 /* 1. Women's Fashion: Editorial Silk Float & Gentle Elevation */
