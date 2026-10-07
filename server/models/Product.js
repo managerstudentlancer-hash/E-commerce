@@ -61,7 +61,7 @@ const productSchema = new mongoose.Schema(
     specialOffer: { type: Boolean, default: false },
     rating: { type: Number, default: 4.8 },
     numReviews: { type: Number, default: 0 },
-    status: { type: String, enum: ['active', 'draft', 'archived'], default: 'active' },
+    status: { type: String, enum: ['active', 'draft', 'archived', 'discontinued'], default: 'active' },
     seoTitle: { type: String, default: '' },
     seoDescription: { type: String, default: '' },
   },

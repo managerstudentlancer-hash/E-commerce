@@ -676,10 +676,12 @@ const adminForgotPassword = async (req, res, next) => {
       attempts: 0,
     });
 
-    console.log(`\n======================================================`);
-    console.log(`🛡️ [ADMIN RECOVERY SERVICE] Password Reset Code for ${normalizedEmail}:`);
-    console.log(`👉 Code: ${resetCode} (Valid for 10 minutes)`);
-    console.log(`======================================================\n`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`\n======================================================`);
+      console.log(`🛡️ [ADMIN RECOVERY SERVICE] Password Reset Code for ${normalizedEmail}:`);
+      console.log(`👉 Code: ${resetCode} (Valid for 10 minutes)`);
+      console.log(`======================================================\n`);
+    }
 
     res.json({
       success: true,

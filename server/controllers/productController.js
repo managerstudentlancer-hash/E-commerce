@@ -207,6 +207,29 @@ const getProductBySlug = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
+    // If product exists but is no longer active (archived/draft), return 410 Gone
+    // with the product name so the frontend can show a proper "unavailable" page
+    if (product.status && product.status !== 'active') {
+      // Still fetch some alternative products so the user has somewhere to go
+      const alternativeProducts = await Product.find({
+        _id: { $ne: product._id },
+        status: 'active',
+        ...(product.category ? { category: product.category } : {}),
+      })
+        .limit(8)
+        .select('name slug price compareAtPrice discount images thumbnail hoverImage rating numReviews brand category categorySlug subcategory tags');
+
+      return res.status(410).json({
+        success: false,
+        message: `"${product.name}" is no longer available.`,
+        productName: product.name,
+        productStatus: product.status,
+        category: product.category,
+        categorySlug: product.categorySlug,
+        alternativeProducts,
+      });
+    }
+
     // Fetch similar / related products strictly prioritizing same subcategory and category first
     let relatedProducts = [];
 

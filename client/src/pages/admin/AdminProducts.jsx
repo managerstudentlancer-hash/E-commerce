@@ -526,6 +526,8 @@ const AdminProducts = () => {
               { id: 'all', label: 'All Status' },
               { id: 'active', label: 'Active' },
               { id: 'draft', label: 'Draft / Hidden' },
+              { id: 'archived', label: 'Archived' },
+              { id: 'discontinued', label: 'Discontinued' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1247,6 +1249,8 @@ const AdminProducts = () => {
                   >
                     <option value="active">Active (Visible)</option>
                     <option value="draft">Draft / Inactive</option>
+                    <option value="archived">Archived</option>
+                    <option value="discontinued">Discontinued</option>
                   </select>
                 </div>
 

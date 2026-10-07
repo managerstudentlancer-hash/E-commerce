@@ -1,3 +1,5 @@
+import { captureFrontendException } from './sentry';
+
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 /**
@@ -73,6 +75,8 @@ const request = async (endpoint, options = {}) => {
     error.status = response.status;
     error.data = data;
     error.endpoint = endpoint;
+    const reqId = response.headers.get('x-request-id') || data.requestId;
+    if (reqId) error.requestId = reqId;
 
     // Trigger auth unauthorized event if 401 occurs on protected endpoint
     if (response.status === 401 && typeof window !== 'undefined') {
@@ -81,6 +85,13 @@ const request = async (endpoint, options = {}) => {
           detail: { endpoint, message: data.message },
         })
       );
+    }
+
+    // Only capture unexpected 5xx server failures (do not spam Sentry with normal 4xx user validation errors)
+    if (response.status >= 500) {
+      captureFrontendException(error, {
+        tags: { endpoint, status: String(response.status), requestId: reqId || 'unknown' },
+      });
     }
 
     throw error;

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 
@@ -19,10 +20,20 @@ const getCart = async (req, res, next) => {
 // @route POST /api/cart
 const addToCart = async (req, res, next) => {
   try {
-    const { productId, quantity = 1, variant = '' } = req.body;
+    const { productId, quantity = 1, variant = '', slug = '', name = '' } = req.body;
     const reqQty = Math.max(1, parseInt(quantity, 10) || 1);
 
-    const product = await Product.findById(productId);
+    let product = null;
+    if (productId && mongoose.Types.ObjectId.isValid(String(productId))) {
+      product = await Product.findById(productId);
+    }
+    if (!product && (slug || req.body.slug)) {
+      product = await Product.findOne({ slug: String(slug || req.body.slug).toLowerCase().trim() });
+    }
+    if (!product && (name || req.body.name)) {
+      product = await Product.findOne({ name: String(name || req.body.name).trim() });
+    }
+
     if (!product || product.status !== 'active') {
       return res.status(404).json({ success: false, message: 'Product not found or unavailable' });
     }
