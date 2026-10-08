@@ -212,6 +212,21 @@ const Footer = () => {
             <Link to="/become-a-seller" className="hover:text-amber-400 text-neutral-400 transition-colors">Seller Registration</Link>
             <Link to="/delivery/login" className="hover:text-emerald-400 text-neutral-400 transition-colors">Fleet Rider</Link>
             <Link to="/admin/login" className="hover:text-neutral-300 text-neutral-600 transition-colors">Admin Portal</Link>
+            {import.meta.env.DEV && (
+              <button
+                type="button"
+                onClick={() => {
+                  import('../../services/sentry').then(({ triggerTestError }) => {
+                    triggerTestError();
+                    alert('⚡ Test error sent to Sentry! Check your Sentry dashboard at arpit-34.sentry.io');
+                  });
+                }}
+                className="hover:text-rose-400 text-neutral-500 transition-colors font-mono cursor-pointer"
+                title="Send test error to Sentry (arpit-34.sentry.io)"
+              >
+                ⚡ Test Sentry
+              </button>
+            )}
           </div>
 
           {/* Payment Badges (Pills) */}

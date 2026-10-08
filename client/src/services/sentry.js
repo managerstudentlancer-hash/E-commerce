@@ -106,9 +106,6 @@ export const initSentry = () => {
   return { isInitialized, Sentry };
 };
 
-/**
- * Capture an error on the frontend with safe metadata
- */
 export const captureFrontendException = (error, context = {}) => {
   if (!isInitialized) return;
   try {
@@ -120,6 +117,22 @@ export const captureFrontendException = (error, context = {}) => {
     // Fail safe
   }
 };
+
+/**
+ * Diagnostic helper to trigger an intentional test error for Sentry verification
+ */
+export const triggerTestError = () => {
+  const testError = new Error('This is your first VEXIVO test error on Sentry!');
+  Sentry.captureException(testError);
+  console.info('🚀 [VEXIVO Sentry] Intentional test error successfully captured and sent to Sentry!');
+  return testError;
+};
+
+// Expose on window in browser runtime for easy debugging / manual verification
+if (typeof window !== 'undefined') {
+  window.Sentry = Sentry;
+  window.triggerTestSentryError = triggerTestError;
+}
 
 export { Sentry };
 export default Sentry;
