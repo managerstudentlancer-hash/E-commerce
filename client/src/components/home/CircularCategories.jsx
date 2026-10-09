@@ -1,6 +1,5 @@
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getCategoryFallback } from '../../utils/imageHelper';
 import { useCategories } from '../../context/CategoryContext';
 
@@ -70,11 +69,6 @@ const referenceCategories = [
 ];
 
 const CircularCategories = () => {
-  const scrollRef = useRef(null);
-  const set1Ref = useRef(null);
-  const set2Ref = useRef(null);
-  const set3Ref = useRef(null);
-  const isAdjusting = useRef(false);
   const { categories: dbCategories } = useCategories();
 
   const categories = useMemo(() => {
@@ -97,64 +91,15 @@ const CircularCategories = () => {
     return referenceCategories;
   }, [dbCategories]);
 
-  // Center scroll position at Set 2 on mount & resize
-  useEffect(() => {
-    const centerAtMiddleSet = () => {
-      if (scrollRef.current && set1Ref.current && set2Ref.current) {
-        const offset = set2Ref.current.offsetLeft - set1Ref.current.offsetLeft;
-        if (offset > 0) {
-          scrollRef.current.scrollLeft = set2Ref.current.offsetLeft;
-        }
-      }
-    };
-
-    const timer1 = setTimeout(centerAtMiddleSet, 30);
-    const timer2 = setTimeout(centerAtMiddleSet, 250);
-    window.addEventListener('resize', centerAtMiddleSet);
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      window.removeEventListener('resize', centerAtMiddleSet);
-    };
+  // Ensure adequate items per track so there are never visible empty gaps on ultra-wide screens
+  const trackItems = useMemo(() => {
+    if (!categories || categories.length === 0) return [];
+    let items = [...categories];
+    while (items.length < 10) {
+      items = [...items, ...categories];
+    }
+    return items;
   }, [categories]);
-
-  // Infinite Scroll Handler: Silently wraps when entering Set 1 or Set 3
-  const handleScroll = () => {
-    if (!scrollRef.current || !set1Ref.current || !set2Ref.current || !set3Ref.current) return;
-    if (isAdjusting.current) return;
-
-    const el = scrollRef.current;
-    const setDistance = set2Ref.current.offsetLeft - set1Ref.current.offsetLeft;
-    if (setDistance <= 0) return;
-
-    // Approaching start (Set 1 boundary) -> silently shift forward into middle set (Set 2)
-    if (el.scrollLeft <= 15) {
-      isAdjusting.current = true;
-      el.scrollLeft += setDistance;
-      setTimeout(() => {
-        isAdjusting.current = false;
-      }, 30);
-    }
-    // Approaching end (Set 3 boundary) -> silently shift backward into middle set (Set 2)
-    else if (el.scrollLeft >= set3Ref.current.offsetLeft - 15) {
-      isAdjusting.current = true;
-      el.scrollLeft -= setDistance;
-      setTimeout(() => {
-        isAdjusting.current = false;
-      }, 30);
-    }
-  };
-
-  // Button-triggered Smooth Loop Navigation
-  const scroll = (direction) => {
-    if (!scrollRef.current) return;
-    const step = scrollRef.current.clientWidth > 640 ? 320 : 190;
-    scrollRef.current.scrollBy({
-      left: direction === 'right' ? step : -step,
-      behavior: 'smooth',
-    });
-  };
 
   const renderCategoryItem = (cat, key) => (
     <Link
@@ -197,44 +142,21 @@ const CircularCategories = () => {
 
   return (
     <section className="relative w-full max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 pt-4 sm:pt-10 pb-2 sm:pb-4 group/section overflow-hidden">
-      {/* Category Scroll Controls: Loop buttons on both desktop and mobile */}
-      <div className="absolute top-[38%] left-0 sm:left-2 -translate-y-1/2 z-20 flex">
-        <button
-          onClick={() => scroll('left')}
-          aria-label="Previous Category (Loop)"
-          title="Scroll Left (Infinite Loop)"
-          className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white/95 hover:bg-white text-neutral-800 flex items-center justify-center shadow-md border border-neutral-200/90 active:scale-90 transition-all hover:scale-105 backdrop-blur-xs"
-        >
-          <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        </button>
-      </div>
+      {/* Subtle edge fade overlays for premium luxury finish */}
+      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-white via-white/80 to-transparent z-10" />
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
 
-      <div className="absolute top-[38%] right-0 sm:right-2 -translate-y-1/2 z-20 flex">
-        <button
-          onClick={() => scroll('right')}
-          aria-label="Next Category (Loop)"
-          title="Scroll Right (Infinite Loop)"
-          className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white/95 hover:bg-white text-neutral-800 flex items-center justify-center shadow-md border border-neutral-200/90 active:scale-90 transition-all hover:scale-105 backdrop-blur-xs"
-        >
-          <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        </button>
-      </div>
-
-      {/* Infinite Circular Track */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex items-center gap-3 sm:gap-6 overflow-x-auto no-scrollbar py-2 touch-pan-x"
-        style={{ WebkitOverflowScrolling: 'touch' }}
-      >
-        <div ref={set1Ref} className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
-          {categories.map((cat, idx) => renderCategoryItem(cat, `set1-${cat.slug}-${idx}`))}
-        </div>
-        <div ref={set2Ref} className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
-          {categories.map((cat, idx) => renderCategoryItem(cat, `set2-${cat.slug}-${idx}`))}
-        </div>
-        <div ref={set3Ref} className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
-          {categories.map((cat, idx) => renderCategoryItem(cat, `set3-${cat.slug}-${idx}`))}
+      {/* Continuous Reels-Style Infinite Moving Track (Right to Left) */}
+      <div className="category-reel-wrapper relative w-full overflow-hidden py-2 select-none">
+        <div className="flex w-max items-center">
+          {/* Primary Track */}
+          <div className="flex items-center gap-3 sm:gap-6 shrink-0 pr-3 sm:pr-6 animate-category-reel">
+            {trackItems.map((cat, idx) => renderCategoryItem(cat, `track1-${cat.slug}-${idx}`))}
+          </div>
+          {/* Duplicate Seamless Loop Track */}
+          <div className="flex items-center gap-3 sm:gap-6 shrink-0 pr-3 sm:pr-6 animate-category-reel" aria-hidden="true">
+            {trackItems.map((cat, idx) => renderCategoryItem(cat, `track2-${cat.slug}-${idx}`))}
+          </div>
         </div>
       </div>
     </section>

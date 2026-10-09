@@ -8,17 +8,18 @@ const categoriesList = [
   'All',
   'Women Wear',
   'Men Wear',
-  'Kids Wear',
-  'Shoes',
   'Beauty',
-  'Jewellery',
-  'Bags',
-  'Hats',
-  'Vision Care',
-  'Pets Care',
-  'Toys',
-  'Health & Fitness',
-  'Electronics',
+  'Fragrances',
+  'Skin Care',
+  'Fine Jewellery',
+  'Bags & Luggage',
+  'Shoes',
+  'Groceries',
+  'Kitchen Accessories',
+  'Smartphones',
+  'Laptops',
+  'Tablets',
+  'Sports Accessories',
   'Home & Living',
 ];
 
@@ -70,6 +71,9 @@ const Shop = () => {
       if (selectedCategory && selectedCategory !== 'All') {
         params.category = selectedCategory;
       }
+      if (searchParams.get('collection')) params.collection = searchParams.get('collection');
+      if (searchParams.get('collectionSlug')) params.collection = searchParams.get('collectionSlug');
+      if (searchParams.get('gender')) params.gender = searchParams.get('gender');
       if (minPrice) params.minPrice = minPrice;
       if (maxPrice) params.maxPrice = maxPrice;
       if (searchParams.get('search')) params.search = searchParams.get('search');

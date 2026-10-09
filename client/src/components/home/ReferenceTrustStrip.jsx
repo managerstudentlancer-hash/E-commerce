@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Truck, Headphones, ShieldCheck, CreditCard } from 'lucide-react';
 
 const ReferenceTrustStrip = () => {
@@ -23,19 +24,19 @@ const ReferenceTrustStrip = () => {
           </div>
 
           {/* 2. 24/7 Support */}
-          <div className="flex items-center space-x-3.5 sm:space-x-4">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white flex items-center justify-center text-amber-900 shadow-xs border border-white/80 flex-shrink-0">
-              <Headphones className="w-5 h-5" />
+          <Link to="/contact" className="flex items-center space-x-3.5 sm:space-x-4 group">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white flex items-center justify-center text-amber-900 shadow-xs border border-white/80 flex-shrink-0 group-hover:scale-105 transition-transform">
+              <Headphones className="w-5 h-5 text-rose-600" />
             </div>
             <div>
-              <h4 className="text-xs sm:text-sm font-bold text-neutral-900 leading-tight">
+              <h4 className="text-xs sm:text-sm font-bold text-neutral-900 leading-tight group-hover:text-rose-600 transition-colors">
                 24/7 Support
               </h4>
               <p className="text-[10px] sm:text-xs text-neutral-500 font-medium mt-0.5 leading-tight">
                 Dedicated concierge
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* 3. Secure Payment */}
           <div className="flex items-center space-x-3.5 sm:space-x-4">

@@ -30,10 +30,17 @@ connectDB().then(async () => {
       console.log(`[VEXIVO] Database count is ${count} (< 60). Running catalog auto-seed...`);
       await seedAll();
     }
+    const { importDummyProducts } = require('./services/dummyProductService');
+    const dummyRes = await importDummyProducts();
+    console.log(`[VEXIVO] DummyJSON sync completed: ${dummyRes.imported} imported, ${dummyRes.updated} updated`);
+    const { seedSarees } = require('./seed/sareeSeed');
+    await seedSarees();
     const initDeliveryPartner = require('./config/initDeliveryPartner');
     await initDeliveryPartner();
+    const { seedAiKnowledge } = require('./seed/aiKnowledgeSeed');
+    await seedAiKnowledge();
   } catch (err) {
-    console.warn('[VEXIVO] Auto-seed check notice:', err.message);
+    console.warn('[VEXIVO] Auto-seed/dummy-import check notice:', err.message);
   }
 });
 
@@ -92,6 +99,9 @@ app.use('/api/site-settings', require('./routes/settingsRoutes'));
 app.use('/api/newsletter', require('./routes/newsletterRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/offers', require('./routes/offerRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/admin/ai', require('./routes/adminAiRoutes'));
 app.use('/api/delivery', require('./routes/deliveryRoutes'));
 app.use('/api/logistics', require('./routes/logisticsRoutes'));
 

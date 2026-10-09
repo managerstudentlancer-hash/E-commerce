@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api, { getAuthToken, setAuthToken } from '../services/api';
+import { registerWithEmail } from '../services/firebase';
 
 const AuthContext = createContext(null);
 
@@ -113,21 +114,39 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (nameOrData, email, password, phone) => {
-    const payload = typeof nameOrData === 'object' && nameOrData !== null
-      ? nameOrData
-      : { name: nameOrData, email, password, phone };
+    const payload =
+      typeof nameOrData === 'object' && nameOrData !== null
+        ? nameOrData
+        : {
+          name: nameOrData,
+          email,
+          password,
+          phone,
+        };
+
+    // Firebase: create account + send verification email
+    await registerWithEmail(
+      payload.email,
+      payload.password
+    );
+
+    // VEXIVO backend: save user in PostgreSQL
     const response = await api.auth.register(payload);
+
     if (response.success && response.token) {
       setAuthToken(response.token);
       localStorage.setItem('vexivo_user', JSON.stringify(response.user));
       sessionStorage.setItem('vexivo_user', JSON.stringify(response.user));
       setToken(response.token);
       setUser(response.user);
+
       return response.user;
     }
-    throw new Error(response.message || 'Registration failed');
-  };
 
+    throw new Error(
+      response.message || 'Registration failed'
+    );
+  };
   const sendOtp = async (phone) => {
     const response = await api.auth.sendOtp({ phone });
     return response;
@@ -154,7 +173,7 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem('vexivo_user');
     setToken(null);
     setUser(null);
-    api.auth.logout().catch(() => {});
+    api.auth.logout().catch(() => { });
   };
 
   const updateProfile = async (profileData) => {

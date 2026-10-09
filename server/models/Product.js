@@ -40,6 +40,24 @@ const productSchema = new mongoose.Schema(
     category: { type: String, required: true },
     categorySlug: { type: String, default: '' },
     subcategory: { type: String, default: '' },
+
+    gender: {
+      type: String,
+      enum: ['women', 'men', 'unisex'],
+      default: 'unisex',
+      index: true,
+    },
+
+    source: {
+      type: String,
+      default: 'manual',
+    },
+
+    sourceProductId: {
+      type: Number,
+      default: null,
+    },
+
     collectionSlug: { type: String, default: '' },
     brand: { type: String, default: 'VEXIVO' },
     sellerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
@@ -126,4 +144,11 @@ productSchema.pre('save', function (next) {
   next();
 });
 
+// Indexes for AI search & catalog filtering performance
+productSchema.index({ status: 1, categorySlug: 1, price: 1 });
+productSchema.index({ status: 1, gender: 1, price: 1 });
+productSchema.index({ status: 1, rating: -1 });
+productSchema.index({ name: 'text', description: 'text', tags: 'text', category: 'text', subcategory: 'text' });
+
 module.exports = mongoose.models.Product || mongoose.model('Product', productSchema);
+
