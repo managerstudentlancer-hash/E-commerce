@@ -26,14 +26,16 @@ const getCategoryAnimationClass = (category = '', categorySlug = '') => {
 };
 
 const ProductCard = ({ product, index = 0, dealBadge = 'Big Billion Days Price', showSizes = true }) => {
+  if (!product) return null;
+
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [added, setAdded] = useState(false);
   const [showQuickView, setShowQuickView] = useState(false);
 
-  const categoryAnimClass = getCategoryAnimationClass(product.category, product.categorySlug);
+  const categoryAnimClass = getCategoryAnimationClass(product?.category, product?.categorySlug);
 
-  const fallbackImg = getCategoryFallback(product.category, product.categorySlug);
+  const fallbackImg = getCategoryFallback(product?.category, product?.categorySlug);
 
   const primaryImage =
     resolveImageUrl(product.thumbnail || (product.images && product.images[0]) || product.image, product.category, product.categorySlug) ||

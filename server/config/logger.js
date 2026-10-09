@@ -77,10 +77,7 @@ const redactPaths = [
   'supabaseKey',
   '*.supabaseKey',
   'stripeSecretKey',
-  '*.stripeSecretKey',
   'STRIPE_SECRET_KEY',
-  'firebasePrivateKey',
-  '*.firebasePrivateKey',
   'private_key',
   '*.private_key',
 ];

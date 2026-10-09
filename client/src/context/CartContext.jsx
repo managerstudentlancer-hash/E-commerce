@@ -11,7 +11,11 @@ export const CartProvider = ({ children }) => {
   const [items, setItems] = useState(() => {
     try {
       const saved = localStorage.getItem('vexivo_cart');
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && Array.isArray(parsed.items)) return parsed.items;
+      return [];
     } catch {
       return [];
     }
@@ -63,16 +67,18 @@ export const CartProvider = ({ children }) => {
   const addToCart = (productInput, quantity = 1, variant = '') => {
     if (!productInput) return;
 
-    // Resolve product object or order item
-    const resolvedProduct =
+    // Resolve product object or order item (preserve real Product ID over order subdocument ID)
+    const prodObj =
       typeof productInput === 'object' && productInput.product && typeof productInput.product === 'object'
-        ? { ...productInput.product, ...productInput }
-        : productInput;
+        ? productInput.product
+        : (typeof productInput === 'object' ? productInput : null);
 
     const pId =
-      typeof resolvedProduct === 'string'
-        ? resolvedProduct
-        : (resolvedProduct._id || resolvedProduct.id || resolvedProduct.product || `prod-${Date.now()}`);
+      typeof productInput === 'string'
+        ? productInput
+        : String(prodObj?._id || prodObj?.id || productInput?._id || productInput?.product || `prod-${Date.now()}`);
+
+    const resolvedProduct = prodObj ? { ...productInput, ...prodObj, _id: pId } : productInput;
 
     const name = resolvedProduct.name || resolvedProduct.title || 'Marketplace Item';
     const price = Number(resolvedProduct.price) || 0;
@@ -120,15 +126,17 @@ export const CartProvider = ({ children }) => {
 
       for (const itemInput of productsArray) {
         if (!itemInput) continue;
-        const resolved =
+        const prodObj =
           typeof itemInput === 'object' && itemInput.product && typeof itemInput.product === 'object'
-            ? { ...itemInput.product, ...itemInput }
-            : itemInput;
+            ? itemInput.product
+            : (typeof itemInput === 'object' ? itemInput : null);
 
         const pId =
-          typeof resolved === 'string'
-            ? resolved
-            : (resolved._id || resolved.id || resolved.product || `prod-${Date.now()}`);
+          typeof itemInput === 'string'
+            ? itemInput
+            : String(prodObj?._id || prodObj?.id || itemInput?._id || itemInput?.product || `prod-${Date.now()}`);
+
+        const resolved = prodObj ? { ...itemInput, ...prodObj, _id: pId } : itemInput;
 
         const name = resolved.name || resolved.title || 'Marketplace Item';
         const price = Number(resolved.price) || 0;
@@ -232,8 +240,9 @@ export const CartProvider = ({ children }) => {
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
 
-  const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const safeItems = Array.isArray(items) ? items : [];
+  const itemCount = safeItems.reduce((acc, item) => acc + (Number(item?.quantity) || 1), 0);
+  const subtotal = safeItems.reduce((acc, item) => acc + ((Number(item?.price) || 0) * (Number(item?.quantity) || 1)), 0);
   const freeShippingRemaining = Math.max(0, freeShippingThreshold - subtotal);
   const freeShippingProgress = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
 

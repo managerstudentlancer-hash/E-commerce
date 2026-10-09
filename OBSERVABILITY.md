@@ -102,8 +102,7 @@ Pino and Sentry both enforce strict sanitization to guarantee that sensitive cus
 ### Redacted Fields:
 - **Credentials & Auth**: `password`, `confirmPassword`, `newPassword`, `currentPassword`, `token`, `accessToken`, `refreshToken`, `jwt`, `JWT_SECRET`, `Authorization` header, `Cookie` header, `Set-Cookie` header.
 - **OTPs & Verification Codes**: `otp`, `pickupOtp`, `deliveryOtp`, `returnPickupOtp`, `code`.
-- **Payment & Financial**: `creditCard`, `cardNumber`, `cvv`, `cvc`, `securityCode`, `expiryDate`.
-- **Infrastructure Secrets**: `SUPABASE_SECRET_KEY`, `serviceRoleKey`, `apiKey`, `secretKey`, `STRIPE_SECRET_KEY`, `firebasePrivateKey`.
+- **Infrastructure Secrets**: `SUPABASE_SECRET_KEY`, `serviceRoleKey`, `apiKey`, `secretKey`, `STRIPE_SECRET_KEY`.
 
 ---
 

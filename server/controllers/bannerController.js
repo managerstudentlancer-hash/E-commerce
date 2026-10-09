@@ -1,5 +1,5 @@
 const Banner = require('../models/Banner');
-const supabaseStorage = require('../services/supabaseStorage');
+const gridfsService = require('../services/gridfsService');
 
 const defaultDualBanners = [
   // Left Dual Banners
@@ -79,10 +79,43 @@ const defaultDualBanners = [
   },
 ];
 
-const autoSeedDualBanners = async () => {
+const defaultHeroBanners = [
+  {
+    title: 'Elevate Your Everyday Style',
+    subtitle: 'Discover premium quality products crafted for effortless comfort, modern silhouettes and timeless elegance.',
+    tag: 'NEW COLLECTION 2026',
+    image: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1600&q=85',
+    buttonText: 'Shop Now',
+    buttonLink: '/shop',
+    secondaryText: 'View Collection',
+    secondaryLink: '/collection/new-arrivals',
+    position: 'hero',
+    active: true,
+    sortOrder: 1,
+  },
+  {
+    title: 'Autumn Winter 2026 Collection',
+    subtitle: 'MODERN MINIMALIST LUXURY',
+    tag: 'AUTUMN ATELIER',
+    image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1600&q=85',
+    buttonText: 'Discover Collection',
+    buttonLink: '/collection/new-arrivals',
+    secondaryText: 'Shop Now',
+    secondaryLink: '/shop',
+    position: 'hero',
+    active: true,
+    sortOrder: 2,
+  },
+];
+
+const autoSeedDefaultBanners = async () => {
   const dualCount = await Banner.countDocuments({ position: { $in: ['dual-left', 'dual-right'] } });
   if (dualCount === 0) {
     await Banner.insertMany(defaultDualBanners);
+  }
+  const heroCount = await Banner.countDocuments({ position: 'hero' });
+  if (heroCount === 0) {
+    await Banner.insertMany(defaultHeroBanners);
   }
 };
 
@@ -90,7 +123,7 @@ const autoSeedDualBanners = async () => {
 // @route GET /api/banners
 const getBanners = async (req, res, next) => {
   try {
-    await autoSeedDualBanners();
+    await autoSeedDefaultBanners();
 
     const { position } = req.query;
     const query = { active: true };
@@ -107,7 +140,7 @@ const getBanners = async (req, res, next) => {
 // @route GET /api/banners/all
 const getAllBanners = async (req, res, next) => {
   try {
-    await autoSeedDualBanners();
+    await autoSeedDefaultBanners();
 
     const banners = await Banner.find().sort({ position: 1, sortOrder: 1, createdAt: -1 });
     res.json({ success: true, count: banners.length, banners });
@@ -136,12 +169,12 @@ const updateBanner = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Banner not found' });
     }
 
-    // Clean up replaced images from Supabase Storage
+    // Clean up replaced images from MongoDB GridFS
     if (req.body.image && existing.image && existing.image !== req.body.image) {
-      await supabaseStorage.deleteFromSupabase(existing.image).catch(() => {});
+      await gridfsService.deleteFromGridFS(existing.image).catch(() => {});
     }
     if (req.body.mobileImage && existing.mobileImage && existing.mobileImage !== req.body.mobileImage) {
-      await supabaseStorage.deleteFromSupabase(existing.mobileImage).catch(() => {});
+      await gridfsService.deleteFromGridFS(existing.mobileImage).catch(() => {});
     }
 
     const banner = await Banner.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -161,10 +194,10 @@ const deleteBanner = async (req, res, next) => {
     }
 
     if (banner.image) {
-      await supabaseStorage.deleteFromSupabase(banner.image).catch(() => {});
+      await gridfsService.deleteFromGridFS(banner.image).catch(() => {});
     }
     if (banner.mobileImage) {
-      await supabaseStorage.deleteFromSupabase(banner.mobileImage).catch(() => {});
+      await gridfsService.deleteFromGridFS(banner.mobileImage).catch(() => {});
     }
 
     await Banner.findByIdAndDelete(req.params.id);

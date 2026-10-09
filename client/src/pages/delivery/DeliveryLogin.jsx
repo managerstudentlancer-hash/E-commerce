@@ -372,7 +372,7 @@ const DeliveryLogin = () => {
           /* ======================================================== */
           /* VIEW 2: REGISTRATION FORM (CREATE ACCOUNT FLOW)           */
           /* ======================================================== */
-          <div className="mt-8 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/80 space-y-6">
+          <div className="mt-6 sm:mt-8 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl shadow-black/80 space-y-5 sm:space-y-6">
             {regError && (
               <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold flex items-center space-x-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -673,7 +673,7 @@ const DeliveryLogin = () => {
           /* ======================================================== */
           /* VIEW 3: LOGIN FORM (PRESERVES EXISTING DESIGN + NO DEMO)  */
           /* ======================================================== */
-          <div className="mt-8 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/80 space-y-6">
+          <div className="mt-6 sm:mt-8 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl shadow-black/80 space-y-5 sm:space-y-6">
             {loginError && (
               <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold flex items-center space-x-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />

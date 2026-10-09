@@ -102,7 +102,13 @@ const ReferenceHero = ({ banners = [] }) => {
 
           {/* Large Editorial Headline */}
           <h1 className="text-3xl sm:text-5xl lg:text-[3.65rem] font-extrabold text-neutral-950 tracking-tight leading-[1.1]">
-            Elevate Your <span className="font-serif italic font-normal text-amber-950/85">Everyday</span> Style
+            {slide.title && slide.title !== defaultHeroSlide.title ? (
+              slide.title
+            ) : (
+              <>
+                Elevate Your <span className="font-serif italic font-normal text-amber-950/85">Everyday</span> Style
+              </>
+            )}
           </h1>
 
           {/* Supporting Text */}

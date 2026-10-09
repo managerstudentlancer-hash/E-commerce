@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api, { getAuthToken, setAuthToken } from '../services/api';
-import { registerWithEmail } from '../services/firebase';
 
 const AuthContext = createContext(null);
 
@@ -124,13 +123,7 @@ export const AuthProvider = ({ children }) => {
           phone,
         };
 
-    // Firebase: create account + send verification email
-    await registerWithEmail(
-      payload.email,
-      payload.password
-    );
-
-    // VEXIVO backend: save user in PostgreSQL
+    // VEXIVO backend: register user with MongoDB + JWT authentication
     const response = await api.auth.register(payload);
 
     if (response.success && response.token) {

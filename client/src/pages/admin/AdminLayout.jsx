@@ -28,6 +28,7 @@ import {
   Headphones,
   Truck,
   MapPin,
+  DollarSign,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -39,6 +40,7 @@ const adminNavItems = [
   { name: 'Orders', path: '/admin/orders', icon: ShoppingCart, badge: 'Live' },
   { name: 'Logistics & Hubs', path: '/admin/logistics', icon: MapPin, badge: 'Hubs' },
   { name: 'Fleet Applications', path: '/admin/delivery-applications', icon: Truck, badge: 'Fleet' },
+  { name: 'Fleet Payouts', path: '/admin/delivery-payouts', icon: DollarSign, badge: 'RazorpayX' },
   { name: 'Customers', path: '/admin/customers', icon: Users, badge: null },
   { name: 'Users & Roles', path: '/admin/users', icon: Users, badge: null },
   { name: '24/7 Customer Care', path: '/admin/support', icon: Headphones, badge: 'Live' },

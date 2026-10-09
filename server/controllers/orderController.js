@@ -375,12 +375,25 @@ const createOrder = async (req, res, next) => {
       await createdOrder.save();
     }
 
-    // Deduct stock atomically
+    // Deduct stock atomically and safeguard non-negative inventory
     for (const item of enrichedItems) {
       if (item.product) {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stock: -Number(item.quantity || 1) },
-        }).catch(() => {});
+        try {
+          await Product.findOneAndUpdate(
+            { _id: item.product },
+            [
+              {
+                $set: {
+                  stock: { $max: [0, { $subtract: ['$stock', Number(item.quantity || 1)] }] },
+                },
+              },
+            ]
+          );
+        } catch {
+          await Product.findByIdAndUpdate(item.product, {
+            $inc: { stock: -Number(item.quantity || 1) },
+          }).catch(() => {});
+        }
       }
     }
 
@@ -505,9 +518,9 @@ const getAllOrders = async (req, res, next) => {
       ];
     }
 
-    const limitNum = parseInt(limit, 10);
-    const pageNum = parseInt(page, 10);
-    const skip = (pageNum - 1) * limitNum;
+    const limitNum = Math.max(1, Math.min(500, parseInt(limit, 10) || 20));
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const skip = Math.max(0, (pageNum - 1) * limitNum);
 
     const total = await Order.countDocuments(query);
     const orders = await Order.find(query)

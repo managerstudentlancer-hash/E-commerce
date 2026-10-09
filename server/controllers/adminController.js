@@ -250,9 +250,9 @@ const getCustomers = async (req, res, next) => {
       query.$or = [{ name: sRegex }, { email: sRegex }, { phone: sRegex }];
     }
 
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const skip = (pageNum - 1) * limitNum;
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, Math.min(500, parseInt(limit, 10) || 20));
+    const skip = Math.max(0, (pageNum - 1) * limitNum);
 
     const total = await User.countDocuments(query);
     const users = await User.find(query)
@@ -392,9 +392,9 @@ const getInventoryList = async (req, res, next) => {
       query.stock = { $gt: 10 };
     }
 
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const skip = (pageNum - 1) * limitNum;
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, Math.min(500, parseInt(limit, 10) || 20));
+    const skip = Math.max(0, (pageNum - 1) * limitNum);
 
     const total = await Product.countDocuments(query);
     const products = await Product.find(query)

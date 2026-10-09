@@ -169,7 +169,9 @@ const getShipments = async (req, res, next) => {
       ];
     }
 
-    const skip = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit, 10);
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, Math.min(500, parseInt(limit, 10) || 20));
+    const skip = Math.max(0, (pageNum - 1) * limitNum);
     const [shipments, total] = await Promise.all([
       Shipment.find(query)
         .populate('warehouse', 'name city warehouseId')
@@ -177,7 +179,7 @@ const getShipments = async (req, res, next) => {
         .populate('deliveryPartner', 'name phone deliveryProfile')
         .sort({ updatedAt: -1, createdAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit, 10)),
+        .limit(limitNum),
       Shipment.countDocuments(query),
     ]);
 

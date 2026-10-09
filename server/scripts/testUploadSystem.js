@@ -5,11 +5,11 @@ const dotenv = require('dotenv');
 dotenv.config({ path: path.join(__dirname, '../.env') });
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const supabaseStorage = require('../services/supabaseStorage');
+const gridfsService = require('../services/gridfsService');
 
 async function runTests() {
   console.log('====================================================');
-  console.log('🧪 VEXIVO Image Upload & Supabase Storage Test Suite');
+  console.log('🧪 VEXIVO Media Upload & MongoDB GridFS Test Suite');
   console.log('====================================================\n');
 
   let passed = 0;
@@ -25,45 +25,42 @@ async function runTests() {
     }
   }
 
-  // TEST 1: Path generation structure
-  console.log('--- TEST GROUP 1: Storage Path Organization ---');
-  const path1 = supabaseStorage.uploadToSupabase ? true : false;
-  assert(path1, 'supabaseStorage service exports uploadToSupabase');
+  // TEST 1: Service Structure & Methods
+  console.log('--- TEST GROUP 1: GridFS Media Service Exports ---');
+  assert(typeof gridfsService.uploadToGridFS === 'function', 'gridfsService exports uploadToGridFS');
+  assert(typeof gridfsService.getFileInfo === 'function', 'gridfsService exports getFileInfo');
+  assert(typeof gridfsService.openDownloadStream === 'function', 'gridfsService exports openDownloadStream');
+  assert(typeof gridfsService.deleteFromGridFS === 'function', 'gridfsService exports deleteFromGridFS');
+  assert(typeof gridfsService.extractFileId === 'function', 'gridfsService exports extractFileId');
 
-  const testFolders = [
-    { folder: 'products', entityId: 'prod123', expectedPrefix: 'products/prod123/' },
-    { folder: 'categories', entityId: 'cat456', expectedPrefix: 'categories/cat456/' },
-    { folder: 'banners', entityId: 'ban789', expectedPrefix: 'banners/ban789/' },
-    { folder: 'profiles', entityId: 'usr001', expectedPrefix: 'profiles/usr001/' },
-    { folder: 'sellers', entityId: 'sel999', expectedPrefix: 'sellers/sel999/' },
+  const testUrls = [
+    { url: '/api/media/6ac945acca95d4714c055a4c', expectedId: '6ac945acca95d4714c055a4c' },
+    { url: '/api/media/6ac945acca95d4714c055a4c/photo.jpg', expectedId: '6ac945acca95d4714c055a4c' },
+    { url: '6ac945acca95d4714c055a4c', expectedId: '6ac945acca95d4714c055a4c' },
   ];
-
-  for (const t of testFolders) {
-    // Check validation of path structure using service
-    assert(
-      typeof supabaseStorage.extractPathFromUrl === 'function',
-      `Path extractor handles ${t.folder} paths`
-    );
+  for (const t of testUrls) {
+    const extracted = gridfsService.extractFileId(t.url);
+    assert(extracted === t.expectedId, `extractFileId parses: ${t.url}`);
   }
 
   // TEST 2: MIME Type Validation
   console.log('\n--- TEST GROUP 2: MIME Type & Format Security ---');
   try {
-    supabaseStorage.validateImageFile({ mimetype: 'image/svg+xml', originalname: 'hack.svg', buffer: Buffer.from('<svg></svg>') });
+    gridfsService.validateMediaFile({ mimetype: 'image/svg+xml', originalname: 'hack.svg', buffer: Buffer.from('<svg></svg>') });
     assert(false, 'SVG files must be rejected to prevent Stored XSS');
   } catch (err) {
     assert(true, 'SVG file correctly rejected (Security against XSS)');
   }
 
   try {
-    supabaseStorage.validateImageFile({ mimetype: 'application/x-msdownload', originalname: 'file.exe', buffer: Buffer.from('MZ') });
+    gridfsService.validateMediaFile({ mimetype: 'application/x-msdownload', originalname: 'file.exe', buffer: Buffer.from('MZ') });
     assert(false, 'Executables must be rejected');
   } catch (err) {
     assert(true, 'Executable file correctly rejected');
   }
 
   try {
-    const valid = supabaseStorage.validateImageFile({
+    const valid = gridfsService.validateMediaFile({
       mimetype: 'image/png',
       originalname: 'luxury-bag.png',
       buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
@@ -76,16 +73,16 @@ async function runTests() {
   // TEST 3: File Size Limits
   console.log('\n--- TEST GROUP 3: File Size Limits ---');
   try {
-    // 6MB buffer
-    const bigBuffer = Buffer.alloc(6 * 1024 * 1024);
-    supabaseStorage.validateImageFile({
+    // 16MB buffer (> 15MB image limit)
+    const bigBuffer = Buffer.alloc(16 * 1024 * 1024);
+    gridfsService.validateMediaFile({
       mimetype: 'image/jpeg',
       originalname: 'huge.jpg',
       buffer: bigBuffer,
     });
-    assert(false, 'File > 5MB must be rejected');
+    assert(false, 'File > 15MB must be rejected');
   } catch (err) {
-    assert(true, 'Oversized file (> 5MB) correctly rejected');
+    assert(true, 'Oversized file (> 15MB) correctly rejected');
   }
 
   // TEST 4: Zero Local Filesystem Storage (Memory Storage check)
@@ -128,27 +125,13 @@ async function runTests() {
     assert(false, `API fetch failed: ${e.message}`);
   }
 
-  // TEST 6: Security & Secret Leakage Prevention
+  // TEST 6: Security & Secret Key Protection
   console.log('\n--- TEST GROUP 6: Security & Secret Key Protection ---');
   const gitignoreContent = fs.readFileSync(path.join(__dirname, '../../.gitignore'), 'utf8');
   assert(
     gitignoreContent.includes('.env') && gitignoreContent.includes('server/.env'),
     '.gitignore contains .env and server/.env to prevent credential leak to Git'
   );
-
-  // Check frontend dist build for SUPABASE_SECRET_KEY
-  const distDir = path.join(__dirname, '../../client/dist/assets');
-  let secretLeakedInClient = false;
-  if (fs.existsSync(distDir)) {
-    const jsFiles = fs.readdirSync(distDir).filter(f => f.endsWith('.js'));
-    for (const f of jsFiles) {
-      const code = fs.readFileSync(path.join(distDir, f), 'utf8');
-      if (code.includes('SUPABASE_SECRET_KEY')) {
-        secretLeakedInClient = true;
-      }
-    }
-  }
-  assert(!secretLeakedInClient, 'SUPABASE_SECRET_KEY is NEVER present in frontend client bundle');
 
   console.log(`\n====================================================`);
   console.log(`📊 Test Results: ${passed}/${total} Passed (${Math.round((passed / total) * 100)}%)`);
@@ -157,7 +140,7 @@ async function runTests() {
   process.exit(passed === total ? 0 : 1);
 }
 
-runTests().catch(err => {
+runTests().catch((err) => {
   console.error('Test execution error:', err);
   process.exit(1);
 });

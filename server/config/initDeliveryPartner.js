@@ -1,6 +1,9 @@
 const User = require('../models/User');
 
 const initDeliveryPartner = async () => {
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
   try {
     const existing = await User.findOne({ email: 'delivery@vexivo.com' });
     if (!existing) {
