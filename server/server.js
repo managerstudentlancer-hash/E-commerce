@@ -9,6 +9,13 @@ const errorHandler = require('./middleware/errorHandler');
 dotenv.config({ path: path.join(__dirname, '../.env') });
 dotenv.config({ path: path.join(__dirname, '.env') });
 
+// Initialize Observability: Sentry & Pino
+const { initSentry, Sentry, isSentryEnabled } = require('./config/sentry');
+initSentry();
+
+const logger = require('./config/logger');
+const requestLogger = require('./middleware/requestLogger');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -23,10 +30,17 @@ connectDB().then(async () => {
       console.log(`[VEXIVO] Database count is ${count} (< 60). Running catalog auto-seed...`);
       await seedAll();
     }
+    const { importDummyProducts } = require('./services/dummyProductService');
+    const dummyRes = await importDummyProducts();
+    console.log(`[VEXIVO] DummyJSON sync completed: ${dummyRes.imported} imported, ${dummyRes.updated} updated`);
+    const { seedSarees } = require('./seed/sareeSeed');
+    await seedSarees();
     const initDeliveryPartner = require('./config/initDeliveryPartner');
     await initDeliveryPartner();
+    const { seedAiKnowledge } = require('./seed/aiKnowledgeSeed');
+    await seedAiKnowledge();
   } catch (err) {
-    console.warn('[VEXIVO] Auto-seed check notice:', err.message);
+    console.warn('[VEXIVO] Auto-seed/dummy-import check notice:', err.message);
   }
 });
 
@@ -40,6 +54,9 @@ const {
 
 // Security: Hide server framework signature
 app.disable('x-powered-by');
+
+// Observability: Pino HTTP Request Logging & Correlation ID (X-Request-Id)
+app.use(requestLogger);
 
 // Security & Header Fortification
 app.use(setSecurityHeaders);
@@ -82,6 +99,9 @@ app.use('/api/site-settings', require('./routes/settingsRoutes'));
 app.use('/api/newsletter', require('./routes/newsletterRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/offers', require('./routes/offerRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/admin/ai', require('./routes/adminAiRoutes'));
 app.use('/api/delivery', require('./routes/deliveryRoutes'));
 app.use('/api/logistics', require('./routes/logisticsRoutes'));
 
@@ -139,6 +159,28 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Observability status endpoint
+app.get('/api/observability/status', (req, res) => {
+  res.json({
+    success: true,
+    logger: 'pino',
+    logLevel: logger.level,
+    sentryEnabled: isSentryEnabled(),
+    environment: process.env.NODE_ENV || 'development',
+    requestId: req.id || req.headers['x-request-id'] || 'active',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Diagnostic route for testing unexpected error capture (available only in non-production)
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/api/observability/test-error', (req, res, next) => {
+    const testErr = new Error('VEXIVO Observability Diagnostic Test Error');
+    testErr.statusCode = 500;
+    next(testErr);
+  });
+}
+
 // Serve frontend client static build when available
 const clientDist = path.join(__dirname, '../client/dist');
 const fs = require('fs');
@@ -156,11 +198,17 @@ if (fs.existsSync(clientDist)) {
   });
 }
 
+// Sentry express error handler (must be before custom error handler)
+if (isSentryEnabled() && Sentry.setupExpressErrorHandler) {
+  Sentry.setupExpressErrorHandler(app);
+}
+
 // Centralized error handler
 app.use(errorHandler);
 
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
+  logger.info({ port: PORT, env: process.env.NODE_ENV || 'development' }, 'VEXIVO API Server successfully started');
   console.log(`====================================================`);
   console.log(`🚀 VEXIVO Server running in ${process.env.NODE_ENV || 'development'} mode`);
   console.log(`🌐 API Live at: http://127.0.0.1:${PORT}`);

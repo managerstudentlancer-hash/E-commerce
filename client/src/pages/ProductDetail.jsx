@@ -41,6 +41,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [discontinuedInfo, setDiscontinuedInfo] = useState(null); // { productName, category, categorySlug, alternativeProducts }
 
   // Gallery & Zoom state
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -177,6 +178,7 @@ const ProductDetail = () => {
 
   const fetchProductDetails = async () => {
     setLoading(true);
+    setDiscontinuedInfo(null);
     try {
       const res = await api.products.getBySlug(slug);
       if (res.success && res.product) {
@@ -200,6 +202,16 @@ const ProductDetail = () => {
       }
     } catch (err) {
       console.error('Failed to load product:', err);
+      // Handle 410 Gone — product exists but is discontinued/archived
+      if (err.status === 410 && err.data) {
+        setDiscontinuedInfo({
+          productName: err.data.productName || 'This product',
+          message: err.data.message || 'This product is no longer available.',
+          category: err.data.category || '',
+          categorySlug: err.data.categorySlug || '',
+          alternativeProducts: err.data.alternativeProducts || [],
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -277,6 +289,56 @@ const ProductDetail = () => {
   }
 
   if (!product) {
+    // Product is discontinued/archived — show a helpful unavailable page with alternatives
+    if (discontinuedInfo) {
+      return (
+        <div className="min-h-[60vh] bg-white">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+            {/* Unavailable Notice */}
+            <div className="text-center space-y-4 mb-10 sm:mb-14">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-neutral-100 flex items-center justify-center">
+                <ShoppingBag className="w-7 h-7 sm:w-9 sm:h-9 text-neutral-400" />
+              </div>
+              <h1 className="text-xl sm:text-2xl font-extrabold text-neutral-900 tracking-tight">
+                Product No Longer Available
+              </h1>
+              <p className="text-sm sm:text-base text-neutral-500 max-w-md mx-auto leading-relaxed">
+                {discontinuedInfo.message}
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                {discontinuedInfo.categorySlug && (
+                  <Link
+                    to={`/category/${discontinuedInfo.categorySlug}`}
+                    className="btn-pill-dark text-xs py-2.5 px-6"
+                  >
+                    Browse {discontinuedInfo.category || 'Category'}
+                  </Link>
+                )}
+                <Link to="/shop" className="text-xs font-semibold text-neutral-700 hover:text-black underline underline-offset-4 py-2.5 px-4">
+                  Back to Shop
+                </Link>
+              </div>
+            </div>
+
+            {/* Alternative Products from Same Category */}
+            {discontinuedInfo.alternativeProducts && discontinuedInfo.alternativeProducts.length > 0 && (
+              <div>
+                <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-neutral-900 mb-5 sm:mb-6 text-center">
+                  You Might Also Like
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+                  {discontinuedInfo.alternativeProducts.map((altProduct) => (
+                    <ProductCard key={altProduct._id} product={altProduct} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Truly missing product (never existed)
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center space-y-4">
         <h2 className="text-xl font-bold text-neutral-900">Product not found</h2>

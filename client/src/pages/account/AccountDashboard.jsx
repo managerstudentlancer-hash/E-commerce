@@ -39,6 +39,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import api from '../../services/api';
+import AIAssistantChat from '../../components/support/AIAssistantChat';
 import CustomerShipmentTracker from '../../components/logistics/CustomerShipmentTracker';
 
 const formatShortDate = (dateInput) => {
@@ -554,6 +555,16 @@ const AccountDashboard = () => {
     }
   };
 
+  const handleOpenTicketWithPrefill = (prefill = {}) => {
+    setTicketForm({
+      category: prefill.category || 'Order Issue',
+      subject: prefill.subject || '',
+      message: prefill.message || '',
+      orderNumber: prefill.orderNumber || '',
+    });
+    setShowNewTicketModal(true);
+  };
+
   const handleSendTicketReply = async (e) => {
     e.preventDefault();
     if (!replyMessage.trim() || !selectedTicket) return;
@@ -743,6 +754,18 @@ const AccountDashboard = () => {
                 >
                   Gift Cards & Coupons
                 </button>
+                <Link
+                  to="/offers"
+                  className="w-full text-left px-10 py-2 font-medium flex items-center justify-between text-neutral-600 hover:text-black hover:bg-neutral-50 transition-colors group"
+                >
+                  <span className="flex items-center space-x-1.5">
+                    <Gift className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Offers &amp; Gift Cards</span>
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-rose-50 text-rose-600 border border-rose-100">
+                    EXPLORE
+                  </span>
+                </Link>
               </div>
 
               {/* MY STUFF */}
@@ -761,6 +784,18 @@ const AccountDashboard = () => {
                   <span className="text-[11px] text-neutral-400">({wishlist?.length || 0})</span>
                 </button>
                 <button
+                  onClick={() => setActiveTab('support')}
+                  className={`w-full text-left px-10 py-2 font-medium flex items-center justify-between transition-colors ${
+                    activeTab === 'support' ? 'text-blue-600 font-bold bg-blue-50/50' : 'text-neutral-600 hover:text-black hover:bg-neutral-50'
+                  }`}
+                >
+                  <span>24x7 Customer Care</span>
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-amber-100 text-amber-900 border border-amber-300/80 flex items-center space-x-0.5">
+                    <Sparkles className="w-2.5 h-2.5 text-amber-700 fill-amber-400" />
+                    <span>AI</span>
+                  </span>
+                </button>
+                <button
                   onClick={() => setActiveTab('notifications')}
                   className={`w-full text-left px-10 py-2 font-medium flex items-center justify-between transition-colors ${
                     activeTab === 'notifications' ? 'text-blue-600 font-bold bg-blue-50/50' : 'text-neutral-600 hover:text-black hover:bg-neutral-50'
@@ -772,14 +807,6 @@ const AccountDashboard = () => {
                       {unreadNotificationCount}
                     </span>
                   )}
-                </button>
-                <button
-                  onClick={() => setActiveTab('support')}
-                  className={`w-full text-left px-10 py-2 font-medium transition-colors ${
-                    activeTab === 'support' ? 'text-blue-600 font-bold bg-blue-50/50' : 'text-neutral-600 hover:text-black hover:bg-neutral-50'
-                  }`}
-                >
-                  24x7 Customer Care
                 </button>
               </div>
 
@@ -2196,21 +2223,30 @@ const AccountDashboard = () => {
               <div className="space-y-6">
                 <div className="pb-4 border-b border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h1 className="text-lg sm:text-xl font-extrabold text-neutral-900 tracking-tight">
-                      24x7 Help Center & Support Tickets
+                    <h1 className="text-lg sm:text-xl font-extrabold text-neutral-900 tracking-tight flex items-center space-x-2">
+                      <span>24×7 Customer Care · VEXIVO AI</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-gradient-to-r from-amber-400 to-yellow-500 text-neutral-900 shadow-sm flex items-center space-x-1">
+                        <Sparkles className="w-2.5 h-2.5 fill-neutral-900" />
+                        <span>AI POWERED</span>
+                      </span>
                     </h1>
                     <p className="text-xs text-neutral-400 mt-0.5">
-                      Need help with an order, return, or delivery? Reach our dedicated support team
+                      Instant order tracking, 1-click returns &amp; refunds, payment support, product discovery, offers, and 24×7 live AI concierge
                     </p>
                   </div>
 
                   <button
-                    onClick={() => setShowNewTicketModal(true)}
-                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5 self-start sm:self-auto"
+                    onClick={() => handleOpenTicketWithPrefill()}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5 self-start sm:self-auto active:scale-95"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Create Support Ticket</span>
                   </button>
+                </div>
+
+                {/* Prominent VEXIVO AI Shopping & Support Assistant */}
+                <div className="space-y-3">
+                  <AIAssistantChat onOpenTicketModal={handleOpenTicketWithPrefill} />
                 </div>
 
                 {/* FAQ Quick Selector */}

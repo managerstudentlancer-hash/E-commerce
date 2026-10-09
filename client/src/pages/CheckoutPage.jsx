@@ -60,6 +60,7 @@ const CheckoutPage = () => {
     items,
     subtotal,
     clearCart,
+    removeFromCart,
     appliedCoupon,
     couponDiscount,
     applyCoupon,
@@ -532,8 +533,48 @@ const CheckoutPage = () => {
           {/* Form Column (7 Cols) */}
           <div className="lg:col-span-7 space-y-8">
             {errorMsg && (
-              <div className="p-4 rounded-xl bg-red-50 text-[#C4301C] text-xs font-bold border border-red-200">
-                {errorMsg}
+              <div className="p-4 rounded-2xl bg-red-50 text-[#C4301C] text-xs font-bold border border-red-200 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                    <span>{errorMsg}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setErrorMsg('')}
+                    className="text-neutral-400 hover:text-neutral-700"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {errorMsg.toLowerCase().includes('no longer available') && (
+                  <div className="pt-2 border-t border-red-200/60 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const match = items.find((it) =>
+                          errorMsg.toLowerCase().includes(it.name?.toLowerCase())
+                        );
+                        if (match) {
+                          removeFromCart(match.id || match._id);
+                        } else if (items.length > 0) {
+                          removeFromCart(items[0].id || items[0]._id);
+                        }
+                        setErrorMsg('');
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-[11px] shadow-sm transition-all"
+                    >
+                      Cart se ye item hatayein (Remove item from bag)
+                    </button>
+                    <Link
+                      to="/shop"
+                      className="px-3 py-1.5 rounded-xl bg-white border border-red-200 text-neutral-700 hover:text-black font-semibold text-[11px]"
+                    >
+                      Explore other products
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 

@@ -1,3 +1,5 @@
+import { captureFrontendException } from './sentry';
+
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 /**
@@ -73,6 +75,8 @@ const request = async (endpoint, options = {}) => {
     error.status = response.status;
     error.data = data;
     error.endpoint = endpoint;
+    const reqId = response.headers.get('x-request-id') || data.requestId;
+    if (reqId) error.requestId = reqId;
 
     // Trigger auth unauthorized event if 401 occurs on protected endpoint
     if (response.status === 401 && typeof window !== 'undefined') {
@@ -81,6 +85,13 @@ const request = async (endpoint, options = {}) => {
           detail: { endpoint, message: data.message },
         })
       );
+    }
+
+    // Only capture unexpected 5xx server failures (do not spam Sentry with normal 4xx user validation errors)
+    if (response.status >= 500) {
+      captureFrontendException(error, {
+        tags: { endpoint, status: String(response.status), requestId: reqId || 'unknown' },
+      });
     }
 
     throw error;
@@ -130,6 +141,8 @@ export const api = {
     setDefaultAddress: (id) => request(`/auth/addresses/${id}/default`, { method: 'PUT' }),
     activateSeller: (sellerData) => request('/auth/activate-seller', { method: 'POST', body: JSON.stringify(sellerData) }),
     changePassword: (passwords) => request('/auth/password', { method: 'PUT', body: JSON.stringify(passwords) }),
+    forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+    resetPassword: (data) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify(data) }),
   },
 
   // Products
@@ -161,6 +174,7 @@ export const api = {
     create: (cat) => request('/categories', { method: 'POST', body: JSON.stringify(cat) }),
     update: (id, cat) => request(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(cat) }),
     delete: (id) => request(`/categories/${id}`, { method: 'DELETE' }),
+    syncDummy: () => request('/categories/sync-dummy', { method: 'POST' }),
   },
 
   // Collections
@@ -342,13 +356,21 @@ export const api = {
     processReturnRefund: (orderId) => request(`/admin/returns/${orderId}/refund`, { method: 'PUT' }),
   },
 
-  // Support / Customer Care
+  // Support / 24*7 Customer Care
   support: {
+    submitInquiry: (data) => request('/support/inquiry', { method: 'POST', body: JSON.stringify(data) }),
     createTicket: (data) => request('/support/tickets', { method: 'POST', body: JSON.stringify(data) }),
     getMyTickets: () => request('/support/tickets'),
     getById: (id) => request(`/support/tickets/${id}`),
     reply: (id, message) => request(`/support/tickets/${id}/reply`, { method: 'POST', body: JSON.stringify({ message }) }),
     close: (id) => request(`/support/tickets/${id}/close`, { method: 'PUT' }),
+    getAdminTickets: (params) => {
+      const query = params ? `?${new URLSearchParams(Object.entries(params).filter(([_, v]) => v != null && v !== '')).toString()}` : '';
+      return request(`/support/admin/tickets${query}`);
+    },
+    updateTicketAdmin: (id, data) => request(`/support/admin/tickets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteTicketAdmin: (id) => request(`/support/admin/tickets/${id}`, { method: 'DELETE' }),
+    adminReply: (id, message) => request(`/support/admin/tickets/${id}/reply`, { method: 'POST', body: JSON.stringify({ message }) }),
   },
 
   // Notifications
@@ -356,6 +378,80 @@ export const api = {
     getAll: () => request('/notifications'),
     markRead: (id) => request(`/notifications/${id}/read`, { method: 'PUT' }),
     markAllRead: () => request('/notifications/read-all', { method: 'PUT' }),
+  },
+
+  // Offers & Gift Cards
+  offers: {
+    getAll: (section) => request(`/offers${section && section !== 'all' ? `?section=${section}` : ''}`),
+    getAdminAll: (section) => request(`/offers/admin/all${section && section !== 'all' ? `?section=${section}` : ''}`),
+    create: (data) => request('/offers', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id, data) => request(`/offers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    toggle: (id) => request(`/offers/${id}/toggle`, { method: 'PATCH' }),
+    delete: (id) => request(`/offers/${id}`, { method: 'DELETE' }),
+    resetDefault: () => request('/offers/reset-default', { method: 'POST' }),
+  },
+
+  // AI Assistant (Customer & Public APIs)
+  ai: {
+    chat: (payload) => request('/ai/chat', { method: 'POST', body: JSON.stringify(payload) }),
+    getWelcome: () => request('/ai/welcome'),
+    searchProducts: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/ai/products/search${q ? `?${q}` : ''}`);
+    },
+    getProduct: (id) => request(`/ai/products/${id}`),
+    getCategories: () => request('/ai/categories'),
+    getOffers: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/ai/offers${q ? `?${q}` : ''}`);
+    },
+    getKnowledge: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/ai/knowledge${q ? `?${q}` : ''}`);
+    },
+    addToCart: (data) => request('/ai/cart/add', { method: 'POST', body: JSON.stringify(data) }),
+    addToWishlist: (data) => request('/ai/wishlist/add', { method: 'POST', body: JSON.stringify(data) }),
+    getUserOrders: () => request('/ai/orders'),
+    cancelOrder: (orderId, reason) =>
+      request('/ai/cancel-order', { method: 'POST', body: JSON.stringify({ orderId, reason }) }),
+    returnOrder: (orderId, payload) =>
+      request('/ai/return-order', {
+        method: 'POST',
+        body: JSON.stringify({ orderId, ...(typeof payload === 'string' ? { reason: payload } : payload) }),
+      }),
+  },
+
+  // Admin AI Management Suite
+  adminAi: {
+    getSettings: () => request('/admin/ai/settings'),
+    updateSettings: (data) => request('/admin/ai/settings', { method: 'PUT', body: JSON.stringify(data) }),
+    getKnowledge: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/admin/ai/knowledge${q ? `?${q}` : ''}`);
+    },
+    createKnowledge: (data) => request('/admin/ai/knowledge', { method: 'POST', body: JSON.stringify(data) }),
+    updateKnowledge: (id, data) => request(`/admin/ai/knowledge/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteKnowledge: (id) => request(`/admin/ai/knowledge/${id}`, { method: 'DELETE' }),
+    getFaqs: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/admin/ai/faqs${q ? `?${q}` : ''}`);
+    },
+    createFaq: (data) => request('/admin/ai/faqs', { method: 'POST', body: JSON.stringify(data) }),
+    updateFaq: (id, data) => request(`/admin/ai/faqs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteFaq: (id) => request(`/admin/ai/faqs/${id}`, { method: 'DELETE' }),
+    getConversations: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/admin/ai/conversations${q ? `?${q}` : ''}`);
+    },
+    getConversationById: (id) => request(`/admin/ai/conversations/${id}`),
+    getUnanswered: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/admin/ai/unanswered${q ? `?${q}` : ''}`);
+    },
+    resolveUnanswered: (id, data) =>
+      request(`/admin/ai/unanswered/${id}/resolve`, { method: 'POST', body: JSON.stringify(data) }),
+    deleteUnanswered: (id) => request(`/admin/ai/unanswered/${id}`, { method: 'DELETE' }),
+    getAnalytics: () => request('/admin/ai/analytics'),
   },
 
   // Multi-Stage Logistics & Fulfillment Workflow

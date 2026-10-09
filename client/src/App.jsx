@@ -13,6 +13,7 @@ import CartDrawer from './components/common/CartDrawer';
 import { ProtectedRoute, AdminRoute, DeliveryRoute } from './components/common/ProtectedRoute';
 import MobileStickyBar from './components/common/MobileStickyBar';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import VexivoAiAssistant from './components/ai/VexivoAiAssistant';
 
 // Primary Storefront Pages (Eagerly Loaded for Immediate First Paint)
 import Home from './pages/Home';
@@ -23,6 +24,7 @@ import ProductDetail from './pages/ProductDetail';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import SearchResults from './pages/SearchResults';
+import OffersPage from './pages/OffersPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -60,12 +62,15 @@ const AdminCollections = lazy(() => import('./pages/admin/AdminCollections'));
 const AdminCustomers = lazy(() => import('./pages/admin/AdminCustomers'));
 const AdminInventory = lazy(() => import('./pages/admin/AdminInventory'));
 const AdminCoupons = lazy(() => import('./pages/admin/AdminCoupons'));
+const AdminOffers = lazy(() => import('./pages/admin/AdminOffers'));
 const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'));
 const AdminBanners = lazy(() => import('./pages/admin/AdminBanners'));
 const AdminLogo = lazy(() => import('./pages/admin/AdminLogo'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminSupport = lazy(() => import('./pages/admin/AdminSupport'));
 const AdminDeliveryApplications = lazy(() => import('./pages/admin/AdminDeliveryApplications'));
 const AdminLogistics = lazy(() => import('./pages/admin/AdminLogistics'));
+const AdminAiAssistant = lazy(() => import('./pages/admin/AdminAiAssistant'));
 
 // Smooth, Minimal Route Loading Spinner
 const RouteLoadingFallback = () => (
@@ -87,6 +92,7 @@ const PublicLayout = () => {
       <Footer />
       <CartDrawer />
       <MobileStickyBar />
+      <VexivoAiAssistant />
     </div>
   );
 };
@@ -108,6 +114,7 @@ const App = () => {
                   <Route path="/collection/:slug" element={<CollectionPage />} />
                   <Route path="/product/:slug" element={<ProductDetail />} />
                   <Route path="/search" element={<SearchResults />} />
+                  <Route path="/offers" element={<OffersPage />} />
                   <Route path="/cart" element={<CartPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/login" element={<Login />} />
@@ -174,10 +181,14 @@ const App = () => {
                   <Route path="inventory" element={<AdminInventory />} />
                   <Route path="collections" element={<AdminCollections />} />
                   <Route path="users" element={<AdminUsers />} />
+                  <Route path="support" element={<AdminSupport />} />
                   <Route path="coupons" element={<AdminCoupons />} />
+                  <Route path="offers" element={<AdminOffers />} />
                   <Route path="reviews" element={<AdminReviews />} />
                   <Route path="banners" element={<AdminBanners />} />
                   <Route path="logo" element={<AdminLogo />} />
+                  <Route path="ai" element={<AdminAiAssistant />} />
+                  <Route path="ai-assistant" element={<AdminAiAssistant />} />
                   <Route path="settings" element={<AdminSettings />} />
                 </Route>
 

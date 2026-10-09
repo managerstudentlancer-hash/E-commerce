@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { captureFrontendException } from '../../services/sentry';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -13,6 +14,7 @@ class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error('VEXIVO ErrorBoundary caught:', error, errorInfo);
+    captureFrontendException(error, { extra: errorInfo });
   }
 
   render() {

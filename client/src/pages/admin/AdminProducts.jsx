@@ -24,13 +24,17 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { getCategoryFallback } from '../../utils/imageHelper';
 
+import { useSearchParams } from 'react-router-dom';
+
 const AdminProducts = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const initialCategory = searchParams.get('category') || 'all';
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState(initialCategory);
   const [stockFilter, setStockFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -56,7 +60,7 @@ const AdminProducts = () => {
     numReviews: 0,
     price: '',
     compareAtPrice: '',
-    category: 'Women',
+    category: 'Women Wear',
     subcategory: '',
     sku: '',
     stock: 50,
@@ -75,6 +79,13 @@ const AdminProducts = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    const urlCat = searchParams.get('category');
+    if (urlCat) {
+      setCategoryFilter(urlCat);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -197,7 +208,7 @@ const AdminProducts = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.categories.getAll();
+      const res = await api.categories.getAllAdmin();
       if (res.success) {
         setCategories(res.categories || []);
       }
@@ -526,6 +537,8 @@ const AdminProducts = () => {
               { id: 'all', label: 'All Status' },
               { id: 'active', label: 'Active' },
               { id: 'draft', label: 'Draft / Hidden' },
+              { id: 'archived', label: 'Archived' },
+              { id: 'discontinued', label: 'Discontinued' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -706,6 +719,11 @@ const AdminProducts = () => {
                                 <span className="text-[10px] text-slate-400 font-mono">
                                   {prod.sku || 'SKU-PENDING'}
                                 </span>
+                                {prod.source === 'dummyjson' && (
+                                  <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                    DummyJSON
+                                  </span>
+                                )}
                                 {prod.brand && (
                                   <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/25">
                                     {prod.brand}
@@ -1247,6 +1265,8 @@ const AdminProducts = () => {
                   >
                     <option value="active">Active (Visible)</option>
                     <option value="draft">Draft / Inactive</option>
+                    <option value="archived">Archived</option>
+                    <option value="discontinued">Discontinued</option>
                   </select>
                 </div>
 

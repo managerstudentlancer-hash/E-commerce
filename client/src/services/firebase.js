@@ -1,22 +1,19 @@
 /**
  * Firebase Configuration for VEXIVO E-Commerce
- * 
- * Google Firebase Phone Authentication (FREE - Spark Plan)
- * - Firebase handles SMS delivery automatically via Google's servers
- * - No third-party SMS gateway needed (No Fast2SMS, Twilio, etc.)
- * - Free tier: ~50 phone verifications/month (Spark Plan)
- * - With Identity Platform: 10,000/month free
- * 
- * Setup Instructions:
- * 1. Go to https://console.firebase.google.com
- * 2. Create a new project (or use existing)
- * 3. Go to Authentication > Sign-in method > Phone > Enable
- * 4. Go to Project Settings > General > Your apps > Add Web App
- * 5. Copy the firebaseConfig values to your .env file
+ * Phone Authentication & Email Authentication Support
  */
 
 import { initializeApp } from 'firebase/app';
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import {
+  getAuth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  signInWithEmailAndPassword,
+  signOut,
+  reload,
+} from 'firebase/auth';
 
 // Firebase config from environment variables
 const firebaseConfig = {
@@ -36,27 +33,94 @@ const auth = getAuth(app);
 auth.languageCode = navigator.language || 'en';
 
 /**
+ * Register user with email + password
+ */
+export const registerWithEmail = async (email, password) => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    try {
+      await sendEmailVerification(userCredential.user);
+      console.log('[Firebase] Verification email sent');
+    } catch (verErr) {
+      console.warn('[Firebase] Verification email send notice:', verErr.message);
+    }
+    return {
+      uid: userCredential.user.uid,
+      email: userCredential.user.email,
+      emailVerified: userCredential.user.emailVerified,
+    };
+  } catch (error) {
+    console.error('[Firebase] Registration error:', error);
+    const errorMessages = {
+      'auth/email-already-in-use': 'This email is already registered.',
+      'auth/invalid-email': 'Please enter a valid email address.',
+      'auth/weak-password': 'Password should be at least 6 characters.',
+      'auth/operation-not-allowed': 'Email/Password authentication is not enabled in Firebase.',
+    };
+    throw new Error(errorMessages[error.code] || error.message || 'Registration failed.');
+  }
+};
+
+/**
+ * Login with email + password
+ */
+export const loginWithEmail = async (email, password) => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    try {
+      await reload(userCredential.user);
+    } catch (e) {}
+
+    const idToken = await userCredential.user.getIdToken();
+    return {
+      uid: userCredential.user.uid,
+      email: userCredential.user.email,
+      emailVerified: userCredential.user.emailVerified,
+      idToken,
+    };
+  } catch (error) {
+    const errorMessages = {
+      'auth/invalid-email': 'Please enter a valid email address.',
+      'auth/invalid-credential': 'Incorrect email or password.',
+      'auth/user-not-found': 'No account found with this email.',
+      'auth/wrong-password': 'Incorrect email or password.',
+      'auth/too-many-requests': 'Too many login attempts. Please try again later.',
+    };
+    throw new Error(errorMessages[error.code] || error.message || 'Login failed. Please try again.');
+  }
+};
+
+/**
+ * Resend verification email
+ */
+export const resendVerificationEmail = async () => {
+  try {
+    if (!auth.currentUser) {
+      throw new Error('No logged-in user found.');
+    }
+    await sendEmailVerification(auth.currentUser);
+    return true;
+  } catch (error) {
+    throw new Error(error.message || 'Unable to resend verification email.');
+  }
+};
+
+/**
  * Setup invisible reCAPTCHA verifier
- * Required by Firebase Phone Auth to prevent abuse
- * The reCAPTCHA is invisible - user won't see any challenge
  */
 let recaptchaVerifier = null;
 
 export const setupRecaptcha = (elementId = 'recaptcha-container') => {
-  // Clear existing verifier if any
   if (recaptchaVerifier) {
     try {
       recaptchaVerifier.clear();
-    } catch (e) {
-      // Ignore cleanup errors
-    }
+    } catch (e) {}
     recaptchaVerifier = null;
   }
 
   recaptchaVerifier = new RecaptchaVerifier(auth, elementId, {
     size: 'invisible',
     callback: () => {
-      // reCAPTCHA solved - will proceed with phone auth
       console.log('[Firebase] reCAPTCHA verified successfully');
     },
     'expired-callback': () => {
@@ -70,10 +134,6 @@ export const setupRecaptcha = (elementId = 'recaptcha-container') => {
 
 /**
  * Send OTP to phone number using Firebase
- * Firebase handles SMS delivery automatically (FREE!)
- * 
- * @param {string} phoneNumber - Full phone number with country code (e.g., +919876543210)
- * @returns {Object} confirmationResult - Use this to verify OTP later
  */
 export const sendFirebaseOtp = async (phoneNumber) => {
   if (!recaptchaVerifier) {
@@ -86,20 +146,15 @@ export const sendFirebaseOtp = async (phoneNumber) => {
     return confirmationResult;
   } catch (error) {
     console.error('[Firebase] Error sending OTP:', error);
-    
-    // Reset reCAPTCHA on error so user can retry
     if (recaptchaVerifier) {
       try {
         recaptchaVerifier.clear();
-      } catch (e) {
-        // Ignore
-      }
+      } catch (e) {}
       recaptchaVerifier = null;
     }
 
-    // Provide user-friendly error messages
     const errorMessages = {
-      'auth/invalid-phone-number': 'Invalid phone number format. Please include country code (e.g., +91XXXXXXXXXX).',
+      'auth/invalid-phone-number': 'Invalid phone number format. Please include country code.',
       'auth/too-many-requests': 'Too many OTP requests. Please wait a few minutes before trying again.',
       'auth/quota-exceeded': 'SMS quota exceeded. Please try again later.',
       'auth/captcha-check-failed': 'Security verification failed. Please refresh the page and try again.',
@@ -114,31 +169,22 @@ export const sendFirebaseOtp = async (phoneNumber) => {
 
 /**
  * Verify OTP code entered by user
- * 
- * @param {Object} confirmationResult - From sendFirebaseOtp()
- * @param {string} otpCode - 6-digit code entered by user
- * @returns {string} Firebase ID Token - Send this to your backend for verification
  */
 export const verifyFirebaseOtp = async (confirmationResult, otpCode) => {
   try {
     const result = await confirmationResult.confirm(otpCode);
-    // Get Firebase ID token to send to our backend
     const idToken = await result.user.getIdToken();
-    console.log('[Firebase] OTP verified successfully');
     return {
       idToken,
       phoneNumber: result.user.phoneNumber,
       uid: result.user.uid,
     };
   } catch (error) {
-    console.error('[Firebase] OTP verification failed:', error);
-    
     const errorMessages = {
       'auth/invalid-verification-code': 'Invalid OTP code. Please check and try again.',
       'auth/code-expired': 'OTP has expired. Please request a new one.',
       'auth/session-expired': 'Verification session has expired. Please request a new OTP.',
     };
-
     throw new Error(errorMessages[error.code] || 'Invalid or expired OTP. Please try again.');
   }
 };

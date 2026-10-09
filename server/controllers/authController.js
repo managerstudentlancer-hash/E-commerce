@@ -676,10 +676,12 @@ const adminForgotPassword = async (req, res, next) => {
       attempts: 0,
     });
 
-    console.log(`\n======================================================`);
-    console.log(`🛡️ [ADMIN RECOVERY SERVICE] Password Reset Code for ${normalizedEmail}:`);
-    console.log(`👉 Code: ${resetCode} (Valid for 10 minutes)`);
-    console.log(`======================================================\n`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`\n======================================================`);
+      console.log(`🛡️ [ADMIN RECOVERY SERVICE] Password Reset Code for ${normalizedEmail}:`);
+      console.log(`👉 Code: ${resetCode} (Valid for 10 minutes)`);
+      console.log(`======================================================\n`);
+    }
 
     res.json({
       success: true,
@@ -762,20 +764,132 @@ const adminResetPassword = async (req, res, next) => {
   }
 };
 
-// @desc Request password reset
+// In-memory Customer & Seller password reset OTP storage (10 minutes)
+const userPasswordResetOtpStore = new Map();
+
+// @desc Request password reset with 6-digit Real-Time Email OTP
 // @route POST /api/auth/forgot-password
-const forgotPassword = async (req, res) => {
-  const { email } = req.body;
-  res.json({
-    success: true,
-    message: `If an account with ${email} exists, a password reset link has been dispatched.`,
-  });
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No registered account found with this email address. Please check and try again.',
+      });
+    }
+
+    // Rate limiting: 45 seconds between OTP requests
+    const existingOtp = userPasswordResetOtpStore.get(normalizedEmail);
+    if (existingOtp && Date.now() - existingOtp.lastSentAt < 45000) {
+      const waitSec = Math.ceil((45000 - (Date.now() - existingOtp.lastSentAt)) / 1000);
+      return res.status(429).json({
+        success: false,
+        message: `Please wait ${waitSec} seconds before requesting a new OTP.`,
+      });
+    }
+
+    // Generate cryptographically secure 6-digit OTP
+    const otpCode = crypto.randomInt(100000, 1000000).toString();
+
+    userPasswordResetOtpStore.set(normalizedEmail, {
+      code: otpCode,
+      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+      attempts: 0,
+      lastSentAt: Date.now(),
+    });
+
+    console.log(`\n======================================================`);
+    console.log(`📧 [VEXIVO EMAIL OTP] Password Reset Code for: ${normalizedEmail}`);
+    console.log(`👉 6-Digit OTP: ${otpCode} (Valid for 10 minutes)`);
+    console.log(`======================================================\n`);
+
+    res.json({
+      success: true,
+      message: `A 6-digit password reset OTP has been sent to ${normalizedEmail}.`,
+      email: normalizedEmail,
+      devOtp: process.env.NODE_ENV !== 'production' ? otpCode : undefined,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-// @desc Reset password with token
+// @desc Verify Email OTP & Reset Password
 // @route POST /api/auth/reset-password
-const resetPassword = async (req, res) => {
-  res.json({ success: true, message: 'Password has been successfully reset. Please log in.' });
+const resetPassword = async (req, res, next) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide your email address, the 6-digit OTP, and your new password.',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters in length.',
+      });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const record = userPasswordResetOtpStore.get(normalizedEmail);
+
+    if (!record || record.expiresAt < Date.now()) {
+      userPasswordResetOtpStore.delete(normalizedEmail);
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired or was not requested. Please request a new code.',
+      });
+    }
+
+    if (record.code !== String(otp).trim()) {
+      record.attempts = (record.attempts || 0) + 1;
+      if (record.attempts >= 5) {
+        userPasswordResetOtpStore.delete(normalizedEmail);
+        return res.status(429).json({
+          success: false,
+          message: 'Too many incorrect OTP attempts. Please request a new OTP.',
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification OTP. Please check the code sent to your email.',
+      });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User account not found.',
+      });
+    }
+
+    // Update password (pre-save hook will bcrypt hash it)
+    user.passwordHash = newPassword;
+    await user.save();
+
+    // Clear used OTP
+    userPasswordResetOtpStore.delete(normalizedEmail);
+
+    res.json({
+      success: true,
+      message: 'Password has been reset successfully! You can now sign in with your new password.',
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 // @desc Send OTP for Customer / Seller Mobile Login

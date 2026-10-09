@@ -1,36 +1,158 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Loader2, Sparkles, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { Loader2, Sparkles, ArrowUpDown, AlertCircle, ShoppingBag, RefreshCw } from 'lucide-react';
 import api from '../services/api';
 import ProductCard from '../components/common/ProductCard';
+
+const collectionMeta = {
+  'women-dresses': {
+    name: "Women's Dresses",
+    gender: 'women',
+    description: 'Evening gowns, tailored dresses, floral maxis, and contemporary silhouettes.',
+  },
+  'womens-dresses': {
+    name: "Women's Dresses",
+    gender: 'women',
+    description: 'Evening gowns, tailored dresses, floral maxis, and contemporary silhouettes.',
+  },
+  'women-shoes': {
+    name: "Women's Shoes & Heels",
+    gender: 'women',
+    description: 'Designer stilettos, casual sneakers, pumps, and everyday comfort footwear.',
+  },
+  'womens-shoes': {
+    name: "Women's Shoes & Heels",
+    gender: 'women',
+    description: 'Designer stilettos, casual sneakers, pumps, and everyday comfort footwear.',
+  },
+  'women-bags': {
+    name: "Women's Bags & Luggage",
+    gender: 'women',
+    description: 'Luxury shoulder bags, leather totes, clutches, and travel luggage.',
+  },
+  'womens-bags': {
+    name: "Women's Bags & Luggage",
+    gender: 'women',
+    description: 'Luxury shoulder bags, leather totes, clutches, and travel luggage.',
+  },
+  'women-jewellery': {
+    name: "Women's Fine Jewellery",
+    gender: 'women',
+    description: 'Artisanal earrings, statement pendants, and elegant luxury accessories.',
+  },
+  'womens-jewellery': {
+    name: "Women's Fine Jewellery",
+    gender: 'women',
+    description: 'Artisanal earrings, statement pendants, and elegant luxury accessories.',
+  },
+  'women-watches': {
+    name: "Women's Luxury Watches",
+    gender: 'women',
+    description: 'Masterfully crafted timepieces and timeless luxury chronographs.',
+  },
+  'womens-watches': {
+    name: "Women's Luxury Watches",
+    gender: 'women',
+    description: 'Masterfully crafted timepieces and timeless luxury chronographs.',
+  },
+  'women-tops': {
+    name: "Women's Tops & Shirts",
+    gender: 'women',
+    description: 'Silk blouses, casual tees, tailored button-downs, and elegant tops.',
+  },
+  tops: {
+    name: "Women's Tops & Shirts",
+    gender: 'women',
+    description: 'Silk blouses, casual tees, tailored button-downs, and elegant tops.',
+  },
+  'men-shirts': {
+    name: "Men's Shirts",
+    gender: 'men',
+    description: 'Tailored oxfords, casual checks, pure linen button-downs, and overshirts.',
+  },
+  'mens-shirts': {
+    name: "Men's Shirts",
+    gender: 'men',
+    description: 'Tailored oxfords, casual checks, pure linen button-downs, and overshirts.',
+  },
+  'men-shoes': {
+    name: "Men's Shoes",
+    gender: 'men',
+    description: 'Sports trainers, off-white street sneakers, and formal leather footwear.',
+  },
+  'mens-shoes': {
+    name: "Men's Shoes",
+    gender: 'men',
+    description: 'Sports trainers, off-white street sneakers, and formal leather footwear.',
+  },
+  'men-watches': {
+    name: "Men's Watches",
+    gender: 'men',
+    description: 'Automatic timepieces, dive watches, and precision chronographs.',
+  },
+  'mens-watches': {
+    name: "Men's Watches",
+    gender: 'men',
+    description: 'Automatic timepieces, dive watches, and precision chronographs.',
+  },
+};
 
 const CollectionPage = () => {
   const { slug } = useParams();
   const [collection, setCollection] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
 
-  useEffect(() => {
-    const fetchCollection = async () => {
-      setLoading(true);
-      try {
-        const cleanSlug = (slug || '').toLowerCase().trim();
-        const res = await api.collections.getBySlug(cleanSlug);
-        
+  const fetchCollection = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const cleanSlug = (slug || '').toLowerCase().trim();
+
+      // 1. Try fetching directly by collectionSlug or category from products endpoint
+      let prodRes = await api.products.getAll({
+        collection: cleanSlug,
+        limit: 100,
+      });
+
+      if (!prodRes?.products?.length) {
+        prodRes = await api.products.getAll({
+          category: cleanSlug,
+          limit: 100,
+        });
+      }
+
+      if (prodRes && prodRes.success && Array.isArray(prodRes.products) && prodRes.products.length > 0) {
+        const meta = collectionMeta[cleanSlug];
+        const formattedName = meta?.name || cleanSlug
+          .split('-')
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' ');
+
+        setCollection({
+          name: formattedName.includes('Collection') ? formattedName : `${formattedName} Collection`,
+          description: meta?.description || 'Curated luxury styles crafted to highest standards.',
+          products: prodRes.products,
+        });
+      } else {
+        // 2. Try collections endpoint
+        const colRes = await api.collections.getBySlug(cleanSlug).catch(() => null);
+
         if (
-          res &&
-          res.success &&
-          res.collection &&
-          Array.isArray(res.collection.products) &&
-          res.collection.products.length > 0
+          colRes &&
+          colRes.success &&
+          colRes.collection &&
+          Array.isArray(colRes.collection.products) &&
+          colRes.collection.products.length > 0
         ) {
-          setCollection(res.collection);
+          setCollection(colRes.collection);
         } else {
-          // Robust fallback: fetch matching products directly
-          const prodRes = await api.products.getAll();
-          if (prodRes && prodRes.success) {
-            const all = prodRes.products || [];
+          // 3. Fallback to general catalog search
+          const allRes = await api.products.getAll({ limit: 100 });
+          if (allRes && allRes.success) {
+            const all = allRes.products || [];
             let matched = [];
 
             if (cleanSlug.includes('new')) {
@@ -44,45 +166,34 @@ const CollectionPage = () => {
                 (p) =>
                   p.collectionSlug === cleanSlug ||
                   p.categorySlug === cleanSlug ||
-                  (p.tags && p.tags.some((t) => t.toLowerCase().includes(cleanSlug)))
+                  p.category === cleanSlug ||
+                  (p.tags && p.tags.some((t) => t.toLowerCase() === cleanSlug))
               );
             }
 
-            if (matched.length === 0) {
-              matched = all.slice(0, 36);
-            }
-
-            const formattedName = cleanSlug
+            const meta = collectionMeta[cleanSlug];
+            const formattedName = meta?.name || cleanSlug
               .split('-')
               .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
               .join(' ');
 
             setCollection({
-              name: formattedName ? `${formattedName} Collection` : 'Curated Collection',
-              description: `Handpicked selection curated for timeless luxury and everyday lifestyle.`,
+              name: formattedName.includes('Collection') ? formattedName : `${formattedName} Collection`,
+              description: meta?.description || 'Handpicked selection curated for timeless luxury and everyday lifestyle.',
               products: matched,
             });
           }
         }
-      } catch (err) {
-        console.error('Failed to load collection:', err);
-        try {
-          const prodRes = await api.products.getAll();
-          if (prodRes && prodRes.success) {
-            setCollection({
-              name: (slug || 'Featured').replace(/-/g, ' ').toUpperCase() + ' COLLECTION',
-              description: 'Exclusive seasonal handpicked selections.',
-              products: (prodRes.products || []).slice(0, 24),
-            });
-          }
-        } catch (fbErr) {
-          console.error('Fallback failed:', fbErr);
-        }
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error('Failed to load collection:', err);
+      setError(err.message || 'Unable to connect to product catalog.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchCollection();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [slug]);
@@ -121,6 +232,23 @@ const CollectionPage = () => {
       <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-3">
         <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
         <p className="text-xs font-semibold text-neutral-500">Loading collection...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center space-y-3 px-4 text-center">
+        <AlertCircle className="w-10 h-10 text-red-500" />
+        <p className="text-base font-bold text-neutral-800">Failed to load collection</p>
+        <p className="text-xs text-neutral-500 max-w-sm">{error}</p>
+        <button
+          onClick={fetchCollection}
+          className="btn-pill-dark text-xs py-2 px-5 inline-flex items-center space-x-1.5 cursor-pointer"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Try Again</span>
+        </button>
       </div>
     );
   }
@@ -166,7 +294,7 @@ const CollectionPage = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setSelectedCategory('all')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                     selectedCategory === 'all'
                       ? 'bg-black text-white shadow-xs'
                       : 'bg-white text-neutral-700 border border-neutral-200 hover:border-black'
@@ -178,7 +306,7 @@ const CollectionPage = () => {
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                       selectedCategory === cat
                         ? 'bg-black text-white shadow-xs'
                         : 'bg-white text-neutral-700 border border-neutral-200 hover:border-black'
@@ -196,7 +324,7 @@ const CollectionPage = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-white border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-neutral-800 focus:outline-none focus:border-black"
+                  className="bg-white border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-neutral-800 focus:outline-none focus:border-black cursor-pointer"
                 >
                   <option value="featured">Featured / Trending</option>
                   <option value="price-low">Price: Low to High</option>
@@ -209,16 +337,17 @@ const CollectionPage = () => {
         </div>
       </div>
 
-      {/* Grid */}
+      {/* Grid Stage */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         {filteredProducts.length === 0 ? (
           <div className="text-center py-20 bg-neutral-50 rounded-3xl border border-neutral-100 space-y-4">
+            <ShoppingBag className="w-10 h-10 text-neutral-300 mx-auto" />
             <p className="text-base font-bold text-neutral-900">
-              No products found in this selection.
+              No products found in this collection.
             </p>
             <button
               onClick={() => setSelectedCategory('all')}
-              className="btn-pill-dark text-xs py-2.5 px-6"
+              className="btn-pill-dark text-xs py-2.5 px-6 cursor-pointer"
             >
               Reset Filters
             </button>
@@ -226,7 +355,7 @@ const CollectionPage = () => {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {filteredProducts.map((product, idx) => (
-              <ProductCard key={product._id || product.id} product={product} index={idx} />
+              <ProductCard key={product._id || product.id || idx} product={product} index={idx} />
             ))}
           </div>
         )}
