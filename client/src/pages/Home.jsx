@@ -61,6 +61,14 @@ const Home = () => {
     };
 
     loadHomeData();
+
+    // Auto-refresh when admin modifies banners and switches back to tab
+    window.addEventListener('focus', loadHomeData);
+    window.addEventListener('vexivo_banners_updated', loadHomeData);
+    return () => {
+      window.removeEventListener('focus', loadHomeData);
+      window.removeEventListener('vexivo_banners_updated', loadHomeData);
+    };
   }, []);
 
   return (
