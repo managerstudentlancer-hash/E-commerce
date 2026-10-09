@@ -269,8 +269,10 @@ const sendRealSmsOtp = async ({ phone, otp }) => {
 
     // If no SMS API key is configured yet in environment
     if (providerUsed === 'none') {
-      console.log(`[SMS GATEWAY NOTICE] 📡 Real SMS Gateway: No active SMS API key found in .env (FAST2SMS_API_KEY, TWILIO_ACCOUNT_SID, TWOFACTOR_API_KEY).`);
-      console.log(`[SMS DISPATCH LOG] 📱 Real OTP Generated for ${cleanPhone}: [ ${otp} ] (Active 10 Mins)`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[SMS GATEWAY NOTICE] 📡 Real SMS Gateway: No active SMS API key found in .env (FAST2SMS_API_KEY, TWILIO_ACCOUNT_SID, TWOFACTOR_API_KEY).`);
+        console.log(`[SMS DISPATCH LOG] 📱 Real OTP Generated for ${cleanPhone}: [ ${otp} ] (Active 10 Mins)`);
+      }
       return {
         success: true,
         provider: 'Development & Logging Engine',

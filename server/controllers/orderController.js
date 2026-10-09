@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
@@ -130,14 +131,29 @@ const createOrder = async (req, res, next) => {
       let verifiedImage = item.image || '';
       let availableStock = 999;
 
-      if (item.product) {
-        const prod = await Product.findById(item.product).select('price salePrice name images sellerId sellerName stock options status').lean();
-        if (!prod || prod.status !== 'active') {
-          return res.status(400).json({
-            success: false,
-            message: `Product "${item.name}" is no longer available.`,
-          });
-        }
+      let prod = null;
+      if (item.product && mongoose.Types.ObjectId.isValid(String(item.product))) {
+        prod = await Product.findById(item.product).select('price salePrice name images sellerId sellerName stock options status').lean();
+      }
+      if (!prod && item.slug) {
+        prod = await Product.findOne({ slug: String(item.slug).toLowerCase().trim() }).select('price salePrice name images sellerId sellerName stock options status').lean();
+      }
+      if (!prod && item.name) {
+        prod = await Product.findOne({ name: String(item.name).trim() }).select('price salePrice name images sellerId sellerName stock options status').lean();
+      }
+
+      if (prod) {
+        item.product = prod._id;
+      }
+
+      if (!prod || prod.status !== 'active') {
+        return res.status(400).json({
+          success: false,
+          message: `Product "${item.name}" is no longer available.`,
+          unavailableItemName: item.name,
+          unavailableProductId: item.product || null,
+        });
+      }
 
         availableStock = prod.stock !== undefined ? prod.stock : 50;
 
@@ -172,9 +188,7 @@ const createOrder = async (req, res, next) => {
           seller = prod.sellerId;
           sellerName = prod.sellerName || 'Independent Seller';
         }
-      }
 
-      const validQty = Math.max(1, Math.min(99, parseInt(item.quantity, 10) || 1));
       const lineTotal = verifiedPrice * validQty;
       computedSubtotal += lineTotal;
 
