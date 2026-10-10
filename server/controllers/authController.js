@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const supabaseStorage = require('../services/supabaseStorage');
+const gridfsService = require('../services/gridfsService');
 
 const getJwtSecret = () => {
   const secret = process.env.JWT_SECRET;
@@ -370,13 +370,13 @@ const uploadProfilePhoto = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Clean up previous Supabase profile image (image replacement)
+    // Clean up previous profile image from GridFS (image replacement)
     if (user.profilePhoto) {
-      await supabaseStorage.deleteFromSupabase(user.profilePhoto).catch(() => {});
+      await gridfsService.deleteFromGridFS(user.profilePhoto).catch(() => {});
     }
 
-    // Upload to Supabase Storage
-    const result = await supabaseStorage.uploadToSupabase({
+    // Upload to MongoDB GridFS
+    const result = await gridfsService.uploadToGridFS({
       buffer: req.file.buffer,
       mimetype: req.file.mimetype,
       originalname: req.file.originalname,
@@ -389,15 +389,14 @@ const uploadProfilePhoto = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'Profile photo uploaded successfully to Supabase Storage',
+      message: 'Profile photo uploaded successfully to MongoDB GridFS',
       profilePhoto: user.profilePhoto,
-      path: result.path,
+      path: result.storagePath,
       user: formatUserResponse(user),
     });
   } catch (error) {
     console.error('[Profile Photo Upload Error]:', error.message);
-    const isConfigError = error.message.includes('configured');
-    res.status(isConfigError ? 503 : 400).json({
+    res.status(400).json({
       success: false,
       message: error.message,
     });
@@ -414,7 +413,7 @@ const removeProfilePhoto = async (req, res, next) => {
     }
 
     if (user.profilePhoto) {
-      await supabaseStorage.deleteFromSupabase(user.profilePhoto).catch(() => {});
+      await gridfsService.deleteFromGridFS(user.profilePhoto).catch(() => {});
     }
 
     user.profilePhoto = '';
@@ -955,65 +954,51 @@ const sendOtp = async (req, res, next) => {
   }
 };
 
-// @desc Verify OTP or Firebase Phone Auth Token and authenticate Customer or Seller
+// @desc Verify OTP and authenticate Customer or Seller
 // @route POST /api/auth/verify-otp
 const verifyOtp = async (req, res, next) => {
   try {
-    const { phone, otp, name, firebaseIdToken } = req.body;
-    let verifiedPhone = null;
+    const { phone, otp, name } = req.body;
 
-    if (firebaseIdToken) {
-      try {
-        const { verifyFirebaseToken } = require('../config/firebase');
-        const firebaseUser = await verifyFirebaseToken(firebaseIdToken);
-        if (!firebaseUser || !firebaseUser.phoneNumber) {
-          return res.status(400).json({ success: false, message: 'Firebase phone verification failed.' });
-        }
-        verifiedPhone = firebaseUser.phoneNumber;
-      } catch (err) {
-        return res.status(400).json({ success: false, message: 'Firebase verification token invalid.' });
-      }
-    } else {
-      const phoneCheck = validateAndFormatIndianPhone(phone);
-      if (!phoneCheck.valid) {
-        return res.status(400).json({ success: false, message: phoneCheck.error });
-      }
-
-      if (!otp || typeof otp !== 'string' || otp.trim().length !== 6) {
-        return res.status(400).json({ success: false, message: 'Please enter a valid 6-digit verification code.' });
-      }
-
-      const { formatted } = phoneCheck;
-      const stored = otpStore.get(formatted);
-
-      if (!stored || stored.expiresAt < Date.now()) {
-        return res.status(400).json({
-          success: false,
-          message: 'Verification code has expired or was not requested. Please request a new code.',
-        });
-      }
-
-      if (stored.attempts >= 5) {
-        otpStore.delete(formatted);
-        return res.status(429).json({
-          success: false,
-          message: 'Too many incorrect attempts. Please request a new verification code.',
-        });
-      }
-
-      const enteredHash = crypto.createHash('sha256').update(otp.trim()).digest('hex');
-      if (enteredHash !== stored.otpHash) {
-        stored.attempts += 1;
-        return res.status(400).json({
-          success: false,
-          message: 'Incorrect verification code. Please check and try again.',
-        });
-      }
-
-      // OTP Verified! Clear stored code
-      otpStore.delete(formatted);
-      verifiedPhone = formatted;
+    const phoneCheck = validateAndFormatIndianPhone(phone);
+    if (!phoneCheck.valid) {
+      return res.status(400).json({ success: false, message: phoneCheck.error });
     }
+
+    if (!otp || typeof otp !== 'string' || otp.trim().length !== 6) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid 6-digit verification code.' });
+    }
+
+    const { formatted } = phoneCheck;
+    const stored = otpStore.get(formatted);
+
+    if (!stored || stored.expiresAt < Date.now()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification code has expired or was not requested. Please request a new code.',
+      });
+    }
+
+    if (stored.attempts >= 5) {
+      otpStore.delete(formatted);
+      return res.status(429).json({
+        success: false,
+        message: 'Too many incorrect attempts. Please request a new verification code.',
+      });
+    }
+
+    const enteredHash = crypto.createHash('sha256').update(otp.trim()).digest('hex');
+    if (enteredHash !== stored.otpHash) {
+      stored.attempts += 1;
+      return res.status(400).json({
+        success: false,
+        message: 'Incorrect verification code. Please check and try again.',
+      });
+    }
+
+    // OTP Verified! Clear stored code
+    otpStore.delete(formatted);
+    const verifiedPhone = formatted;
 
     const raw10 = verifiedPhone.replace(/[^0-9]/g, '').slice(-10);
 

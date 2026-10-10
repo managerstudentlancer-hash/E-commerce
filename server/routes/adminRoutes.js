@@ -22,13 +22,21 @@ const {
 } = require('../controllers/adminController');
 const { protect, adminOnly } = require('../middleware/auth');
 const upload = require('../middleware/upload');
-const supabaseStorage = require('../services/supabaseStorage');
+const gridfsService = require('../services/gridfsService');
 
 // All routes here strictly require authentication + admin role
 router.use(protect, adminOnly);
 
-// Universal Admin Upload to Supabase Storage (products, banners, categories, videos, logo, etc.)
-router.post('/upload', upload.single('image'), async (req, res, next) => {
+// Universal Admin Upload to MongoDB GridFS (products, banners, categories, videos, logo, etc.)
+router.post('/upload', (req, res, next) => {
+  upload.any()(req, res, (err) => {
+    if (err) return next(err);
+    if (req.files && req.files.length > 0) {
+      req.file = req.files[0];
+    }
+    next();
+  });
+}, async (req, res, next) => {
   try {
     const file = req.file || req.files?.[0];
     if (!file) {
@@ -54,47 +62,45 @@ router.post('/upload', upload.single('image'), async (req, res, next) => {
       req.body.userId ||
       'admin';
 
-    const result = await supabaseStorage.uploadToSupabase({
+    const result = await gridfsService.uploadToGridFS({
       buffer: file.buffer,
       mimetype: file.mimetype,
       originalname: file.originalname,
       folder,
       entityId,
-      mediaType: 'auto',
     });
 
     res.json({
       success: true,
-      message: 'File uploaded successfully to Supabase Storage',
+      message: 'File uploaded successfully to MongoDB GridFS',
       url: result.url,
-      path: result.path,
+      path: result.storagePath,
       filename: result.filename,
-      bucket: result.bucket,
-      mediaType: result.mediaType,
-      mimeType: result.mimeType,
+      fileId: result.fileId,
+      mediaType: file.mimetype.startsWith('video/') ? 'video' : 'image',
+      mimeType: result.mimetype,
       size: result.size,
     });
   } catch (error) {
     console.error('[Admin Upload Error]:', error.message);
-    const isConfigError = error.message.includes('configured');
-    res.status(isConfigError ? 503 : 400).json({
+    res.status(400).json({
       success: false,
       message: error.message,
     });
   }
 });
 
-// Admin Delete Image from Supabase Storage
+// Admin Delete Image from MongoDB GridFS
 router.delete('/delete-image', async (req, res, next) => {
   try {
     const { url } = req.body;
     if (!url) {
       return res.status(400).json({ success: false, message: 'Image URL or path is required' });
     }
-    const removed = await supabaseStorage.deleteFromSupabase(url);
+    const removed = await gridfsService.deleteFromGridFS(url);
     res.json({
       success: true,
-      message: removed ? 'Image deleted successfully from Supabase Storage' : 'File already removed or not found',
+      message: removed ? 'Image deleted successfully from MongoDB GridFS' : 'File already removed or not found',
     });
   } catch (error) {
     next(error);
@@ -130,5 +136,26 @@ router.post('/delivery/cod-settle', settleCod);
 // Returns & Dispute Management
 router.get('/returns', getReturns);
 router.put('/returns/:id/refund', processReturnRefund);
+
+// Flipkart-Style Delivery Partner Earnings & Payouts Administration
+const {
+  getAdminPayoutsOverview,
+  getAdminPayoutsList,
+  getAdminPayoutConfig,
+  updateAdminPayoutConfig,
+  batchSettleEligiblePayouts,
+  reconcilePayout,
+  retryFailedPayout,
+  adjustRiderEarning,
+} = require('../controllers/deliveryPayoutController');
+
+router.get('/delivery-payouts/overview', getAdminPayoutsOverview);
+router.get('/delivery-payouts/list', getAdminPayoutsList);
+router.get('/delivery-payouts/config', getAdminPayoutConfig);
+router.put('/delivery-payouts/config', updateAdminPayoutConfig);
+router.post('/delivery-payouts/batch-settle', batchSettleEligiblePayouts);
+router.post('/delivery-payouts/:id/reconcile', reconcilePayout);
+router.post('/delivery-payouts/:id/retry', retryFailedPayout);
+router.post('/delivery-payouts/adjust-earning', adjustRiderEarning);
 
 module.exports = router;

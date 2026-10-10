@@ -56,14 +56,14 @@ const getDeliveryProfile = async (req, res, next) => {
 
     const availableCount = await Order.countDocuments({
       $or: [
-        { deliveryPartner: null, orderStatus: { $in: ['processing', 'confirmed', 'shipped'] } },
-        { 'deliveryDetails.deliveryStatus': 'unassigned', orderStatus: { $in: ['processing', 'confirmed', 'shipped'] } },
+        { deliveryPartner: null, orderStatus: { $in: ['processing', 'confirmed', 'shipped', 'ready_for_delivery'] } },
+        { 'deliveryDetails.deliveryStatus': { $in: ['unassigned', 'ready_for_delivery'] }, orderStatus: { $in: ['processing', 'confirmed', 'shipped', 'ready_for_delivery'] } },
       ],
     });
 
     const failedDeliveries = await Order.countDocuments({
       deliveryPartner: user._id,
-      'deliveryDetails.deliveryStatus': 'failed',
+      'deliveryDetails.deliveryStatus': { $in: ['failed', 'rescheduled'] },
     });
 
     const returnDeliveries = await Order.countDocuments({
@@ -197,11 +197,11 @@ const getDeliveryOrders = async (req, res, next) => {
         },
       };
     } else if (tab === 'available') {
-      // STRICT LOGISTICS RULE: Only show unassigned orders that have reached READY_FOR_DELIVERY at the delivery hub
+      // Available orders awaiting fleet partner acceptance from dispatch pool
       query = {
         $or: [
-          { deliveryPartner: null, 'deliveryDetails.deliveryStatus': 'ready_for_delivery' },
-          { deliveryPartner: null, orderStatus: 'ready_for_delivery' },
+          { deliveryPartner: null, orderStatus: { $in: ['processing', 'confirmed', 'shipped', 'ready_for_delivery'] } },
+          { 'deliveryDetails.deliveryStatus': { $in: ['unassigned', 'ready_for_delivery'] }, orderStatus: { $in: ['processing', 'confirmed', 'shipped', 'ready_for_delivery'] } },
         ],
       };
     } else if (tab === 'completed') {
@@ -398,10 +398,22 @@ const confirmPickup = async (req, res, next) => {
 
     // Validate either 4-digit OTP or Barcode scan (matching orderNumber or trackingNumber)
     const expectedOtp = order.deliveryDetails.pickupOtp;
-    const isScanMatch = scanCode && (scanCode === order.trackingNumber || scanCode === order.orderNumber);
+    const trimmedScan = scanCode ? String(scanCode).trim().toUpperCase() : '';
+    const isScanMatch = Boolean(
+      trimmedScan &&
+        (trimmedScan === String(order.trackingNumber || '').trim().toUpperCase() ||
+          trimmedScan === String(order.orderNumber || '').trim().toUpperCase())
+    );
 
-    if (!isScanMatch && expectedOtp && pickupOtp) {
-      if (order.deliveryDetails.pickupOtp.trim() !== String(pickupOtp).trim()) {
+    if (scanCode && !isScanMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Barcode scan did not match order or tracking number. Please verify package label.',
+      });
+    }
+
+    if (!isScanMatch) {
+      if (expectedOtp && (!pickupOtp || String(pickupOtp).trim() !== String(expectedOtp).trim())) {
         return res.status(400).json({ success: false, message: 'Invalid 4-digit Seller Pickup OTP' });
       }
     }
@@ -525,7 +537,7 @@ const reachedCustomer = async (req, res, next) => {
 // @route PUT /api/delivery/orders/:id/complete
 const completeDelivery = async (req, res, next) => {
   try {
-    const { deliveryOtp, deliveryNotes = '' } = req.body;
+    const { deliveryOtp, scanCode, deliveryNotes = '' } = req.body;
     const order = await Order.findById(req.params.id);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
@@ -538,20 +550,36 @@ const completeDelivery = async (req, res, next) => {
 
     if (!order.deliveryDetails) order.deliveryDetails = {};
 
-    // Strict Customer Delivery OTP check
-    const expectedOtp = order.deliveryDetails.deliveryOtp;
-    if (expectedOtp && deliveryOtp) {
-      if (String(deliveryOtp).trim() !== String(expectedOtp).trim()) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid 4-digit Delivery OTP. Please ask recipient for the code shown in their VEXIVO app.',
-        });
-      }
-    } else if (expectedOtp && !deliveryOtp) {
+    // Strict Customer Delivery OTP check or Barcode match
+    const trimmedScan = scanCode ? String(scanCode).trim().toUpperCase() : '';
+    const isScanMatch = Boolean(
+      trimmedScan &&
+        (trimmedScan === String(order.trackingNumber || '').trim().toUpperCase() ||
+          trimmedScan === String(order.orderNumber || '').trim().toUpperCase())
+    );
+
+    if (scanCode && !isScanMatch) {
       return res.status(400).json({
         success: false,
-        message: 'Recipient 4-digit Delivery OTP is required to complete delivery.',
+        message: 'Scanned barcode does not match package tracking number. Please verify package label.',
       });
+    }
+
+    if (!isScanMatch) {
+      const expectedOtp = order.deliveryDetails.deliveryOtp;
+      if (expectedOtp && deliveryOtp) {
+        if (String(deliveryOtp).trim() !== String(expectedOtp).trim()) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid 4-digit Delivery OTP. Please ask recipient for the code shown in their VEXIVO app.',
+          });
+        }
+      } else if (expectedOtp && !deliveryOtp) {
+        return res.status(400).json({
+          success: false,
+          message: 'Recipient 4-digit Delivery OTP or Barcode scan is required to complete delivery.',
+        });
+      }
     }
 
     order.deliveryDetails.deliveryStatus = 'delivered';
@@ -577,10 +605,14 @@ const completeDelivery = async (req, res, next) => {
       timestamp: new Date(),
     });
 
-    // Credit delivery partner payout (+₹50 per completed shipment) and track COD cash in hand
+    // Credit delivery partner payout (+ configurable base + distance + surges) into immutable ledger
+    const { recordDeliveryEarnings } = require('./deliveryPayoutController');
+    await recordDeliveryEarnings(order, req.user._id).catch((err) => {
+      console.error('[Delivery Earning Recording Error]:', err);
+    });
+
     await User.findByIdAndUpdate(req.user._id, {
       $inc: {
-        'deliveryProfile.earnings': 50,
         'deliveryProfile.totalDeliveries': 1,
         ...(isCod ? { 'deliveryProfile.codInHand': order.total } : {}),
       },
@@ -845,10 +877,12 @@ const pickupReturn = async (req, res, next) => {
       timestamp: new Date(),
     });
 
-    // Credit delivery partner (+₹40 return pickup fee)
+    // Credit delivery partner return pickup fee into immutable ledger
+    const { recordDeliveryEarnings } = require('./deliveryPayoutController');
+    await recordDeliveryEarnings(order, req.user._id).catch(() => {});
+
     await User.findByIdAndUpdate(req.user._id, {
       $inc: {
-        'deliveryProfile.earnings': 40,
         'deliveryProfile.totalDeliveries': 1,
       },
     }).catch(() => {});
@@ -1184,6 +1218,12 @@ const getDeliveryAssignments = async (req, res, next) => {
   }
 };
 
+// @desc Attempt redelivery for failed / rescheduled orders (transitions back to out_for_delivery)
+// @route PUT /api/delivery/orders/:id/attempt-redelivery
+const attemptRedelivery = async (req, res, next) => {
+  return outForDelivery(req, res, next);
+};
+
 module.exports = {
   getDeliveryProfile,
   toggleOnlineStatus,
@@ -1193,6 +1233,7 @@ module.exports = {
   reachedPickup,
   confirmPickup,
   outForDelivery,
+  attemptRedelivery,
   reachedCustomer,
   completeDelivery,
   failDelivery,

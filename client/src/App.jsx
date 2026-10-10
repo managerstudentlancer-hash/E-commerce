@@ -69,6 +69,7 @@ const AdminLogo = lazy(() => import('./pages/admin/AdminLogo'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const AdminSupport = lazy(() => import('./pages/admin/AdminSupport'));
 const AdminDeliveryApplications = lazy(() => import('./pages/admin/AdminDeliveryApplications'));
+const AdminDeliveryPayouts = lazy(() => import('./pages/admin/AdminDeliveryPayouts'));
 const AdminLogistics = lazy(() => import('./pages/admin/AdminLogistics'));
 const AdminAiAssistant = lazy(() => import('./pages/admin/AdminAiAssistant'));
 
@@ -83,16 +84,26 @@ const RouteLoadingFallback = () => (
 const PublicLayout = () => {
   return (
     <div className="flex flex-col min-h-screen pb-14 lg:pb-0">
-      <Header />
+      <ErrorBoundary>
+        <Header />
+      </ErrorBoundary>
       <main className="flex-1">
         <ErrorBoundary>
           <Outlet />
         </ErrorBoundary>
       </main>
-      <Footer />
-      <CartDrawer />
-      <MobileStickyBar />
-      <VexivoAiAssistant />
+      <ErrorBoundary>
+        <Footer />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <CartDrawer />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <MobileStickyBar />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <VexivoAiAssistant />
+      </ErrorBoundary>
     </div>
   );
 };
@@ -177,6 +188,7 @@ const App = () => {
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="logistics" element={<AdminLogistics />} />
                   <Route path="delivery-applications" element={<AdminDeliveryApplications />} />
+                  <Route path="delivery-payouts" element={<AdminDeliveryPayouts />} />
                   <Route path="customers" element={<AdminCustomers />} />
                   <Route path="inventory" element={<AdminInventory />} />
                   <Route path="collections" element={<AdminCollections />} />

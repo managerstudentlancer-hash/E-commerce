@@ -1,6 +1,6 @@
 const Category = require('../models/Category');
 const Product = require('../models/Product');
-const supabaseStorage = require('../services/supabaseStorage');
+const gridfsService = require('../services/gridfsService');
 
 const slugify = (text) => {
   return text
@@ -358,9 +358,9 @@ const getCategoryBySlug = async (req, res, next) => {
     else if (req.query.sort === 'newest') sortOptions = { createdAt: -1, newArrival: -1 };
 
     // Pagination & Product Limits (e.g. limit: 12, 24, 36, 48)
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 12;
-    const skip = (page - 1) * limit;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, Math.min(1000, parseInt(req.query.limit, 10) || 12));
+    const skip = Math.max(0, (page - 1) * limit);
 
     const total = await Product.countDocuments(filterQuery);
     const products = await Product.find(filterQuery)
@@ -431,7 +431,7 @@ const updateCategory = async (req, res, next) => {
     }
 
     if (image !== undefined && category.image && category.image !== image) {
-      await supabaseStorage.deleteFromSupabase(category.image).catch(() => {});
+      await gridfsService.deleteFromGridFS(category.image).catch(() => {});
     }
 
     if (description !== undefined) category.description = description;
@@ -458,7 +458,7 @@ const deleteCategory = async (req, res, next) => {
     }
 
     if (category.image) {
-      await supabaseStorage.deleteFromSupabase(category.image).catch(() => {});
+      await gridfsService.deleteFromGridFS(category.image).catch(() => {});
     }
 
     await Category.findByIdAndDelete(req.params.id);
