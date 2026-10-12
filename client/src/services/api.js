@@ -1,6 +1,14 @@
 import { captureFrontendException } from './sentry';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// Normalize API_URL so it properly handles optional trailing slashes and ensures /api prefix
+const getBaseApiUrl = () => {
+  const envUrl = (import.meta.env.VITE_API_URL || '').trim();
+  if (!envUrl) return '/api';
+  const clean = envUrl.replace(/\/+$/, '');
+  return clean.endsWith('/api') ? clean : `${clean}/api`;
+};
+
+const API_URL = getBaseApiUrl();
 
 /**
  * Robust token retriever:

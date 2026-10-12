@@ -71,11 +71,29 @@ app.use(requestLogger);
 app.use(setSecurityHeaders);
 app.use(globalRateLimiter);
 
-// Secure CORS
-app.use(cors({
-  origin: process.env.CLIENT_URL || ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true,
-}));
+// Secure CORS (Supports localhost, custom domain, and Vercel preview/production domains)
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map((url) => url.trim().replace(/\/+$/, ''))
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1');
+      if (isAllowed) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+  })
+);
 
 // Payload Body Limiting (Mitigate Buffer Overflow & ReDoS)
 // Capture rawBody for cryptographic webhook HMAC verification (RazorpayX)
