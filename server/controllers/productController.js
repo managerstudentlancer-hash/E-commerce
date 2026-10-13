@@ -78,6 +78,8 @@ const getProducts = async (req, res, next) => {
       'mens-shoes': ['mens-shoes', 'men-shoes'],
       'men-watches': ['mens-watches', 'men-watches'],
       'mens-watches': ['mens-watches', 'men-watches'],
+      'sarees': ['sarees', 'saree'],
+      'saree': ['sarees', 'saree'],
     };
 
     const targetCategory = category || categorySlug;
@@ -85,6 +87,15 @@ const getProducts = async (req, res, next) => {
       const catLower = targetCategory.toLowerCase().trim();
       if (catLower === 'women-wear' || catLower === 'women' || catLower === "women's wear") {
         andConditions.push({ gender: 'women' });
+      } else if (catLower === 'sarees' || catLower === 'saree') {
+        andConditions.push({
+          $or: [
+            { subcategory: new RegExp('^sarees?$', 'i') },
+            { tags: { $in: ['saree', 'sarees'] } },
+            { categorySlug: 'sarees' },
+            { collectionSlug: 'ethnic-wear' },
+          ],
+        });
       } else if (catLower === 'men-wear' || catLower === 'men' || catLower === "men's wear") {
         andConditions.push({ gender: 'men' });
       } else if (fashionCategoryAliases[catLower]) {

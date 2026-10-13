@@ -21167,6 +21167,10 @@ const seedAll = async () => {
     ]);
     console.log('[VEXIVO Seed] Seeded Demo Orders for Delivery Fleet testing.');
 
+    // 8. Seed & Sync Handcrafted Sarees and Ethnic Catalog
+    const { seedSarees } = require('./sareeSeed');
+    await seedSarees();
+
     console.log('======================================================');
     console.log('🎉 VEXIVO DATABASE SEEDING COMPLETE!');
     console.log(`📦 Total Products Seeded: ${products.length}`);

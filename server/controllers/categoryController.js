@@ -106,6 +106,10 @@ const getCategoryBySlug = async (req, res, next) => {
       'men-shoes': 'mens-shoes',
       'men-watches': 'mens-watches',
       skincare: 'skin-care',
+      saree: 'sarees',
+      sarees: 'sarees',
+      'women-sarees': 'sarees',
+      'ethnic-wear': 'sarees',
     };
 
     const slug = slugAliases[rawSlug] || rawSlug;
@@ -113,6 +117,7 @@ const getCategoryBySlug = async (req, res, next) => {
 
     const categoryTitleMap = {
       'women-wear': "Women's Fashion",
+      'sarees': "Sarees & Ethnic Wear",
       'men-wear': "Men's Fashion",
       'kids-wear': "Kids' Wear",
       'womens-dresses': "Women's Dresses",
@@ -174,6 +179,16 @@ const getCategoryBySlug = async (req, res, next) => {
     if (slug === 'women-wear' || rawSlug === 'women' || rawSlug === 'women-wear') {
       baseQuery = {
         gender: 'women',
+        status: 'active',
+      };
+    } else if (slug === 'sarees' || rawSlug === 'saree' || rawSlug === 'sarees' || slug === 'ethnic-wear') {
+      baseQuery = {
+        $or: [
+          { subcategory: new RegExp('^sarees?$', 'i') },
+          { tags: { $in: ['saree', 'sarees'] } },
+          { categorySlug: 'sarees' },
+          { collectionSlug: 'ethnic-wear' },
+        ],
         status: 'active',
       };
     } else if (slug === 'men-wear' || rawSlug === 'men' || rawSlug === 'men-wear') {

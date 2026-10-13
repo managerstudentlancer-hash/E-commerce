@@ -262,6 +262,16 @@ const categoryMapping = {
     parentCategory: 'Automotive',
     categoryIcon: 'Car',
   },
+  sarees: {
+    category: 'sarees',
+    categorySlug: 'sarees',
+    gender: 'women',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    displayName: 'Sarees & Ethnic Wear',
+    parentCategory: 'Women Wear',
+    categoryIcon: 'Sparkles',
+  },
 };
 
 const getCategoryInfo = (rawCategory) => {
@@ -284,7 +294,7 @@ const getCategoryInfo = (rawCategory) => {
   };
 };
 
-const getDummyProducts = () => {
+const getLocalDummyProducts = () => {
   if (!fs.existsSync(dummyProductsPath)) {
     throw new Error('dummy-products.json not found');
   }
@@ -294,6 +304,70 @@ const getDummyProducts = () => {
   );
 
   return data.products || (Array.isArray(data) ? data : []);
+};
+
+/**
+ * Safely fetches products from official DummyJSON products endpoint with pagination.
+ * If network request fails or times out, gracefully falls back to local JSON data.
+ */
+const fetchDummyProductsFromApi = async ({ limit = 100, maxProducts = 250, timeoutMs = 8000 } = {}) => {
+  const allProducts = [];
+  let skip = 0;
+  let totalAvailable = Infinity;
+
+  try {
+    while (skip < totalAvailable && allProducts.length < maxProducts) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      const url = `https://dummyjson.com/products?limit=${limit}&skip=${skip}`;
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'VexivoCatalogSync/1.0' },
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`DummyJSON API responded with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!data || !Array.isArray(data.products)) {
+        throw new Error('Invalid DummyJSON API response structure');
+      }
+
+      totalAvailable = typeof data.total === 'number' ? data.total : data.products.length;
+      allProducts.push(...data.products);
+      skip += limit;
+
+      if (data.products.length === 0) break;
+    }
+
+    if (allProducts.length > 0) {
+      console.log(`[DummyProductService] Successfully fetched ${allProducts.length} live products from DummyJSON API.`);
+      try {
+        fs.writeFileSync(
+          dummyProductsPath,
+          JSON.stringify({ products: allProducts, total: allProducts.length }, null, 2),
+          'utf-8'
+        );
+      } catch (cacheErr) {
+        console.warn('[DummyProductService] Local cache update notice:', cacheErr.message);
+      }
+      return allProducts;
+    }
+  } catch (apiErr) {
+    console.warn(`[DummyProductService] Live DummyJSON API fetch unavailable or timed out (${apiErr.message}). Falling back to cached local dataset.`);
+  }
+
+  return getLocalDummyProducts();
+};
+
+const getDummyProducts = (options = {}) => {
+  if (options && options.fetchLive) {
+    return fetchDummyProductsFromApi(options);
+  }
+  return getLocalDummyProducts();
 };
 
 const mapProduct = (product) => {
@@ -390,13 +464,27 @@ const syncCategoriesInDB = async (products) => {
         });
       }
     }
+
+    // Refresh live counts for parent Women Wear category
+    const womenWearCount = await Product.countDocuments({
+      gender: 'women',
+      status: 'active',
+    });
+    const womenCategory = await Category.findOne({ slug: 'women-wear' });
+    if (womenCategory) {
+      womenCategory.itemCount = womenWearCount;
+      await womenCategory.save();
+    }
   } catch (err) {
     console.warn('[DummyProductService] Category sync notice:', err.message);
   }
 };
 
-const importDummyProducts = async () => {
-  const products = getDummyProducts();
+const importDummyProducts = async (options = {}) => {
+  const fetchLive = options && options.fetchLive === true;
+  const products = fetchLive
+    ? await fetchDummyProductsFromApi(options)
+    : getLocalDummyProducts();
 
   let imported = 0;
   let updated = 0;
@@ -458,7 +546,10 @@ module.exports = {
   categoryMapping,
   getCategoryInfo,
   getDummyProducts,
+  getLocalDummyProducts,
+  fetchDummyProductsFromApi,
   mapProduct,
   importDummyProducts,
   getDummyCategorySummary,
+  syncCategoriesInDB,
 };
