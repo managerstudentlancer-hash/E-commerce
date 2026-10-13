@@ -162,6 +162,7 @@ const AdminBanners = () => {
         showToast('New banner created and published to storefront!');
       }
 
+      window.dispatchEvent(new Event('vexivo_banners_updated'));
       setIsModalOpen(false);
       fetchBanners();
     } catch (err) {
@@ -177,6 +178,7 @@ const AdminBanners = () => {
       setBanners((prev) =>
         prev.map((b) => (b._id === banner._id ? { ...b, active: !b.active } : b))
       );
+      window.dispatchEvent(new Event('vexivo_banners_updated'));
       showToast(`Banner visibility updated on live storefront`);
     } catch (err) {
       showToast(err.message || 'Failed to toggle banner');
@@ -189,6 +191,7 @@ const AdminBanners = () => {
     try {
       await api.banners.delete(deleteConfirmId);
       setDeleteConfirmId(null);
+      window.dispatchEvent(new Event('vexivo_banners_updated'));
       showToast('Banner deleted successfully');
       fetchBanners();
     } catch (err) {

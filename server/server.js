@@ -179,7 +179,8 @@ app.all(['/api/seed-catalog', '/api/admin/seed-catalog'], protect, adminOnly, as
     const total = await Product.countDocuments();
     const bagCount = await Product.countDocuments({ categorySlug: 'bags' });
     const shoeCount = await Product.countDocuments({ categorySlug: 'shoes' });
-    res.json({ success: true, message: `Catalog seeded! Total: ${total}, Bags: ${bagCount}, Shoes: ${shoeCount}` });
+    const sareeCount = await Product.countDocuments({ subcategory: /^sarees?$/i });
+    res.json({ success: true, message: `Catalog seeded! Total: ${total}, Sarees: ${sareeCount}, Bags: ${bagCount}, Shoes: ${shoeCount}` });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

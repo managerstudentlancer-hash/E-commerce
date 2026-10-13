@@ -1,7 +1,9 @@
 const Product = require('../models/Product');
 const Category = require('../models/Category');
+const Offer = require('../models/Offer');
 
 const sareeProducts = [
+  // 1. Banarasi Art Silk Zari Woven Saree
   {
     name: 'Banarasi Art Silk Zari Woven Saree',
     slug: 'banarasi-art-silk-zari-woven-saree',
@@ -30,7 +32,11 @@ const sareeProducts = [
     status: 'active',
     featured: true,
     bestseller: true,
+    newArrival: false,
+    specialOffer: true,
   },
+
+  // 2. Chanderi Pure Cotton Handloom Saree
   {
     name: 'Chanderi Pure Cotton Handloom Saree',
     slug: 'chanderi-pure-cotton-handloom-saree',
@@ -59,7 +65,11 @@ const sareeProducts = [
     status: 'active',
     featured: false,
     bestseller: true,
+    newArrival: false,
+    specialOffer: true,
   },
+
+  // 3. Floral Printed Georgette Party Wear Saree
   {
     name: 'Floral Printed Georgette Party Wear Saree',
     slug: 'floral-printed-georgette-party-wear-saree',
@@ -88,7 +98,11 @@ const sareeProducts = [
     status: 'active',
     featured: false,
     bestseller: false,
+    newArrival: true,
+    specialOffer: true,
   },
+
+  // 4. Kanjivaram Style Woven Zari Saree
   {
     name: 'Kanjivaram Style Woven Zari Saree',
     slug: 'kanjivaram-style-woven-zari-saree',
@@ -117,7 +131,11 @@ const sareeProducts = [
     status: 'active',
     featured: true,
     bestseller: true,
+    newArrival: false,
+    specialOffer: true,
   },
+
+  // 5. Crimson Red Royal Bridal Silk Saree
   {
     name: 'Crimson Red Royal Bridal Silk Saree',
     slug: 'crimson-red-royal-bridal-silk-saree',
@@ -146,7 +164,11 @@ const sareeProducts = [
     status: 'active',
     featured: true,
     bestseller: true,
+    newArrival: false,
+    specialOffer: true,
   },
+
+  // 6. Blush Pink Embroidered Organza Saree
   {
     name: 'Blush Pink Embroidered Organza Saree',
     slug: 'blush-pink-embroidered-organza-saree',
@@ -174,7 +196,540 @@ const sareeProducts = [
     tags: ['saree', 'sarees', 'organza', 'pink', 'wedding', 'party wear', 'under 1500', 'women'],
     status: 'active',
     featured: true,
+    bestseller: false,
+    newArrival: true,
+    specialOffer: true,
   },
+
+  // 7. Black Zari Woven Banarasi Silk Saree
+  {
+    name: 'Black Zari Woven Banarasi Silk Saree',
+    slug: 'black-zari-woven-banarasi-silk-saree',
+    sku: 'VEX-SAR-007',
+    description: 'Statement black Banarasi silk saree with lustrous silver and metallic antique gold zari jaal motifs throughout body and heavy floral pallu.',
+    shortDescription: 'Exquisite black Banarasi silk saree with silver & gold zari weaving.',
+    price: 1850,
+    compareAtPrice: 3299,
+    discount: 44,
+    images: [
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Heritage',
+    stock: 28,
+    rating: 4.9,
+    numReviews: 29,
+    tags: ['saree', 'sarees', 'black', 'black saree', 'banarasi', 'silk', 'zari', 'ethnic', 'wedding', 'women'],
+    status: 'active',
+    featured: true,
+    bestseller: true,
+    newArrival: false,
+    specialOffer: true,
+  },
+
+  // 8. Royal Navy Blue Kanjivaram Temple Border Saree
+  {
+    name: 'Royal Navy Blue Kanjivaram Temple Border Saree',
+    slug: 'royal-navy-blue-kanjivaram-temple-border-saree',
+    sku: 'VEX-SAR-008',
+    description: 'Opulent deep navy blue pure handloom Kanjivaram silk saree featuring signature gold zari Korvai temple borders, majestic mayil peacock buttis, and rich woven pallu.',
+    shortDescription: 'Magnificent navy blue Kanjivaram silk saree with temple border and gold zari weave.',
+    price: 2899,
+    compareAtPrice: 4899,
+    discount: 41,
+    images: [
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Heritage',
+    stock: 20,
+    rating: 4.9,
+    numReviews: 38,
+    tags: ['saree', 'sarees', 'kanjivaram', 'blue', 'navy blue', 'silk', 'temple border', 'wedding', 'bridal', 'women'],
+    status: 'active',
+    featured: true,
+    bestseller: true,
+    newArrival: false,
+    specialOffer: true,
+  },
+
+  // 9. Lavender Hand-Painted Floral Organza Saree
+  {
+    name: 'Lavender Hand-Painted Floral Organza Saree',
+    slug: 'lavender-hand-painted-floral-organza-saree',
+    sku: 'VEX-SAR-009',
+    description: 'Ethereal sheer lavender organza saree detailed with botanical hand-painted watercolor blossoms and delicate gota patti cutwork borders. Drapes with an airy, graceful silhouette.',
+    shortDescription: 'Airy sheer lavender organza saree with delicate hand-painted floral motifs and gota border.',
+    price: 1799,
+    compareAtPrice: 2999,
+    discount: 40,
+    images: [
+      'https://images.unsplash.com/photo-1610030469668-9655ec843f55?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1610030469668-9655ec843f55?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Modern Ethnic',
+    stock: 32,
+    rating: 4.8,
+    numReviews: 24,
+    tags: ['saree', 'sarees', 'organza', 'lavender', 'floral', 'pastel', 'party wear', 'day wedding', 'women'],
+    status: 'active',
+    featured: true,
+    bestseller: false,
+    newArrival: true,
+    specialOffer: true,
+  },
+
+  // 10. Emerald Green Meenakari Banarasi Katan Silk Saree
+  {
+    name: 'Emerald Green Meenakari Banarasi Katan Silk Saree',
+    slug: 'emerald-green-meenakari-banarasi-katan-silk-saree',
+    sku: 'VEX-SAR-010',
+    description: 'Regal emerald green pure Katan silk Banarasi saree woven with dual-tone antique gold zari and colourful Meenakari resham accents on the border and royal kadwa jaal.',
+    shortDescription: 'Emerald green Banarasi katan silk saree featuring Meenakari floral jaal and rich zari pallu.',
+    price: 3299,
+    compareAtPrice: 5999,
+    discount: 45,
+    images: [
+      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'wedding-collection',
+    gender: 'women',
+    brand: 'VEXIVO Heritage',
+    stock: 18,
+    rating: 5.0,
+    numReviews: 41,
+    tags: ['saree', 'sarees', 'banarasi', 'emerald green', 'green', 'silk', 'meenakari', 'wedding', 'royal', 'women'],
+    status: 'active',
+    featured: true,
+    bestseller: true,
+    newArrival: false,
+    specialOffer: true,
+  },
+
+  // 11. Sunset Yellow Haldi Chanderi Handloom Saree
+  {
+    name: 'Sunset Yellow Haldi Chanderi Handloom Saree',
+    slug: 'sunset-yellow-haldi-chanderi-handloom-saree',
+    sku: 'VEX-SAR-011',
+    description: 'Vibrant festive mustard and golden-yellow Chanderi cotton-silk saree woven with traditional ashrafi buttis and shimmering zari border. The quintessential choice for Haldi ceremonies.',
+    shortDescription: 'Festive yellow Chanderi handloom saree with gold zari buttis, crafted for Haldi ceremonies.',
+    price: 1199,
+    compareAtPrice: 1999,
+    discount: 40,
+    images: [
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Heritage',
+    stock: 40,
+    rating: 4.7,
+    numReviews: 33,
+    tags: ['saree', 'sarees', 'chanderi', 'yellow', 'haldi', 'under 1500', 'festive', 'cotton silk', 'women'],
+    status: 'active',
+    featured: false,
+    bestseller: true,
+    newArrival: false,
+    specialOffer: true,
+  },
+
+  // 12. Midnight Blue Chikankari Embroidered Georgette Saree
+  {
+    name: 'Midnight Blue Chikankari Embroidered Georgette Saree',
+    slug: 'midnight-blue-chikankari-embroidered-georgette-saree',
+    sku: 'VEX-SAR-012',
+    description: 'Timeless Lucknowi Chikankari embroidered saree on featherlight viscose georgette in royal midnight blue, highlighted with luminous tone-on-tone mukaish and pearl work.',
+    shortDescription: 'Handcrafted Lucknowi Chikankari georgette saree in midnight blue with mukaish work.',
+    price: 2199,
+    compareAtPrice: 3899,
+    discount: 44,
+    images: [
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Couture',
+    stock: 22,
+    rating: 4.9,
+    numReviews: 27,
+    tags: ['saree', 'sarees', 'georgette', 'chikankari', 'blue', 'midnight blue', 'embroidery', 'cocktail', 'women'],
+    status: 'active',
+    featured: true,
+    bestseller: false,
+    newArrival: true,
+    specialOffer: true,
+  },
+
+  // 13. Tussar Silk Hand Block Printed Saree
+  {
+    name: 'Tussar Silk Hand Block Printed Saree',
+    slug: 'tussar-silk-hand-block-printed-saree',
+    sku: 'VEX-SAR-013',
+    description: 'Artisanal wild Tussar silk saree in natural golden beige, adorned with earthy Madhubani and Ajrakh wooden block prints and temple resham borders.',
+    shortDescription: 'Handcrafted pure Tussar silk saree with earthy block prints and textured handloom weave.',
+    price: 1599,
+    compareAtPrice: 2799,
+    discount: 43,
+    images: [
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Heritage',
+    stock: 26,
+    rating: 4.8,
+    numReviews: 21,
+    tags: ['saree', 'sarees', 'tussar silk', 'silk', 'block print', 'handloom', 'beige', 'ethnic', 'women'],
+    status: 'active',
+    featured: false,
+    bestseller: true,
+    newArrival: false,
+    specialOffer: true,
+  },
+
+  // 14. Rich Maroon & Gold Zari Bridal Kanjivaram Saree
+  {
+    name: 'Rich Maroon & Gold Zari Bridal Kanjivaram Saree',
+    slug: 'rich-maroon-gold-zari-bridal-kanjivaram-saree',
+    sku: 'VEX-SAR-014',
+    description: 'Grand ceremonial bridal Kanjivaram silk saree in deep maroon, lavishly adorned with heavy 24k gold zari brocade, rudraksha border motifs, and opulent pallu.',
+    shortDescription: 'Heritage maroon Kanjivaram bridal silk saree with dense gold zari weaving and heavy pallu.',
+    price: 3499,
+    compareAtPrice: 6499,
+    discount: 46,
+    images: [
+      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'wedding-collection',
+    gender: 'women',
+    brand: 'VEXIVO Couture',
+    stock: 14,
+    rating: 5.0,
+    numReviews: 62,
+    tags: ['saree', 'sarees', 'kanjivaram', 'maroon', 'red', 'wedding', 'bridal', 'silk', 'royal', 'women'],
+    status: 'active',
+    featured: true,
+    bestseller: true,
+    newArrival: false,
+    specialOffer: true,
+  },
+
+  // 15. Olive Green Scalloped Border Glass Organza Saree
+  {
+    name: 'Olive Green Scalloped Border Glass Organza Saree',
+    slug: 'olive-green-scalloped-border-glass-organza-saree',
+    sku: 'VEX-SAR-015',
+    description: 'Modern luxury olive green glass organza saree featuring delicate hand-embroidered sequin scalloped border edges and scattered crystal buttis. Lightweight and radiant.',
+    shortDescription: 'Sheer olive green glass organza saree with delicate scalloped sequin embroidered borders.',
+    price: 1699,
+    compareAtPrice: 2899,
+    discount: 41,
+    images: [
+      'https://images.unsplash.com/photo-1610030469668-9655ec843f55?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1610030469668-9655ec843f55?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Modern Ethnic',
+    stock: 25,
+    rating: 4.7,
+    numReviews: 18,
+    tags: ['saree', 'sarees', 'organza', 'green', 'olive green', 'party wear', 'cocktail', 'modern', 'women'],
+    status: 'active',
+    featured: false,
+    bestseller: false,
+    newArrival: true,
+    specialOffer: true,
+  },
+
+  // 16. Wine Red Sequinned Bollywood Georgette Saree
+  {
+    name: 'Wine Red Sequinned Bollywood Georgette Saree',
+    slug: 'wine-red-sequinned-bollywood-georgette-saree',
+    sku: 'VEX-SAR-016',
+    description: 'Statement Bollywood-inspired wine red georgette saree covered with vertical lines of shimmering micro-sequins. Effortlessly lightweight drape made for sangeet and cocktail parties.',
+    shortDescription: 'Glittering wine red georgette saree featuring all-over micro sequin embellishments.',
+    price: 1899,
+    compareAtPrice: 3299,
+    discount: 42,
+    images: [
+      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Modern Ethnic',
+    stock: 35,
+    rating: 4.8,
+    numReviews: 36,
+    tags: ['saree', 'sarees', 'georgette', 'red', 'wine', 'sequin', 'party wear', 'bollywood', 'women'],
+    status: 'active',
+    featured: true,
+    bestseller: true,
+    newArrival: false,
+    specialOffer: true,
+  },
+
+  // 17. Pastel Peach Maheshwari Handwoven Silk Saree
+  {
+    name: 'Pastel Peach Maheshwari Handwoven Silk Saree',
+    slug: 'pastel-peach-maheshwari-handwoven-silk-saree',
+    sku: 'VEX-SAR-017',
+    description: 'Graceful handcrafted Maheshwari silk-cotton saree in soft pastel peach featuring reversible bugdi borders and five-stripe zari pallu. Breathable, featherlight drape.',
+    shortDescription: 'Artisanal Maheshwari handloom silk-cotton saree in soothing pastel peach with zari border.',
+    price: 1399,
+    compareAtPrice: 2299,
+    discount: 39,
+    images: [
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1610030469668-9655ec843f55?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1610030469668-9655ec843f55?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Heritage',
+    stock: 30,
+    rating: 4.7,
+    numReviews: 20,
+    tags: ['saree', 'sarees', 'maheshwari', 'silk', 'handloom', 'peach', 'pastel', 'under 1500', 'women'],
+    status: 'active',
+    featured: false,
+    bestseller: false,
+    newArrival: true,
+    specialOffer: true,
+  },
+
+  // 18. Royal Purple & Antique Gold Banarasi Silk Saree
+  {
+    name: 'Royal Purple & Antique Gold Banarasi Silk Saree',
+    slug: 'royal-purple-antique-gold-banarasi-silk-saree',
+    sku: 'VEX-SAR-018',
+    description: 'Imperial royal purple Banarasi art silk saree decorated with antique matte gold floral zari jaal work, ornate shikargah motifs, and heavy brocade pallu.',
+    shortDescription: 'Regal deep purple Banarasi silk saree with antique gold zari weaving and heavy pallu.',
+    price: 1750,
+    compareAtPrice: 2999,
+    discount: 42,
+    images: [
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Heritage',
+    stock: 24,
+    rating: 4.9,
+    numReviews: 29,
+    tags: ['saree', 'sarees', 'banarasi', 'purple', 'silk', 'zari', 'festive', 'wedding', 'women'],
+    status: 'active',
+    featured: false,
+    bestseller: true,
+    newArrival: false,
+    specialOffer: true,
+  },
+
+  // 19. Bandhani Gota Patti Pure Georgette Festive Saree
+  {
+    name: 'Bandhani Gota Patti Pure Georgette Festive Saree',
+    slug: 'bandhani-gota-patti-pure-georgette-festive-saree',
+    sku: 'VEX-SAR-019',
+    description: 'Authentic Rajasthani hand-tied Bandhani tie-dye saree in radiant scarlet red and amber yellow, highlighted with intricate hand-stitched Jaipuri gota patti borders.',
+    shortDescription: 'Jaipuri hand-tied Bandhani georgette saree with intricate handcrafted Gota Patti work.',
+    price: 1999,
+    compareAtPrice: 3499,
+    discount: 43,
+    images: [
+      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Modern Ethnic',
+    stock: 28,
+    rating: 4.8,
+    numReviews: 35,
+    tags: ['saree', 'sarees', 'bandhani', 'gota patti', 'red', 'georgette', 'festive', 'wedding', 'women'],
+    status: 'active',
+    featured: true,
+    bestseller: false,
+    newArrival: true,
+    specialOffer: true,
+  },
+
+  // 20. Patola Printed Soft Silk Traditional Saree
+  {
+    name: 'Patola Printed Soft Silk Traditional Saree',
+    slug: 'patola-printed-soft-silk-traditional-saree',
+    sku: 'VEX-SAR-020',
+    description: 'Classic Gujarat double Ikat inspired Patola digital prints on butter-soft Litchi silk with lustrous contrast gold zari woven borders and tasseled pallu.',
+    shortDescription: 'Traditional Patola printed soft silk saree with geometric weave and woven zari border.',
+    price: 1299,
+    compareAtPrice: 2199,
+    discount: 41,
+    images: [
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Heritage',
+    stock: 38,
+    rating: 4.7,
+    numReviews: 22,
+    tags: ['saree', 'sarees', 'patola', 'silk', 'ikat', 'under 1500', 'traditional', 'ethnic', 'women'],
+    status: 'active',
+    featured: false,
+    bestseller: true,
+    newArrival: false,
+    specialOffer: true,
+  },
+
+  // 21. Ivory Gold Tissue Organza Cocktail Saree
+  {
+    name: 'Ivory Gold Tissue Organza Cocktail Saree',
+    slug: 'ivory-gold-tissue-organza-cocktail-saree',
+    sku: 'VEX-SAR-021',
+    description: 'Ultra-chic metallic ivory and warm gold tissue organza saree with micro-cutwork pearl borders. Drapes with modern luminescent sheen for receptions and cocktail evenings.',
+    shortDescription: 'Luminous ivory gold tissue organza saree with pearl border for modern cocktail receptions.',
+    price: 2150,
+    compareAtPrice: 3999,
+    discount: 46,
+    images: [
+      'https://images.unsplash.com/photo-1610030469668-9655ec843f55?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1610030469668-9655ec843f55?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Couture',
+    stock: 19,
+    rating: 4.9,
+    numReviews: 31,
+    tags: ['saree', 'sarees', 'organza', 'tissue', 'gold', 'ivory', 'party wear', 'reception', 'women'],
+    status: 'active',
+    featured: true,
+    bestseller: false,
+    newArrival: true,
+    specialOffer: true,
+  },
+
+  // 22. Mint Green Floral Zari Jaal Banarasi Saree
+  {
+    name: 'Mint Green Floral Zari Jaal Banarasi Saree',
+    slug: 'mint-green-floral-zari-jaal-banarasi-saree',
+    sku: 'VEX-SAR-022',
+    description: 'Pastel mint green Banarasi art silk saree woven with silver and gold flora-fauna jaal across the body, finished with a contrast emerald border and zari pallu.',
+    shortDescription: 'Refreshing mint green Banarasi silk saree with silver & gold floral jaal weaving.',
+    price: 1499,
+    compareAtPrice: 2499,
+    discount: 40,
+    images: [
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    ],
+    thumbnail: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    category: 'Women Wear',
+    categorySlug: 'women-wear',
+    subcategory: 'Sarees',
+    collectionSlug: 'ethnic-wear',
+    gender: 'women',
+    brand: 'VEXIVO Heritage',
+    stock: 27,
+    rating: 4.8,
+    numReviews: 26,
+    tags: ['saree', 'sarees', 'banarasi', 'mint green', 'green', 'silk', 'under 1500', 'summer wedding', 'women'],
+    status: 'active',
+    featured: false,
+    bestseller: false,
+    newArrival: true,
+    specialOffer: true,
+  },
+
+  // Supporting Western & Jewellery items (required for matching styling & AI assistant tests)
   {
     name: 'Midnight Black Velvet Evening Gown',
     slug: 'midnight-black-velvet-evening-gown',
@@ -229,35 +784,6 @@ const sareeProducts = [
     rating: 4.8,
     numReviews: 42,
     tags: ['dress', 'dresses', 'black', 'black dress', 'cocktail', 'midi', 'party', 'under 2000', 'women'],
-    status: 'active',
-    featured: true,
-    bestseller: true,
-  },
-  {
-    name: 'Black Zari Woven Banarasi Silk Saree',
-    slug: 'black-zari-woven-banarasi-silk-saree',
-    sku: 'VEX-SAR-007',
-    description: 'Statement black Banarasi silk saree with lustrous silver and metallic antique gold zari jaal motifs throughout body and heavy floral pallu.',
-    shortDescription: 'Exquisite black Banarasi silk saree with silver & gold zari weaving.',
-    price: 1850,
-    compareAtPrice: 3299,
-    discount: 44,
-    images: [
-      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
-    ],
-    thumbnail: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
-    hoverImage: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
-    category: 'Women Wear',
-    categorySlug: 'women-wear',
-    subcategory: 'Sarees',
-    collectionSlug: 'ethnic-wear',
-    gender: 'women',
-    brand: 'VEXIVO Heritage',
-    stock: 28,
-    rating: 4.9,
-    numReviews: 29,
-    tags: ['saree', 'sarees', 'black', 'black saree', 'banarasi', 'silk', 'zari', 'ethnic', 'wedding', 'women'],
     status: 'active',
     featured: true,
     bestseller: true,
@@ -318,21 +844,79 @@ const sareeProducts = [
     tags: ['jewellery', 'jewelry', 'earrings', 'jhumka', 'saree jewellery', 'gold', 'meenakari', 'women'],
     status: 'active',
     featured: true,
-  }
+  },
 ];
-
-const Offer = require('../models/Offer');
 
 const seedSarees = async () => {
   try {
+    let seeded = 0;
+    let updated = 0;
+
     for (const item of sareeProducts) {
       const existing = await Product.findOne({ slug: item.slug });
       if (!existing) {
         await Product.create(item);
+        seeded++;
+      } else {
+        Object.assign(existing, item);
+        await existing.save();
+        updated++;
       }
     }
-    console.log('[VEXIVO Saree Catalog] Verified & Synced ethnic / saree / jewellery items.');
 
+    // Sync Sarees Category in DB
+    const sareeCount = await Product.countDocuments({
+      $or: [
+        { subcategory: new RegExp('^sarees?$', 'i') },
+        { tags: 'saree' },
+      ],
+      status: 'active',
+    });
+
+    const sareeCat = await Category.findOne({ slug: 'sarees' });
+    if (sareeCat) {
+      sareeCat.itemCount = sareeCount;
+      await sareeCat.save();
+    } else {
+      await Category.create({
+        name: 'Sarees',
+        slug: 'sarees',
+        description: 'Handcrafted luxury Banarasi, Kanjivaram, Chanderi, and designer silk sarees for weddings and festive occasions.',
+        image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+        icon: 'Sparkles',
+        itemCount: sareeCount,
+        parentCategory: 'Women Wear',
+        status: 'active',
+        sortOrder: 15,
+      });
+    }
+
+    // Update parent Women Wear category item count
+    const womenWearCount = await Product.countDocuments({
+      gender: 'women',
+      status: 'active',
+    });
+    const womenCategory = await Category.findOne({ slug: 'women-wear' });
+    if (womenCategory) {
+      womenCategory.itemCount = womenWearCount;
+      await womenCategory.save();
+    } else {
+      await Category.create({
+        name: 'Women Wear',
+        slug: 'women-wear',
+        description: 'Effortless silhouettes, fine tailoring, dresses, sarees, and everyday luxury essentials.',
+        image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80',
+        icon: 'Sparkles',
+        sortOrder: 1,
+        featured: true,
+        itemCount: womenWearCount,
+        status: 'active',
+      });
+    }
+
+    console.log(`[VEXIVO Saree Catalog] Verified & Synced ethnic / saree / jewellery items: ${seeded} seeded, ${updated} updated, ${sareeCount} active sarees in catalog.`);
+
+    // Sync default promotional offers if empty
     const offerCount = await Offer.countDocuments();
     if (offerCount === 0) {
       const { defaultSeedOffers } = require('../controllers/offerController');
@@ -341,8 +925,11 @@ const seedSarees = async () => {
         console.log('[VEXIVO Offer Catalog] Seeded default promotional offers & deals.');
       }
     }
+
+    return { total: sareeProducts.length, seeded, updated, sareeCount };
   } catch (err) {
     console.warn('[VEXIVO Saree Catalog] Sync notice:', err.message);
+    return { error: err.message };
   }
 };
 

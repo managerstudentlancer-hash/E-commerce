@@ -47,7 +47,8 @@ router.use('/:productId/reviews', reviewRouter);
 
 router.post('/import-dummy', protect, async (req, res) => {
   try {
-    const result = await importDummyProducts();
+    const fetchLive = req.query.live === 'true' || req.body?.live === true;
+    const result = await importDummyProducts({ fetchLive });
 
     return res.status(200).json({
       success: true,
@@ -60,6 +61,27 @@ router.post('/import-dummy', protect, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to import DummyJSON products',
+      error: error.message,
+    });
+  }
+});
+
+router.post('/seed-sarees', protect, async (req, res) => {
+  try {
+    const { seedSarees } = require('../seed/sareeSeed');
+    const result = await seedSarees();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Saree catalog synchronized successfully',
+      result,
+    });
+  } catch (error) {
+    console.error('Saree seed error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to seed saree catalog',
       error: error.message,
     });
   }

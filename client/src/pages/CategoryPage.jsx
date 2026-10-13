@@ -63,7 +63,18 @@ const CATEGORY_BRAND_MAP = {
     'ALLEN SOLLY',
     'AND',
     'W FOR WOMAN',
+    'VEXIVO Heritage',
+    'VEXIVO Couture',
+    'VEXIVO Modern Ethnic',
     'VEXIVO Women',
+  ],
+  sarees: [
+    'VEXIVO Heritage',
+    'VEXIVO Couture',
+    'VEXIVO Modern Ethnic',
+    'BIBA',
+    'W FOR WOMAN',
+    'FABINDIA',
   ],
   'men-wear': [
     'ZARA',
@@ -185,6 +196,7 @@ const CATEGORY_HIERARCHY = {
   bags: { parent: 'Bags, Wallets & Belts', mid: 'Luggage & Travel', current: 'Suitcases & Bags' },
   shoes: { parent: 'Footwear', mid: "Men's & Women's Footwear", current: 'Shoes & Sneakers' },
   'women-wear': { parent: 'Clothing and Accessories', mid: "Women's Western & Ethnic", current: 'Apparel & Dresses' },
+  sarees: { parent: 'Clothing and Accessories', mid: 'Ethnic Wear', current: 'Sarees' },
   'men-wear': { parent: 'Clothing and Accessories', mid: "Men's Clothing", current: 'Shirts & Trousers' },
   jewellery: { parent: 'Watches & Accessories', mid: 'Wrist Watches', current: 'Luxury & Chrono' },
   electronics: { parent: 'Electronics', mid: 'Audio & Personal Entertainment', current: 'Headphones & Audio' },
@@ -505,7 +517,7 @@ const CategoryPage = () => {
                 {/* Subcategories Pills if any */}
                 {availableSubcategories.length > 0 && (
                   <div className="pl-6 pt-2 space-y-1">
-                    {availableSubcategories.slice(0, 5).map((sub) => (
+                    {availableSubcategories.slice(0, 12).map((sub) => (
                       <button
                         key={sub}
                         onClick={() =>
