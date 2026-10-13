@@ -1,6 +1,14 @@
 import { captureFrontendException } from './sentry';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// Normalize API_URL so it properly handles optional trailing slashes and ensures /api prefix
+const getBaseApiUrl = () => {
+  const envUrl = (import.meta.env.VITE_API_URL || '').trim();
+  if (!envUrl) return '/api';
+  const clean = envUrl.replace(/\/+$/, '');
+  return clean.endsWith('/api') ? clean : `${clean}/api`;
+};
+
+const API_URL = getBaseApiUrl();
 
 /**
  * Robust token retriever:
@@ -63,10 +71,27 @@ const request = async (endpoint, options = {}) => {
     headers.Authorization = options.headers.Authorization;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutMs = options.timeout || 25000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response;
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+      signal: options.signal || controller.signal,
+    });
+  } catch (netErr) {
+    clearTimeout(timeoutId);
+    if (netErr.name === 'AbortError') {
+      const timeoutError = new Error(`Request timed out after ${timeoutMs / 1000}s. Please check your connection.`);
+      timeoutError.status = 408;
+      throw timeoutError;
+    }
+    throw netErr;
+  }
+  clearTimeout(timeoutId);
 
   const data = await response.json().catch(() => ({}));
 
@@ -328,18 +353,38 @@ export const api = {
     accept: (id) => request(`/delivery/orders/${id}/accept`, { method: 'PUT' }),
     decline: (id, reason) => request(`/delivery/orders/${id}/decline`, { method: 'PUT', body: JSON.stringify({ reason }) }),
     reachedPickup: (id) => request(`/delivery/orders/${id}/reached-pickup`, { method: 'PUT' }),
-    confirmPickup: (id, pickupOtp) => request(`/delivery/orders/${id}/pickup`, { method: 'PUT', body: JSON.stringify({ pickupOtp }) }),
+    confirmPickup: (id, payload) =>
+      request(`/delivery/orders/${id}/pickup`, {
+        method: 'PUT',
+        body: JSON.stringify(typeof payload === 'string' ? { pickupOtp: payload } : payload),
+      }),
     outForDelivery: (id) => request(`/delivery/orders/${id}/out-for-delivery`, { method: 'PUT' }),
     reachedCustomer: (id) => request(`/delivery/orders/${id}/reached-customer`, { method: 'PUT' }),
-    completeDelivery: (id, deliveryOtp) => request(`/delivery/orders/${id}/complete`, { method: 'PUT', body: JSON.stringify({ deliveryOtp }) }),
+    completeDelivery: (id, payload) =>
+      request(`/delivery/orders/${id}/complete`, {
+        method: 'PUT',
+        body: JSON.stringify(typeof payload === 'string' ? { deliveryOtp: payload } : payload),
+      }),
     failDelivery: (id, reason) => request(`/delivery/orders/${id}/fail`, { method: 'PUT', body: JSON.stringify({ reason }) }),
     reschedule: (id, rescheduledDate, reason) => request(`/delivery/orders/${id}/reschedule`, { method: 'PUT', body: JSON.stringify({ rescheduledDate, reason }) }),
     returnToSeller: (id, reason) => request(`/delivery/orders/${id}/return-to-seller`, { method: 'PUT', body: JSON.stringify({ reason }) }),
     pickupReturn: (id, returnPickupOtp) => request(`/delivery/returns/${id}/pickup`, { method: 'PUT', body: JSON.stringify({ returnPickupOtp }) }),
     submitSupport: (supportData) => request('/delivery/support', { method: 'POST', body: JSON.stringify(supportData) }),
+    getEarningsSummary: () => request('/delivery/earnings/summary'),
+    getEarningsLedger: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/delivery/earnings/ledger${q ? `?${q}` : ''}`);
+    },
+    getPayouts: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/delivery/payouts${q ? `?${q}` : ''}`);
+    },
+    requestWithdrawal: () => request('/delivery/payouts/withdraw', { method: 'POST' }),
+    getBankDetails: () => request('/delivery/bank-details'),
+    updateBankDetails: (data) => request('/delivery/bank-details', { method: 'PUT', body: JSON.stringify(data) }),
   },
 
-  // Admin Logistics & Returns
+  // Admin Logistics, Payouts & Returns
   adminLogistics: {
     getDeliveryPartners: () => request('/admin/delivery-partners'),
     getApplications: (params = {}) => {
@@ -354,6 +399,19 @@ export const api = {
     settleCod: (partnerId) => request('/admin/delivery/cod-settle', { method: 'POST', body: JSON.stringify({ partnerId }) }),
     getReturns: () => request('/admin/returns'),
     processReturnRefund: (orderId) => request(`/admin/returns/${orderId}/refund`, { method: 'PUT' }),
+
+    // Delivery Fleet Earnings & Payout Administration
+    getPayoutsOverview: () => request('/admin/delivery-payouts/overview'),
+    getPayoutsList: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/admin/delivery-payouts/list${q ? `?${q}` : ''}`);
+    },
+    getPayoutConfig: () => request('/admin/delivery-payouts/config'),
+    updatePayoutConfig: (data) => request('/admin/delivery-payouts/config', { method: 'PUT', body: JSON.stringify(data) }),
+    batchSettlePayouts: () => request('/admin/delivery-payouts/batch-settle', { method: 'POST' }),
+    reconcilePayout: (id) => request(`/admin/delivery-payouts/${id}/reconcile`, { method: 'POST' }),
+    retryPayout: (id) => request(`/admin/delivery-payouts/${id}/retry`, { method: 'POST' }),
+    adjustEarning: (data) => request('/admin/delivery-payouts/adjust-earning', { method: 'POST', body: JSON.stringify(data) }),
   },
 
   // Support / 24*7 Customer Care

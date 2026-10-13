@@ -1,5 +1,5 @@
 const Product = require('../models/Product');
-const supabaseStorage = require('../services/supabaseStorage');
+const gridfsService = require('../services/gridfsService');
 
 // Helper to slugify string
 const slugify = (text) => {
@@ -235,9 +235,9 @@ const getProducts = async (req, res, next) => {
       sortOptions = { name: -1 };
     }
 
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const skip = (pageNum - 1) * limitNum;
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, Math.min(1000, parseInt(limit, 10) || 12));
+    const skip = Math.max(0, (pageNum - 1) * limitNum);
 
     const total = await Product.countDocuments(query);
     const products = await Product.find(query)
@@ -432,6 +432,8 @@ const updateProduct = async (req, res, next) => {
           message: 'Access denied: You can only edit your own products.',
         });
       }
+      delete req.body.sellerId;
+      delete req.body.seller;
     }
 
     if (req.body.name && req.body.name !== product.name && !req.body.slug) {
@@ -485,7 +487,7 @@ const deleteProduct = async (req, res, next) => {
     ].filter(Boolean);
 
     for (const imgUrl of allImages) {
-      await supabaseStorage.deleteFromSupabase(imgUrl).catch(() => {});
+      await gridfsService.deleteFromGridFS(imgUrl).catch(() => {});
     }
 
     await Product.findByIdAndDelete(req.params.id);
@@ -529,13 +531,12 @@ const uploadProductMedia = async (req, res, next) => {
 
     if (hasMultiple) {
       const uploadPromises = req.files.map((file) =>
-        supabaseStorage.uploadToSupabase({
+        gridfsService.uploadToGridFS({
           buffer: file.buffer,
           mimetype: file.mimetype,
           originalname: file.originalname,
           folder,
           entityId: productId,
-          mediaType: 'auto',
         })
       );
       const results = await Promise.all(uploadPromises);
@@ -543,17 +544,17 @@ const uploadProductMedia = async (req, res, next) => {
       // If existing productId provided and valid ObjectId, update product document
       if (productId && String(productId).match(/^[0-9a-fA-F]{24}$/)) {
         const mediaItems = results.map((r, idx) => ({
-          type: r.mediaType === 'video' ? 'video' : 'image',
+          type: r.mimetype?.startsWith('video/') ? 'video' : 'image',
           url: r.url,
-          storagePath: r.path,
+          storagePath: r.storagePath,
           filename: r.filename,
-          mimeType: r.mimeType,
+          mimeType: r.mimetype,
           size: r.size,
           displayOrder: idx,
         }));
 
-        const newImages = results.filter((r) => r.mediaType !== 'video').map((r) => r.url);
-        const newVideos = results.filter((r) => r.mediaType === 'video').map((r) => r.url);
+        const newImages = results.filter((r) => !r.mimetype?.startsWith('video/')).map((r) => r.url);
+        const newVideos = results.filter((r) => r.mimetype?.startsWith('video/')).map((r) => r.url);
 
         await Product.findByIdAndUpdate(productId, {
           $push: {
@@ -568,28 +569,28 @@ const uploadProductMedia = async (req, res, next) => {
         success: true,
         urls: results.map((r) => r.url),
         media: results,
-        images: results.filter((r) => r.mediaType !== 'video'),
-        videos: results.filter((r) => r.mediaType === 'video'),
+        images: results.filter((r) => !r.mimetype?.startsWith('video/')),
+        videos: results.filter((r) => r.mimetype?.startsWith('video/')),
       });
     }
 
-    const result = await supabaseStorage.uploadToSupabase({
+    const result = await gridfsService.uploadToGridFS({
       buffer: req.file.buffer,
       mimetype: req.file.mimetype,
       originalname: req.file.originalname,
       folder,
       entityId: productId,
-      mediaType: 'auto',
     });
 
     // If existing productId provided, update product
     if (productId && String(productId).match(/^[0-9a-fA-F]{24}$/)) {
+      const isVid = req.file.mimetype?.startsWith('video/');
       const mediaItem = {
-        type: result.mediaType === 'video' ? 'video' : 'image',
+        type: isVid ? 'video' : 'image',
         url: result.url,
-        storagePath: result.path,
+        storagePath: result.storagePath,
         filename: result.filename,
-        mimeType: result.mimeType,
+        mimeType: result.mimetype,
         size: result.size,
         displayOrder: 0,
       };
@@ -597,7 +598,7 @@ const uploadProductMedia = async (req, res, next) => {
       const updateOp = {
         $push: {
           media: mediaItem,
-          ...(result.mediaType === 'video' ? { videos: result.url } : { images: result.url }),
+          ...(isVid ? { videos: result.url } : { images: result.url }),
         },
       };
 
@@ -607,24 +608,23 @@ const uploadProductMedia = async (req, res, next) => {
     res.json({
       success: true,
       url: result.url,
-      path: result.path,
+      path: result.storagePath,
       filename: result.filename,
-      bucket: result.bucket,
-      mediaType: result.mediaType,
-      mimeType: result.mimeType,
+      fileId: result.fileId,
+      mediaType: req.file.mimetype?.startsWith('video/') ? 'video' : 'image',
+      mimeType: result.mimetype,
       size: result.size,
     });
   } catch (error) {
     console.error('[Product Media Upload Error]:', error.message);
-    const isConfigError = error.message.includes('configured');
-    res.status(isConfigError ? 503 : 400).json({
+    res.status(400).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-// @desc Delete an image or video from product & Supabase Storage
+// @desc Delete an image or video from product & MongoDB GridFS
 // @route DELETE /api/products/delete-image OR DELETE /api/products/delete-media
 const deleteProductMedia = async (req, res, next) => {
   try {
@@ -633,7 +633,7 @@ const deleteProductMedia = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Media URL is required' });
     }
 
-    await supabaseStorage.deleteFromSupabase(url);
+    await gridfsService.deleteFromGridFS(url);
 
     if (productId && String(productId).match(/^[0-9a-fA-F]{24}$/)) {
       await Product.findByIdAndUpdate(productId, {
@@ -645,7 +645,7 @@ const deleteProductMedia = async (req, res, next) => {
       });
     }
 
-    res.json({ success: true, message: 'Media deleted successfully from Supabase Storage' });
+    res.json({ success: true, message: 'Media deleted successfully from MongoDB GridFS' });
   } catch (error) {
     next(error);
   }

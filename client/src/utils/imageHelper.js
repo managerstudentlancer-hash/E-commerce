@@ -71,8 +71,13 @@ export function resolveImageUrl(url, category = '', categorySlug = '') {
     return trimmed;
   }
 
-  // If local relative upload path
-  if (trimmed.startsWith('/uploads') || trimmed.startsWith('uploads/')) {
+  // If local relative upload path or GridFS media path
+  if (
+    trimmed.startsWith('/uploads') ||
+    trimmed.startsWith('uploads/') ||
+    trimmed.startsWith('/api/media') ||
+    trimmed.startsWith('api/media')
+  ) {
     const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
     return cleanPath;
   }

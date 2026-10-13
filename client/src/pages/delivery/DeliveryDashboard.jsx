@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import DeliveryEarningsTab from '../../components/delivery/DeliveryEarningsTab';
 
 const DeliveryDashboard = () => {
   const { user, logout } = useAuth();
@@ -261,12 +262,15 @@ const DeliveryDashboard = () => {
     try {
       setActionLoading(true);
       setModalError('');
-      const codeToSend = verificationMode === 'barcode' ? inputBarcode : inputOtp;
-      const res = await api.delivery.confirmPickup(activeModalOrder._id, codeToSend);
+      const payload = verificationMode === 'barcode'
+        ? { scanCode: inputBarcode.trim() }
+        : { pickupOtp: inputOtp.trim() };
+      const res = await api.delivery.confirmPickup(activeModalOrder._id, payload);
       if (res.success) {
         showToast('Package picked up successfully! Ready to deliver.');
         closeModal();
         fetchOrders('active');
+        fetchProfileAndStats();
       }
     } catch (err) {
       setModalError(err.message || 'Pickup verification failed');
@@ -281,6 +285,7 @@ const DeliveryDashboard = () => {
       if (res.success) {
         showToast('Order marked as OUT FOR DELIVERY! Customer notified.');
         fetchOrders('active');
+        fetchProfileAndStats();
       }
     } catch (err) {
       showToast(err.message || 'Failed to update status');
@@ -293,6 +298,7 @@ const DeliveryDashboard = () => {
       if (res.success) {
         showToast('Reached customer delivery location');
         fetchOrders('active');
+        fetchProfileAndStats();
       }
     } catch (err) {
       showToast(err.message || 'Failed to update status');
@@ -305,8 +311,10 @@ const DeliveryDashboard = () => {
     try {
       setActionLoading(true);
       setModalError('');
-      const codeToSend = verificationMode === 'barcode' ? inputBarcode : inputOtp;
-      const res = await api.delivery.completeDelivery(activeModalOrder._id, codeToSend);
+      const payload = verificationMode === 'barcode'
+        ? { scanCode: inputBarcode.trim() }
+        : { deliveryOtp: inputOtp.trim() };
+      const res = await api.delivery.completeDelivery(activeModalOrder._id, payload);
       if (res.success) {
         showToast('🎉 Delivery verified & completed! ₹50 payout added.');
         closeModal();
@@ -348,12 +356,45 @@ const DeliveryDashboard = () => {
       setModalError('');
       const res = await api.delivery.reschedule(activeModalOrder._id, rescheduleDate, failureReason);
       if (res.success) {
-        showToast('Shipment rescheduled for tomorrow');
+        showToast('Shipment rescheduled successfully.');
         closeModal();
-        fetchOrders('active');
+        fetchOrders(activeTab);
+        fetchProfileAndStats();
       }
     } catch (err) {
       setModalError(err.message || 'Failed to reschedule');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAttemptRedelivery = async (orderId) => {
+    try {
+      setActionLoading(true);
+      const res = await api.delivery.outForDelivery(orderId);
+      if (res.success) {
+        showToast('Order set to Out for Delivery! Redelivery attempt started.');
+        fetchOrders(activeTab);
+        fetchProfileAndStats();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to restart delivery run');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReturnToSeller = async (orderId, reason = 'Customer unreachable / repeated failure') => {
+    try {
+      setActionLoading(true);
+      const res = await api.delivery.returnToSeller(orderId, reason);
+      if (res.success) {
+        showToast('Package marked for Return to Origin (RTO)');
+        fetchOrders(activeTab);
+        fetchProfileAndStats();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to initiate return to seller');
     } finally {
       setActionLoading(false);
     }
@@ -425,7 +466,8 @@ const DeliveryDashboard = () => {
     setInputBarcode('');
     setModalError('');
     setFailureReason('Customer unreachable / phone busy');
-    setRescheduleDate('');
+    const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    setRescheduleDate(tomorrowStr);
   };
 
   const closeModal = () => {
@@ -549,28 +591,28 @@ const DeliveryDashboard = () => {
       )}
 
       {/* Top Rider Header */}
-      <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-white/10 px-4 sm:px-6 py-3.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-              <Truck className="w-5 h-5" />
+      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur-md border-b border-white/10 px-3 sm:px-6 py-2.5 sm:py-3.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold flex-shrink-0">
+              <Truck className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-black font-mono tracking-tight text-white">
+            <div className="min-w-0">
+              <div className="flex items-center space-x-1.5 sm:space-x-2">
+                <span className="text-xs sm:text-sm font-black font-mono tracking-tight text-white truncate">
                   VEXIVO FLEET
                 </span>
-                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <span className="text-[8px] sm:text-[9px] font-black uppercase px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
                   Rider Hub
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">
-                <span className="font-semibold text-white">{partnerName}</span> • {partnerCity} ({partnerVehicle})
+              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate max-w-[140px] xs:max-w-[180px] sm:max-w-none">
+                <span className="font-semibold text-white">{partnerName}</span> • {partnerCity}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
             {/* Quick Refresh */}
             <button
               onClick={() => {
@@ -579,44 +621,44 @@ const DeliveryDashboard = () => {
               }}
               disabled={isRefreshing}
               title="Refresh Deliveries"
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors border border-white/10 disabled:opacity-50"
+              className="p-1.5 sm:p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors border border-white/10 disabled:opacity-50"
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
             </button>
 
             {/* Emergency SOS Button */}
             <button
               onClick={() => setShowSosModal(true)}
               title="Emergency SOS / Incident Report"
-              className="px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center space-x-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/40 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
+              className="px-2 sm:px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider flex items-center space-x-1 sm:space-x-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/40 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95"
             >
-              <AlertTriangle className="w-3.5 h-3.5 animate-pulse text-rose-400" />
+              <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-pulse text-rose-400" />
               <span className="hidden sm:inline">EMERGENCY SOS</span>
-              <span className="sm:hidden">SOS</span>
-            </button>
-
-            {/* Profile / Vehicle Settings Button */}
-            <button
-              onClick={() => setShowProfileModal(true)}
-              title="Vehicle & Profile Settings"
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors border border-white/10"
-            >
-              <Settings className="w-4 h-4" />
+              <span className="sm:hidden font-mono font-bold">SOS</span>
             </button>
 
             {/* Online/Offline Duty Toggle */}
             <button
               onClick={handleToggleOnline}
               disabled={isTogglingDuty}
-              className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wider flex items-center space-x-1.5 transition-all shadow-md active:scale-95 ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider flex items-center space-x-1 sm:space-x-1.5 transition-all shadow-md active:scale-95 ${
                 metrics.isOnline
-                  ? 'bg-emerald-500 text-slate-950 shadow-emerald-500/20'
+                  ? 'bg-emerald-500 text-slate-950 shadow-emerald-500/20 font-bold'
                   : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
               }`}
             >
-              <Power className={`w-3.5 h-3.5 ${metrics.isOnline ? 'animate-pulse' : ''}`} />
+              <Power className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${metrics.isOnline ? 'animate-pulse' : ''}`} />
               <span className="hidden sm:inline">{metrics.isOnline ? 'DUTY ONLINE' : 'OFFLINE'}</span>
-              <span className="sm:hidden">{metrics.isOnline ? 'ON' : 'OFF'}</span>
+              <span className="sm:hidden font-mono font-bold">{metrics.isOnline ? 'ON' : 'OFF'}</span>
+            </button>
+
+            {/* Profile / Vehicle Settings Button */}
+            <button
+              onClick={() => setShowProfileModal(true)}
+              title="Vehicle & Profile Settings"
+              className="p-1.5 sm:p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors border border-white/10"
+            >
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             {/* Logout */}
@@ -626,20 +668,20 @@ const DeliveryDashboard = () => {
                 navigate('/delivery/login');
               }}
               title="Logout"
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+              className="p-1.5 sm:p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 pb-24 sm:pb-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-3.5 sm:py-6 space-y-3.5 sm:space-y-6 pb-28 sm:pb-8">
         {/* Partner Identity Card / Welcome Banner */}
         <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shadow-xl">
-          <div className="flex items-center space-x-3 sm:space-x-3.5">
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-slate-950 font-black text-base sm:text-lg flex items-center justify-center shadow-lg shadow-emerald-500/20 flex-shrink-0">
+          <div className="flex items-center space-x-3 sm:space-x-3.5 min-w-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-slate-950 font-black text-sm sm:text-lg flex items-center justify-center shadow-lg shadow-emerald-500/20 flex-shrink-0">
               {partnerInitials}
             </div>
             <div className="space-y-0.5 min-w-0 flex-1">
@@ -647,16 +689,16 @@ const DeliveryDashboard = () => {
                 <h2 className="text-sm sm:text-lg font-black text-white truncate">
                   {partnerName}
                 </h2>
-                <span className="text-[9px] sm:text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
-                  ID: #{partnerIdShort}
+                <span className="text-[8px] sm:text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold whitespace-nowrap">
+                  #{partnerIdShort}
                 </span>
-                <span className={`text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                <span className={`text-[8px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap ${
                   metrics.isOnline ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                 }`}>
                   {metrics.isOnline ? 'Active on Duty' : 'Off-Duty'}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <p className="text-[10px] sm:text-[11px] text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <span>📍 <span className="text-slate-200 font-semibold">{partnerCity}</span></span>
                 <span>•</span>
                 <span>🛵 <span className="text-slate-200 font-semibold">{partnerVehicle}</span></span>
@@ -685,45 +727,47 @@ const DeliveryDashboard = () => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
           <div className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-white/10 space-y-0.5 sm:space-y-1">
             <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
-              <Clock className="w-3 h-3 text-amber-400" />
-              <span>New Assignments</span>
+              <Clock className="w-3 h-3 text-amber-400 flex-shrink-0" />
+              <span className="truncate">New Assignments</span>
             </span>
             <p className="text-xl sm:text-2xl font-black text-amber-400 font-mono">{metrics.newAssignmentsCount || 0}</p>
-            <p className="text-[9px] sm:text-[10px] text-slate-400">Awaiting acceptance</p>
+            <p className="text-[9px] sm:text-[10px] text-slate-400 truncate">Awaiting acceptance</p>
           </div>
 
           <div className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-white/10 space-y-0.5 sm:space-y-1">
             <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
-              <Truck className="w-3 h-3 text-cyan-400" />
-              <span>In Transit</span>
+              <Truck className="w-3 h-3 text-cyan-400 flex-shrink-0" />
+              <span className="truncate">In Transit</span>
             </span>
             <p className="text-xl sm:text-2xl font-black text-cyan-400 font-mono">{metrics.inTransitCount || (metrics.activeDeliveries - (metrics.newAssignmentsCount || 0)) || 0}</p>
-            <p className="text-[9px] sm:text-[10px] text-slate-400">Pickup & Run</p>
+            <p className="text-[9px] sm:text-[10px] text-slate-400 truncate">Pickup & Run</p>
           </div>
 
           <div className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-white/10 space-y-0.5 sm:space-y-1">
             <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
-              <Wallet className="w-3 h-3 text-emerald-400" />
-              <span>Earnings Today</span>
+              <Wallet className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+              <span className="truncate">Earnings Today</span>
             </span>
             <p className="text-xl sm:text-2xl font-black text-emerald-400 font-mono">₹{metrics.todayEarnings || 0}</p>
-            <p className="text-[9px] sm:text-[10px] text-slate-400">COD: ₹{metrics.codInHand || 0}</p>
+            <p className="text-[9px] sm:text-[10px] text-slate-400 truncate">COD: ₹{metrics.codInHand || 0}</p>
           </div>
 
           <div className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-white/10 space-y-0.5 sm:space-y-1">
             <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
-              <Star className="w-3 h-3 text-amber-400" />
-              <span>Rider Rating</span>
+              <Star className="w-3 h-3 text-amber-400 flex-shrink-0" />
+              <span className="truncate">Rider Rating</span>
             </span>
             <p className="text-xl sm:text-2xl font-black text-amber-400 font-mono">
               ★ {metrics.rating ? Number(metrics.rating).toFixed(2) : '4.95'}
             </p>
-            <p className="text-[9px] sm:text-[10px] text-emerald-400">{metrics.onTimeRate || 98.4}% On-Time ✓</p>
+            <p className="text-[9px] sm:text-[10px] text-emerald-400 truncate">
+              {typeof metrics.onTimeRate === 'string' && metrics.onTimeRate.includes('%') ? metrics.onTimeRate : `${metrics.onTimeRate || 98.4}%`} On-Time ✓
+            </p>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center space-x-1.5 sm:space-x-2 border-b border-white/10 pb-2 overflow-x-auto no-scrollbar">
+        {/* Navigation Tabs (Smooth Touch Horizontal Scroll) */}
+        <div className="flex items-center space-x-1.5 sm:space-x-2 border-b border-white/10 pb-2.5 overflow-x-auto no-scrollbar touch-scroll -mx-3 px-3 sm:mx-0 sm:px-0">
           {[
             {
               id: 'assigned',
@@ -741,12 +785,13 @@ const DeliveryDashboard = () => {
             { id: 'earnings', label: 'Earnings & Cash (COD)' },
             { id: 'performance', label: 'Performance & SLA' },
             { id: 'completed', label: 'Delivery History', count: metrics.totalDeliveries },
+            { id: 'failed', label: 'Undelivered & Rescheduled', count: metrics.failedDeliveries },
             { id: 'returns', label: 'Customer Returns' },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center space-x-1.5 ${
+              className={`px-3 sm:px-4 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap flex items-center space-x-1.5 flex-shrink-0 ${
                 activeTab === tab.id
                   ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20'
                   : tab.highlight
@@ -773,91 +818,9 @@ const DeliveryDashboard = () => {
           ))}
         </div>
 
-        {/* TAB 1: EARNINGS & COD RECONCILIATION */}
+        {/* TAB 1: FLIPKART-STYLE EARNINGS & PAYOUTS CENTER */}
         {activeTab === 'earnings' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-5 rounded-3xl bg-slate-900/80 border border-cyan-500/30 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 flex items-center space-x-1.5">
-                  <DollarSign className="w-3.5 h-3.5" />
-                  <span>Today's Earnings</span>
-                </span>
-                <p className="text-3xl font-black font-mono text-cyan-400">₹{metrics.todayEarnings || 0}</p>
-                <p className="text-[11px] text-slate-400">From {metrics.todayDeliveries || 0} completed dropoffs</p>
-              </div>
-
-              <div className="p-5 rounded-3xl bg-slate-900/80 border border-emerald-500/30 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center space-x-1.5">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  <span>This Week</span>
-                </span>
-                <p className="text-3xl font-black font-mono text-emerald-400">₹{metrics.weekEarnings || 0}</p>
-                <p className="text-[11px] text-slate-400">Weekly cycle deposits on Monday</p>
-              </div>
-
-              <div className="p-5 rounded-3xl bg-slate-900/80 border border-purple-500/30 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400 flex items-center space-x-1.5">
-                  <Award className="w-3.5 h-3.5" />
-                  <span>This Month</span>
-                </span>
-                <p className="text-3xl font-black font-mono text-purple-400">₹{metrics.monthEarnings || metrics.earnings || 0}</p>
-                <p className="text-[11px] text-slate-400">Includes performance incentives</p>
-              </div>
-
-              <div className="p-5 rounded-3xl bg-slate-900/80 border border-amber-500/30 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center space-x-1.5">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span>COD Cash in Hand</span>
-                </span>
-                <p className="text-3xl font-black font-mono text-amber-400">₹{metrics.codInHand || 0}</p>
-                <p className="text-[11px] text-amber-300">To be settled at Hub by 9 PM</p>
-              </div>
-            </div>
-
-            {/* Payout & Structure Breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="p-6 rounded-3xl bg-slate-900/70 border border-white/10 space-y-4">
-                <h3 className="text-sm font-black uppercase tracking-wider text-white flex items-center space-x-2">
-                  <Wallet className="w-4 h-4 text-emerald-400" />
-                  <span>Payout Rate Structure (INR)</span>
-                </h3>
-                <div className="space-y-3 text-xs">
-                  <div className="flex justify-between items-center py-2 border-b border-white/5">
-                    <span className="text-slate-300">Standard Delivery Base Fee</span>
-                    <span className="font-mono font-bold text-emerald-400 text-sm">₹50.00 / order</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-white/5">
-                    <span className="text-slate-300">Customer Return Reverse Pickup</span>
-                    <span className="font-mono font-bold text-purple-400 text-sm">₹40.00 / return</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-white/5">
-                    <span className="text-slate-300">Peak Festival / Rainy Weather Surge</span>
-                    <span className="font-mono font-bold text-amber-400 text-sm">+₹15.00 / trip</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-white/5">
-                    <span className="text-slate-300">Weekly On-Time SLA Incentive (95%+)</span>
-                    <span className="font-mono font-bold text-cyan-400 text-sm">₹500.00 bonus</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 rounded-3xl bg-slate-900/70 border border-amber-500/20 space-y-4">
-                <h3 className="text-sm font-black uppercase tracking-wider text-amber-400 flex items-center space-x-2">
-                  <ShieldCheck className="w-4 h-4 text-amber-400" />
-                  <span>Cash on Delivery (COD) Compliance</span>
-                </h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  All Cash on Delivery (COD) payments collected from customers during your delivery run are strictly tracked in real-time under your rider ID.
-                </p>
-                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 space-y-1">
-                  <p className="font-bold">⚠️ Daily Settlement Rule:</p>
-                  <p className="text-[11px] text-amber-200/80">
-                    Hand over collected cash at the Sitapura Hub Cashier Desk before closing your shift. The Logistics Admin will mark your balance as settled upon deposit.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <DeliveryEarningsTab onRefreshProfile={fetchProfileAndStats} />
         )}
 
         {/* TAB 2: PERFORMANCE & SLA ANALYTICS */}
@@ -869,7 +832,9 @@ const DeliveryDashboard = () => {
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                   <span>On-Time Delivery Rate</span>
                 </span>
-                <p className="text-3xl font-black font-mono text-emerald-400">{metrics.onTimeRate || 98.4}%</p>
+                <p className="text-3xl font-black font-mono text-emerald-400">
+                  {typeof metrics.onTimeRate === 'string' && metrics.onTimeRate.includes('%') ? metrics.onTimeRate : `${metrics.onTimeRate || 98.4}%`}
+                </p>
                 <p className="text-[11px] text-emerald-400">Target: ≥ 95.0%</p>
               </div>
 
@@ -967,6 +932,8 @@ const DeliveryDashboard = () => {
                     ? 'You currently have no active deliveries in progress. Check the "New Assignments" or "Available Orders" tab.'
                     : activeTab === 'available'
                     ? 'All current orders are assigned. Please keep your duty online to receive incoming requests.'
+                    : activeTab === 'failed'
+                    ? 'No failed or rescheduled deliveries. Excellent delivery performance!'
                     : 'No delivery history recorded in this category.'}
                 </p>
                 {activeTab === 'assigned' && (
@@ -1249,6 +1216,29 @@ const DeliveryDashboard = () => {
                           </button>
                         )}
 
+                        {/* Undelivered & Rescheduled Deliveries Action Controls */}
+                        {activeTab === 'failed' && (
+                          <div className="w-full flex flex-wrap items-center gap-2">
+                            <button
+                              onClick={() => handleAttemptRedelivery(ord._id)}
+                              disabled={actionLoading}
+                              className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center space-x-1 shadow-md shadow-blue-600/30 disabled:opacity-50"
+                            >
+                              <Truck className="w-3.5 h-3.5" />
+                              <span>Attempt Redelivery</span>
+                            </button>
+                            <button
+                              onClick={() => handleReturnToSeller(ord._id)}
+                              disabled={actionLoading}
+                              className="px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold transition-colors flex items-center justify-center space-x-1 disabled:opacity-50"
+                              title="Return package back to seller (RTO)"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              <span>Return to Merchant (RTO)</span>
+                            </button>
+                          </div>
+                        )}
+
                         {/* Completed Deliveries */}
                         {activeTab === 'completed' && (
                           <span className="text-[11px] font-bold text-emerald-400 flex items-center space-x-1">
@@ -1268,9 +1258,9 @@ const DeliveryDashboard = () => {
 
       {/* Action / OTP / Barcode Modal Window */}
       {activeModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-white">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md max-h-[92vh] overflow-y-auto bg-slate-900 border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl space-y-4 sm:space-y-5 text-white custom-scrollbar">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
                   <ShieldCheck className="w-4 h-4" />
@@ -1599,9 +1589,9 @@ const DeliveryDashboard = () => {
 
       {/* Decline Order Modal */}
       {declineModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-rose-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-white">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md max-h-[92vh] overflow-y-auto bg-slate-900 border border-rose-500/30 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl space-y-4 sm:space-y-5 text-white custom-scrollbar">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center font-bold">
                   <Ban className="w-4 h-4" />
@@ -1662,9 +1652,9 @@ const DeliveryDashboard = () => {
 
       {/* Emergency SOS Modal */}
       {showSosModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-rose-500/40 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-white">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md max-h-[92vh] overflow-y-auto bg-slate-900 border border-rose-500/40 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl space-y-4 sm:space-y-5 text-white custom-scrollbar">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold">
                   <AlertTriangle className="w-4 h-4 animate-bounce" />
@@ -1739,9 +1729,9 @@ const DeliveryDashboard = () => {
 
       {/* Profile & Vehicle Settings Modal */}
       {showProfileModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-white">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md max-h-[92vh] overflow-y-auto bg-slate-900 border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl space-y-4 sm:space-y-5 text-white custom-scrollbar">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
                   <Settings className="w-4 h-4" />
@@ -1835,12 +1825,12 @@ const DeliveryDashboard = () => {
         </div>
       )}
 
-      {/* Rider Mobile App Bottom Navigation Bar (Phone Only) */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-white/10 px-2 py-1 flex items-center justify-around shadow-2xl">
+      {/* Rider Mobile App Bottom Navigation Bar (Phone Only with iOS Safe Area) */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-white/10 px-1 py-1.5 pb-safe flex items-center justify-around shadow-2xl">
         <button
           type="button"
           onClick={() => setActiveTab('assigned')}
-          className={`flex flex-col items-center justify-center py-1 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all relative ${
+          className={`flex flex-col items-center justify-center py-1 px-1.5 flex-1 rounded-xl text-[10px] font-bold transition-all relative active:scale-90 ${
             activeTab === 'assigned'
               ? 'text-amber-400 font-black'
               : 'text-slate-400 hover:text-white'
@@ -1858,7 +1848,7 @@ const DeliveryDashboard = () => {
         <button
           type="button"
           onClick={() => setActiveTab('active')}
-          className={`flex flex-col items-center justify-center py-1 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all ${
+          className={`flex flex-col items-center justify-center py-1 px-1.5 flex-1 rounded-xl text-[10px] font-bold transition-all active:scale-90 ${
             activeTab === 'active'
               ? 'text-emerald-400 font-black'
               : 'text-slate-400 hover:text-white'
@@ -1871,7 +1861,7 @@ const DeliveryDashboard = () => {
         <button
           type="button"
           onClick={() => setActiveTab('available')}
-          className={`flex flex-col items-center justify-center py-1 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all ${
+          className={`flex flex-col items-center justify-center py-1 px-1.5 flex-1 rounded-xl text-[10px] font-bold transition-all active:scale-90 ${
             activeTab === 'available'
               ? 'text-cyan-400 font-black'
               : 'text-slate-400 hover:text-white'
@@ -1884,7 +1874,7 @@ const DeliveryDashboard = () => {
         <button
           type="button"
           onClick={() => setActiveTab('earnings')}
-          className={`flex flex-col items-center justify-center py-1 px-2 flex-1 rounded-xl text-[10px] font-bold transition-all ${
+          className={`flex flex-col items-center justify-center py-1 px-1.5 flex-1 rounded-xl text-[10px] font-bold transition-all active:scale-90 ${
             activeTab === 'earnings'
               ? 'text-emerald-400 font-black'
               : 'text-slate-400 hover:text-white'
@@ -1897,7 +1887,7 @@ const DeliveryDashboard = () => {
         <button
           type="button"
           onClick={() => setShowProfileModal(true)}
-          className="flex flex-col items-center justify-center py-1 px-2 flex-1 rounded-xl text-[10px] font-bold text-slate-400 hover:text-white active:scale-95 transition-all"
+          className="flex flex-col items-center justify-center py-1 px-1.5 flex-1 rounded-xl text-[10px] font-bold text-slate-400 hover:text-white active:scale-90 transition-all"
         >
           <Settings className="w-4 h-4 mb-0.5" />
           <span>Profile</span>

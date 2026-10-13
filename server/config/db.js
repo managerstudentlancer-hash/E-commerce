@@ -7,16 +7,22 @@ let mongodInstance = null;
 const connectDB = async () => {
   if (isConnected) return mongoose.connection;
 
+  const isProduction = process.env.NODE_ENV === 'production';
   const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/vexivo';
 
   try {
     const conn = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 2000,
+      serverSelectionTimeoutMS: isProduction ? 5000 : 2000,
     });
     isConnected = true;
-    console.log(`[VEXIVO DB] ✅ Local MongoDB Connected: ${conn.connection.host}`);
+    console.log(`[VEXIVO DB] ✅ MongoDB Connected: ${conn.connection.host}`);
     return conn;
   } catch (error) {
+    if (isProduction) {
+      console.error(`[VEXIVO DB] ❌ FATAL: Persistent MongoDB connection failed in production mode (${error.message}). In-memory fallback is disabled.`);
+      process.exit(1);
+    }
+
     console.log(`[VEXIVO DB] Standard MongoDB server unavailable (${error.message}).`);
     console.log(`[VEXIVO DB] Initializing embedded MongoDB engine...`);
 
@@ -33,7 +39,12 @@ const connectDB = async () => {
         },
       });
       const uri = mongodInstance.getUri();
-      const conn = await mongoose.connect(uri);
+      const conn = await mongoose.connect(uri, {
+        maxPoolSize: 100,
+        minPoolSize: 5,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+      });
       isConnected = true;
       console.log(`[VEXIVO DB] ✅ In-Memory MongoDB Initialized & Connected at: ${uri}`);
       return conn;

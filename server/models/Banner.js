@@ -11,6 +11,9 @@ const bannerSchema = new mongoose.Schema(
     mobileImage: { type: String, default: '', trim: true },
     buttonText: { type: String, default: 'Shop Now', trim: true },
     buttonLink: { type: String, default: '/shop', trim: true },
+    secondaryText: { type: String, default: '', trim: true },
+    secondaryLink: { type: String, default: '', trim: true },
+    description: { type: String, default: '', trim: true },
     position: {
       type: String,
       enum: ['hero', 'promotional', 'split', 'dual-left', 'dual-right', 'footer-banner'],

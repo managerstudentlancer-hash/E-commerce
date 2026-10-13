@@ -1067,8 +1067,9 @@ const AccountDashboard = () => {
                                       key={s}
                                       type="button"
                                       onClick={() => {
-                                        if (order.items?.[0]?.slug) {
-                                          navigate(`/product/${order.items[0].slug}`);
+                                        const target = order.items?.[0]?.product?.slug || order.items?.[0]?.slug || (typeof order.items?.[0]?.product === 'string' ? order.items[0].product : order.items?.[0]?.product?._id);
+                                        if (target) {
+                                          navigate(`/product/${target}?tab=reviews&rating=${s}`);
                                         }
                                       }}
                                       className="p-0.5 text-neutral-300 hover:text-amber-400 focus:outline-none"
@@ -1249,17 +1250,34 @@ const AccountDashboard = () => {
                                   <span className="text-sm font-extrabold text-neutral-900">
                                     ₹{(item.price * item.quantity).toFixed(2)}
                                   </span>
-                                  <button
-                                    onClick={() => {
-                                      addToCart(item, 1);
-                                      navigate('/cart');
-                                    }}
-                                    className="mt-1.5 inline-flex items-center space-x-1 px-2 py-0.5 rounded border border-neutral-200 hover:border-blue-600 text-[11px] font-bold text-neutral-700 hover:text-blue-600 transition-colors"
-                                    title="Buy this product again"
-                                  >
-                                    <RotateCcw className="w-3 h-3" />
-                                    <span>Buy Again</span>
-                                  </button>
+                                  <div className="flex items-center space-x-2 mt-1.5">
+                                    <button
+                                      onClick={() => {
+                                        addToCart(item, 1);
+                                        navigate('/cart');
+                                      }}
+                                      className="inline-flex items-center space-x-1 px-2 py-0.5 rounded border border-neutral-200 hover:border-blue-600 text-[11px] font-bold text-neutral-700 hover:text-blue-600 transition-colors"
+                                      title="Buy this product again"
+                                    >
+                                      <RotateCcw className="w-3 h-3" />
+                                      <span>Buy Again</span>
+                                    </button>
+                                    {order.status === 'delivered' && (
+                                      <button
+                                        onClick={() => {
+                                          const target = item.product?.slug || item.slug || (typeof item.product === 'string' ? item.product : item.product?._id);
+                                          if (target) {
+                                            navigate(`/product/${target}?tab=reviews`);
+                                          }
+                                        }}
+                                        className="inline-flex items-center space-x-1 px-2 py-0.5 rounded border border-amber-200 bg-amber-50 hover:bg-amber-100 hover:border-amber-400 text-[11px] font-bold text-amber-800 transition-colors"
+                                        title="Write a review for this delivered product"
+                                      >
+                                        <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                                        <span>Review</span>
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             ))}
