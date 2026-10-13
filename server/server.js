@@ -25,22 +25,31 @@ const { seedAll } = require('./seed/seedData');
 
 connectDB().then(async () => {
   try {
-    const count = await Product.countDocuments();
-    if (count < 60) {
-      console.log(`[VEXIVO] Database count is ${count} (< 60). Running catalog auto-seed...`);
-      await seedAll();
+    if (process.env.NODE_ENV !== 'production') {
+      const count = await Product.countDocuments();
+      if (count < 60) {
+        console.log(`[VEXIVO] Database count is ${count} (< 60). Running catalog auto-seed...`);
+        await seedAll();
+      }
+      const { importDummyProducts } = require('./services/dummyProductService');
+      const dummyRes = await importDummyProducts();
+      console.log(`[VEXIVO] DummyJSON sync completed: ${dummyRes.imported} imported, ${dummyRes.updated} updated`);
+      const { seedSarees } = require('./seed/sareeSeed');
+      await seedSarees();
+      const initDeliveryPartner = require('./config/initDeliveryPartner');
+      await initDeliveryPartner();
+      const { seedAiKnowledge } = require('./seed/aiKnowledgeSeed');
+      await seedAiKnowledge();
+    } else {
+      console.log('[VEXIVO] Production mode active. Catalog auto-seed and demo account creation disabled.');
     }
-    const { importDummyProducts } = require('./services/dummyProductService');
-    const dummyRes = await importDummyProducts();
-    console.log(`[VEXIVO] DummyJSON sync completed: ${dummyRes.imported} imported, ${dummyRes.updated} updated`);
-    const { seedSarees } = require('./seed/sareeSeed');
-    await seedSarees();
-    const initDeliveryPartner = require('./config/initDeliveryPartner');
-    await initDeliveryPartner();
-    const { seedAiKnowledge } = require('./seed/aiKnowledgeSeed');
-    await seedAiKnowledge();
   } catch (err) {
-    console.warn('[VEXIVO] Auto-seed/dummy-import check notice:', err.message);
+    console.warn('[VEXIVO] Startup initialization notice:', err.message);
+  }
+}).catch((err) => {
+  console.error('[VEXIVO DB] Startup connection error:', err.message);
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
   }
 });
 
@@ -62,14 +71,40 @@ app.use(requestLogger);
 app.use(setSecurityHeaders);
 app.use(globalRateLimiter);
 
-// Secure CORS
-app.use(cors({
-  origin: process.env.CLIENT_URL || ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true,
-}));
+// Secure CORS (Supports localhost, custom domain, and Vercel preview/production domains)
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map((url) => url.trim().replace(/\/+$/, ''))
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1');
+      if (isAllowed) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+  })
+);
 
 // Payload Body Limiting (Mitigate Buffer Overflow & ReDoS)
-app.use(express.json({ limit: '2mb' }));
+// Capture rawBody for cryptographic webhook HMAC verification (RazorpayX)
+app.use(
+  express.json({
+    limit: '2mb',
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // Anti-Injection & Anti-XSS Sanitization Pipeline
@@ -95,6 +130,7 @@ app.use('/api/coupons', require('./routes/couponRoutes'));
 app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/banners', require('./routes/bannerRoutes'));
+app.use('/api/media', require('./routes/mediaRoutes'));
 app.use('/api/site-settings', require('./routes/settingsRoutes'));
 app.use('/api/newsletter', require('./routes/newsletterRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
@@ -104,14 +140,15 @@ app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/admin/ai', require('./routes/adminAiRoutes'));
 app.use('/api/delivery', require('./routes/deliveryRoutes'));
 app.use('/api/logistics', require('./routes/logisticsRoutes'));
+app.use('/api/webhooks', require('./routes/webhookRoutes'));
 
-// Administrative Reseed endpoints (Strictly Admin Protected — completely restricted from public / guest / customer / seller access)
+// Administrative Reseed endpoints (Strictly Admin Protected — completely restricted from public / guest / customer / seller access; completely disabled in production)
 app.all(['/api/seed', '/api/admin/seed'], protect, adminOnly, async (req, res) => {
   try {
-    if (process.env.NODE_ENV === 'production' && req.headers['x-confirm-reseed'] !== 'CONFIRM_SEED') {
+    if (process.env.NODE_ENV === 'production') {
       return res.status(403).json({
         success: false,
-        message: 'Destructive reseed in production requires explicit x-confirm-reseed: CONFIRM_SEED header.',
+        message: 'Database seeding endpoints are strictly disabled in production environments.',
       });
     }
     await seedAll();
@@ -126,10 +163,10 @@ app.all(['/api/seed', '/api/admin/seed'], protect, adminOnly, async (req, res) =
 
 app.all(['/api/seed-catalog', '/api/admin/seed-catalog'], protect, adminOnly, async (req, res) => {
   try {
-    if (process.env.NODE_ENV === 'production' && req.headers['x-confirm-reseed'] !== 'CONFIRM_SEED') {
+    if (process.env.NODE_ENV === 'production') {
       return res.status(403).json({
         success: false,
-        message: 'Destructive reseed in production requires explicit x-confirm-reseed: CONFIRM_SEED header.',
+        message: 'Database seeding endpoints are strictly disabled in production environments.',
       });
     }
     delete require.cache[require.resolve('./seed/seedData')];
@@ -142,7 +179,8 @@ app.all(['/api/seed-catalog', '/api/admin/seed-catalog'], protect, adminOnly, as
     const total = await Product.countDocuments();
     const bagCount = await Product.countDocuments({ categorySlug: 'bags' });
     const shoeCount = await Product.countDocuments({ categorySlug: 'shoes' });
-    res.json({ success: true, message: `Catalog seeded! Total: ${total}, Bags: ${bagCount}, Shoes: ${shoeCount}` });
+    const sareeCount = await Product.countDocuments({ subcategory: /^sarees?$/i });
+    res.json({ success: true, message: `Catalog seeded! Total: ${total}, Sarees: ${sareeCount}, Bags: ${bagCount}, Shoes: ${shoeCount}` });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

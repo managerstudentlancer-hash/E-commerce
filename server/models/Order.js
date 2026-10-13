@@ -137,6 +137,8 @@ const orderSchema = new mongoose.Schema(
       codReconciled: { type: Boolean, default: false },
       codSettledAt: { type: Date, default: null },
       codSettledBy: { type: String, default: '' },
+      estimatedDistanceKm: { type: Number, default: 0 },
+      weatherSurgeApplied: { type: Boolean, default: false },
     },
     returnDetails: {
       status: {

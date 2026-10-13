@@ -20843,33 +20843,33 @@ const bannersData = [
     "subtitle": "MODERN MINIMALIST LUXURY",
     "description": "Explore the definitive new-season edit featuring Savile Row tailoring and architectural silhouettes.",
     "image": "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1600&q=85",
-    "link": "/collection/new-arrivals",
+    "buttonLink": "/collection/new-arrivals",
     "buttonText": "Discover Collection",
-    "type": "hero",
+    "position": "hero",
     "active": true,
-    "order": 1
+    "sortOrder": 1
   },
   {
     "title": "Italian Nappa Footwear Capsule",
     "subtitle": "HANDCRAFTED IN TUSCANY",
     "description": "Minimalist low-top trainers and Chelsea boots constructed with Goodyear-welted precision.",
     "image": "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=1600&q=85",
-    "link": "/category/shoes",
+    "buttonLink": "/category/shoes",
     "buttonText": "Shop Footwear",
-    "type": "hero",
+    "position": "hero",
     "active": true,
-    "order": 2
+    "sortOrder": 2
   },
   {
     "title": "Curated Architectural Living",
     "subtitle": "SCULPTURAL HOME OBJECTS",
     "description": "Elevate your private sanctuary with travertine stone lighting, hand-knotted wool rugs, and minimalist furniture.",
     "image": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1600&q=85",
-    "link": "/category/home-living",
+    "buttonLink": "/category/home-living",
     "buttonText": "Explore Living",
-    "type": "hero",
+    "position": "hero",
     "active": true,
-    "order": 3
+    "sortOrder": 3
   }
 ];
 const couponsData = [
@@ -20912,14 +20912,18 @@ const couponsData = [
 ];
 
 const seedAll = async () => {
+  if (process.env.NODE_ENV === 'production') {
+    const errorMsg = 'CRITICAL: Database seeding is strictly disabled in production environments.';
+    console.error(`[VEXIVO Seed] ❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
   try {
-    console.log('[VEXIVO Seed] Purging existing database collections...');
+    console.log('[VEXIVO Seed] Purging catalog collections (preserving user accounts)...');
     await Promise.all([
-      User.deleteMany(),
       Category.deleteMany(),
       Product.deleteMany(),
       Collection.deleteMany(),
-      Banner.deleteMany(),
       Coupon.deleteMany(),
       Review.deleteMany(),
       Order.deleteMany(),
@@ -20927,18 +20931,26 @@ const seedAll = async () => {
 
     console.log('[VEXIVO Seed] Collections cleared. Seeding fresh VEXIVO catalog with 308 products...');
 
-    // 1. Seed Users
-    const adminUser = await User.create({
-      name: 'VEXIVO Administrator',
-      email: 'admin@vexivo.com',
-      passwordHash: 'AdminPass123!',
-      role: 'admin',
-      phone: '+919999999999',
-    });
+    // 1. Seed or Preserve Users (Never overwrite existing administrators or users)
+    let adminUser = await User.findOne({ role: 'admin' });
+    if (!adminUser) {
+      adminUser = await User.create({
+        name: 'VEXIVO Administrator',
+        email: 'admin@vexivo.com',
+        passwordHash: 'AdminPass123!',
+        role: 'admin',
+        phone: '+919999999999',
+      });
+      console.log('[VEXIVO Seed] Created non-production development admin user.');
+    } else {
+      console.log('[VEXIVO Seed] Existing administrator detected. Preserving existing admin user credentials.');
+    }
 
-    const customerUser = await User.create({
-      name: 'Arpit Customer',
-      email: 'arpit123@gmail.com',
+    let customerUser = await User.findOne({ email: 'arpit123@gmail.com' });
+    if (!customerUser) {
+      customerUser = await User.create({
+        name: 'Arpit Customer',
+        email: 'arpit123@gmail.com',
       passwordHash: 'Arpit123!',
       role: 'customer',
       phone: '+919876543210',
@@ -20969,9 +20981,12 @@ const seedAll = async () => {
         },
       ],
     });
-        const deliveryUser = await User.create({
-      name: 'Vikram Singh (Express Delivery)',
-      email: 'delivery@vexivo.com',
+    }
+        let deliveryUser = await User.findOne({ email: 'delivery@vexivo.com' });
+    if (!deliveryUser) {
+      deliveryUser = await User.create({
+        name: 'Vikram Singh (Express Delivery)',
+        email: 'delivery@vexivo.com',
       passwordHash: 'DeliveryPass123!',
       role: 'delivery_partner',
       phone: '+919876543219',
@@ -20990,6 +21005,7 @@ const seedAll = async () => {
         kycStatus: 'verified',
       },
     });
+    }
     console.log('[VEXIVO Seed] Seeded Admin, Customer & Delivery Partner accounts.');
 
     // 2. Seed Categories
@@ -21009,9 +21025,14 @@ const seedAll = async () => {
     await Collection.insertMany(collectionsData);
     console.log('[VEXIVO Seed] Seeded 4 collections.');
 
-    // 5. Seed Banners
-    await Banner.insertMany(bannersData);
-    console.log('[VEXIVO Seed] Seeded Hero & Promotional Banners.');
+    // 5. Seed Banners (Preserve custom admin banners)
+    const existingBannerCount = await Banner.countDocuments();
+    if (existingBannerCount === 0) {
+      await Banner.insertMany(bannersData);
+      console.log('[VEXIVO Seed] Seeded Hero & Promotional Banners.');
+    } else {
+      console.log(`[VEXIVO Seed] Existing ${existingBannerCount} banners detected. Preserving custom admin banners.`);
+    }
 
     // 6. Seed Coupons
     await Coupon.insertMany(couponsData);
@@ -21146,6 +21167,10 @@ const seedAll = async () => {
     ]);
     console.log('[VEXIVO Seed] Seeded Demo Orders for Delivery Fleet testing.');
 
+    // 8. Seed & Sync Handcrafted Sarees and Ethnic Catalog
+    const { seedSarees } = require('./sareeSeed');
+    await seedSarees();
+
     console.log('======================================================');
     console.log('🎉 VEXIVO DATABASE SEEDING COMPLETE!');
     console.log(`📦 Total Products Seeded: ${products.length}`);
@@ -21172,6 +21197,10 @@ if (require.main === module) {
   // Connect to DB and run seed
   const dotenv = require('dotenv');
   dotenv.config({ path: path.join(__dirname, '../.env') });
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[VEXIVO Seed] ❌ Seeding CLI is strictly prohibited in production mode.');
+    process.exit(1);
+  }
   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/vexivo';
   mongoose.connect(uri)
     .then(() => seedAll())

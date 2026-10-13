@@ -1,47 +1,33 @@
-const path = require('path');
 const dotenv = require('dotenv');
-
-// Load environment variables from server/.env
+const path = require('path');
 dotenv.config({ path: path.join(__dirname, '../.env') });
-dotenv.config({ path: path.join(__dirname, '../../.env') });
-
 const mongoose = require('mongoose');
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
-const { Readable } = require('stream');
+const gridfsService = require('../services/gridfsService');
+
+const Banner = require('../models/Banner');
+const Product = require('../models/Product');
+const Category = require('../models/Category');
+const User = require('../models/User');
 
 async function runMigration() {
   console.log('====================================================');
-  console.log('🚀 VEXIVO — Supabase to MongoDB GridFS Media Seeder');
+  console.log('🚀 VEXIVO — Supabase to MongoDB GridFS Media Migration');
   console.log('====================================================\n');
 
-  // 1. Connect to MongoDB
-  const mongoUri = process.env.MONGODB_URI;
-  if (!mongoUri) {
-    throw new Error('MONGODB_URI is missing from server/.env');
-  }
+  // 1. Connect DB
+  const connectDB = require('../config/db');
+  await connectDB();
+  console.log(`[DB] Connected to MongoDB: ${mongoose.connection.host}/${mongoose.connection.name}`);
 
-  console.log('[1/4] Connecting to MongoDB...');
-  await mongoose.connect(mongoUri);
-  console.log(`✅ [MongoDB Connected] Database: ${mongoose.connection.name} (${mongoose.connection.host})\n`);
-
-  // 2. Initialize GridFS Bucket
-  const gridfsBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
-    bucketName: 'media',
-  });
-
-  // 3. Connect to Supabase
-  console.log('[2/4] Connecting to Supabase Storage...');
+  // 2. Connect Supabase
   const supabaseUrl = process.env.SUPABASE_URL?.trim();
   const supabaseKey = (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)?.trim();
-
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error('SUPABASE_URL or SUPABASE_SECRET_KEY is missing from server/.env');
+    throw new Error('Supabase credentials missing from server/.env');
   }
-
-  const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: { persistSession: false },
-  });
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   const buckets = ['vexivo-images', 'product-media'];
   const allObjects = [];
@@ -50,7 +36,7 @@ async function runMigration() {
   async function listAll(bucket, prefix = '') {
     const { data: items, error } = await supabase.storage.from(bucket).list(prefix, { limit: 100 });
     if (error) {
-      console.warn(`[Warning] Could not list ${bucket}/${prefix}:`, error.message);
+      console.warn(`Warning listing ${bucket}/${prefix}:`, error.message);
       return;
     }
     for (const item of items || []) {
@@ -72,149 +58,158 @@ async function runMigration() {
     await listAll(b);
   }
 
-  console.log(`✅ [Supabase Connected] Discovered ${allObjects.length} objects in Supabase storage.\n`);
+  console.log(`[Discovery] Found ${allObjects.length} total objects in Supabase storage.\n`);
 
-  // 4. Migrate and Seed to MongoDB GridFS
-  console.log('[3/4] Downloading from Supabase and Seeding into MongoDB GridFS...');
-  let migrated = 0;
-  let alreadyMigrated = 0;
-  let skippedEmpty = 0;
-  let errors = 0;
+  const stats = {
+    total: allObjects.length,
+    migrated: 0,
+    alreadyMigrated: 0,
+    skippedEmpty: 0,
+    verifiedChecksums: 0,
+    dbReferencesUpdated: 0,
+    errors: [],
+  };
 
   const urlMapping = new Map(); // oldUrl -> newUrl
+
+  const gridfsBucket = gridfsService.getBucket();
 
   for (const obj of allObjects) {
     const publicUrl = `${supabaseUrl}/storage/v1/object/public/${obj.bucket}/${obj.name}`;
 
-    // Skip empty folder markers or 0-byte placeholders
+    // Skip empty folder placeholders or zero-byte files
     if (obj.name.endsWith('.emptyFolderPlaceholder') || obj.size === 0) {
-      skippedEmpty++;
+      stats.skippedEmpty++;
       continue;
     }
 
     try {
-      // Check if already in MongoDB GridFS
-      const existing = await mongoose.connection.db
-        .collection('media.files')
+      // Check if already migrated
+      const existing = await gridfsBucket
         .find({
-          $or: [
-            { 'metadata.supabasePath': obj.name },
-            { filename: obj.name },
-            { 'metadata.originalSupabaseUrl': publicUrl },
-          ],
+          'metadata.supabaseBucket': obj.bucket,
+          'metadata.supabasePath': obj.name,
         })
         .limit(1)
         .toArray();
 
-      if (existing.length > 0) {
-        alreadyMigrated++;
-        const fileId = existing[0]._id.toString();
-        const newUrl = `/api/media/${fileId}`;
+      let gridfsFile = existing && existing.length > 0 ? existing[0] : null;
+
+      if (gridfsFile) {
+        stats.alreadyMigrated++;
+        const newUrl = `/api/media/${gridfsFile._id}`;
         urlMapping.set(publicUrl, newUrl);
         urlMapping.set(obj.name, newUrl);
-        console.log(`ℹ️ [Already Seeded] ${obj.bucket}/${obj.name} -> ${newUrl}`);
         continue;
       }
 
-      // Download buffer from Supabase
+      // Download from Supabase
       const { data: blob, error: downloadError } = await supabase.storage.from(obj.bucket).download(obj.name);
       if (downloadError) {
-        throw new Error(`Download failed: ${downloadError.message}`);
+        throw new Error(`Failed to download ${obj.bucket}/${obj.name}: ${downloadError.message}`);
       }
 
       const buffer = Buffer.from(await blob.arrayBuffer());
-      const sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
+      const sourceChecksum = crypto.createHash('sha256').update(buffer).digest('hex');
 
       // Upload to GridFS
-      const fileId = new mongoose.mongo.ObjectId();
-      const metadata = {
-        supabaseBucket: obj.bucket,
-        supabasePath: obj.name,
-        originalSupabaseUrl: publicUrl,
-        mimetype: obj.mimetype,
-        size: buffer.length,
-        sha256,
-        uploadedAt: new Date(),
-      };
+      const folder = obj.name.includes('/') ? obj.name.split('/')[0] : 'migrated';
+      const entityId = obj.name.includes('/') ? obj.name.split('/')[1] : 'common';
 
-      await new Promise((resolve, reject) => {
-        const uploadStream = gridfsBucket.openUploadStreamWithId(fileId, obj.name, {
-          contentType: obj.mimetype,
-          metadata,
-        });
-        uploadStream.on('error', reject);
-        uploadStream.on('finish', resolve);
-        Readable.from(buffer).pipe(uploadStream);
+      const uploadResult = await gridfsService.uploadToGridFS({
+        buffer,
+        originalname: path.basename(obj.name),
+        mimetype: obj.mimetype || 'image/jpeg',
+        folder,
+        entityId,
       });
 
-      const newUrl = `/api/media/${fileId.toString()}`;
-      urlMapping.set(publicUrl, newUrl);
-      urlMapping.set(obj.name, newUrl);
-      migrated++;
+      // Attach Supabase tracking metadata to GridFS file
+      await mongoose.connection.db.collection('media.files').updateOne(
+        { _id: new mongoose.mongo.ObjectId(uploadResult.fileId) },
+        {
+          $set: {
+            'metadata.supabaseBucket': obj.bucket,
+            'metadata.supabasePath': obj.name,
+            'metadata.originalSupabaseUrl': publicUrl,
+          },
+        }
+      );
 
-      console.log(`✅ [Seeded into MongoDB] ${obj.bucket}/${obj.name} (${buffer.length} bytes) -> ${newUrl}`);
+      // Verify read back & checksum
+      const readBackChunks = [];
+      const downloadStream = gridfsService.openDownloadStream(uploadResult.fileId);
+      await new Promise((resolve, reject) => {
+        downloadStream.on('data', (chunk) => readBackChunks.push(chunk));
+        downloadStream.on('end', resolve);
+        downloadStream.on('error', reject);
+      });
+      const readBackBuf = Buffer.concat(readBackChunks);
+      const readBackChecksum = crypto.createHash('sha256').update(readBackBuf).digest('hex');
+
+      if (readBackChecksum !== sourceChecksum) {
+        throw new Error(`Checksum mismatch for ${obj.name}: expected ${sourceChecksum}, got ${readBackChecksum}`);
+      }
+
+      stats.verifiedChecksums++;
+      stats.migrated++;
+
+      urlMapping.set(publicUrl, uploadResult.url);
+      urlMapping.set(obj.name, uploadResult.url);
+      console.log(`✅ [Migrated & Verified] ${obj.bucket}/${obj.name} -> ${uploadResult.url}`);
     } catch (err) {
-      errors++;
-      console.error(`❌ [Error Seeding] ${obj.bucket}/${obj.name}:`, err.message);
+      stats.errors.push({ file: `${obj.bucket}/${obj.name}`, error: err.message });
+      console.error(`❌ [Failed] ${obj.bucket}/${obj.name}:`, err.message);
     }
   }
 
-  // 5. Update MongoDB Catalog Collections (Banners, Products, Categories, Users)
-  console.log('\n[4/4] Updating Database References in Collections...');
-  let updatedRefs = 0;
-
-  const Banner = mongoose.models.Banner || mongoose.model('Banner', new mongoose.Schema({}, { strict: false }));
-  const Product = mongoose.models.Product || mongoose.model('Product', new mongoose.Schema({}, { strict: false }));
-  const Category = mongoose.models.Category || mongoose.model('Category', new mongoose.Schema({}, { strict: false }));
-  const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema({}, { strict: false }));
+  // Update Database References
+  console.log('\n--- Updating Database References to GridFS ---');
 
   for (const [oldUrl, newUrl] of urlMapping.entries()) {
-    // Banners
+    // 1. Banners
     const b1 = await Banner.updateMany({ image: oldUrl }, { $set: { image: newUrl } });
     const b2 = await Banner.updateMany({ mobileImage: oldUrl }, { $set: { mobileImage: newUrl } });
-    updatedRefs += (b1.modifiedCount || 0) + (b2.modifiedCount || 0);
+    stats.dbReferencesUpdated += b1.modifiedCount + b2.modifiedCount;
 
-    // Categories
+    // 2. Categories
     const c = await Category.updateMany({ image: oldUrl }, { $set: { image: newUrl } });
-    updatedRefs += c.modifiedCount || 0;
+    stats.dbReferencesUpdated += c.modifiedCount;
 
-    // Products
+    // 3. Products
     const p1 = await Product.updateMany({ thumbnail: oldUrl }, { $set: { thumbnail: newUrl } });
     const p2 = await Product.updateMany({ hoverImage: oldUrl }, { $set: { hoverImage: newUrl } });
     const p3 = await Product.updateMany({ images: oldUrl }, { $set: { 'images.$': newUrl } });
     const p4 = await Product.updateMany({ videos: oldUrl }, { $set: { 'videos.$': newUrl } });
     const p5 = await Product.updateMany({ 'media.url': oldUrl }, { $set: { 'media.$.url': newUrl } });
-    updatedRefs +=
-      (p1.modifiedCount || 0) +
-      (p2.modifiedCount || 0) +
-      (p3.modifiedCount || 0) +
-      (p4.modifiedCount || 0) +
-      (p5.modifiedCount || 0);
+    stats.dbReferencesUpdated += p1.modifiedCount + p2.modifiedCount + p3.modifiedCount + p4.modifiedCount + p5.modifiedCount;
 
-    // Users
+    // 4. Users (profilePhoto)
     const u = await User.updateMany({ profilePhoto: oldUrl }, { $set: { profilePhoto: newUrl } });
-    updatedRefs += u.modifiedCount || 0;
+    stats.dbReferencesUpdated += u.modifiedCount;
   }
 
   console.log('\n====================================================');
-  console.log('🎉 SEEDING & MIGRATION SUMMARY:');
-  console.log(`- Total Objects in Supabase: ${allObjects.length}`);
-  console.log(`- Newly Seeded into MongoDB: ${migrated}`);
-  console.log(`- Already in MongoDB (Skipped duplicate): ${alreadyMigrated}`);
-  console.log(`- Empty Placeholders Skipped: ${skippedEmpty}`);
-  console.log(`- Failed: ${errors}`);
-  console.log(`- Catalog Records Updated: ${updatedRefs}`);
+  console.log('📊 Migration Summary:');
+  console.log(`- Total Supabase Objects: ${stats.total}`);
+  console.log(`- Newly Migrated: ${stats.migrated}`);
+  console.log(`- Already Migrated: ${stats.alreadyMigrated}`);
+  console.log(`- Skipped Empty Placeholders: ${stats.skippedEmpty}`);
+  console.log(`- Checksums Cryptographically Verified: ${stats.verifiedChecksums}`);
+  console.log(`- Database References Updated: ${stats.dbReferencesUpdated}`);
+  console.log(`- Errors Encountered: ${stats.errors.length}`);
   console.log('====================================================\n');
 
-  await mongoose.disconnect();
+  if (stats.errors.length > 0) {
+    console.error('Migration errors detail:', stats.errors);
+    process.exit(1);
+  }
 }
 
-runMigration()
-  .then(() => {
-    console.log('✅ All done! All Supabase media is now seeded into MongoDB.');
-    process.exit(0);
-  })
-  .catch((err) => {
-    console.error('❌ Fatal Migration Error:', err.message);
-    process.exit(1);
-  });
+runMigration().then(() => {
+  console.log('🎉 Migration completed successfully!');
+  process.exit(0);
+}).catch((err) => {
+  console.error('Fatal migration error:', err);
+  process.exit(1);
+});

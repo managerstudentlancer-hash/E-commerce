@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Heart,
   ShoppingBag,
@@ -37,6 +37,7 @@ import { getCategoryFallback, resolveImageUrl } from '../utils/imageHelper';
 const ProductDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -98,7 +99,27 @@ const ProductDetail = () => {
   const [reviewName, setReviewName] = useState('');
   const [reviewsList, setReviewsList] = useState([]);
   const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [reviewError, setReviewError] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  // Switch to review tab if URL has ?tab=reviews or ?rating=...
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const ratingParam = searchParams.get('rating');
+    if (tabParam === 'reviews') {
+      setActiveTab('reviews');
+      setTimeout(() => {
+        const reviewEl = document.getElementById('product-reviews-section');
+        if (reviewEl) reviewEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 350);
+    }
+    if (ratingParam) {
+      const parsedRating = parseInt(ratingParam, 10);
+      if (parsedRating >= 1 && parsedRating <= 5) {
+        setReviewRating(parsedRating);
+      }
+    }
+  }, [searchParams]);
 
   // Contexts
   const { addToCart } = useCart();
@@ -235,6 +256,7 @@ const ProductDetail = () => {
     if (!reviewTitle.trim() || !reviewComment.trim()) return;
 
     setIsSubmittingReview(true);
+    setReviewError('');
     try {
       const res = await api.reviews.create(product._id, {
         rating: reviewRating,
@@ -274,6 +296,8 @@ const ProductDetail = () => {
       }
     } catch (err) {
       console.error('Failed to post review:', err);
+      const errMsg = err?.message || err?.data?.message || 'Failed to submit review. Please try again.';
+      setReviewError(errMsg);
     } finally {
       setIsSubmittingReview(false);
     }
@@ -824,7 +848,7 @@ const ProductDetail = () => {
         </div>
 
         {/* Detailed Tabs: Description, Specs, Shipping, Reviews */}
-        <div className="mt-12 sm:mt-16 lg:mt-24 pt-6 sm:pt-8 border-t border-neutral-100">
+        <div id="product-reviews-section" className="mt-12 sm:mt-16 lg:mt-24 pt-6 sm:pt-8 border-t border-neutral-100">
           {/* Tabs Navigation */}
           <div className="flex items-center justify-start sm:justify-center space-x-2 sm:space-x-8 border-b border-neutral-200 pb-2 overflow-x-auto no-scrollbar scroll-smooth px-1">
             {[
@@ -908,6 +932,11 @@ const ProductDetail = () => {
                     </div>
                   ) : (
                     <form onSubmit={handleReviewSubmit} className="space-y-3.5 sm:space-y-4">
+                      {reviewError && (
+                        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                          {reviewError}
+                        </div>
+                      )}
                       <div>
                         <label className="block text-[11px] sm:text-xs font-bold uppercase text-neutral-700 mb-1">
                           Rating

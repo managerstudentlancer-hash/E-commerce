@@ -1,6 +1,6 @@
 const Category = require('../models/Category');
 const Product = require('../models/Product');
-const supabaseStorage = require('../services/supabaseStorage');
+const gridfsService = require('../services/gridfsService');
 
 const slugify = (text) => {
   return text
@@ -106,6 +106,10 @@ const getCategoryBySlug = async (req, res, next) => {
       'men-shoes': 'mens-shoes',
       'men-watches': 'mens-watches',
       skincare: 'skin-care',
+      saree: 'sarees',
+      sarees: 'sarees',
+      'women-sarees': 'sarees',
+      'ethnic-wear': 'sarees',
     };
 
     const slug = slugAliases[rawSlug] || rawSlug;
@@ -113,6 +117,7 @@ const getCategoryBySlug = async (req, res, next) => {
 
     const categoryTitleMap = {
       'women-wear': "Women's Fashion",
+      'sarees': "Sarees & Ethnic Wear",
       'men-wear': "Men's Fashion",
       'kids-wear': "Kids' Wear",
       'womens-dresses': "Women's Dresses",
@@ -174,6 +179,16 @@ const getCategoryBySlug = async (req, res, next) => {
     if (slug === 'women-wear' || rawSlug === 'women' || rawSlug === 'women-wear') {
       baseQuery = {
         gender: 'women',
+        status: 'active',
+      };
+    } else if (slug === 'sarees' || rawSlug === 'saree' || rawSlug === 'sarees' || slug === 'ethnic-wear') {
+      baseQuery = {
+        $or: [
+          { subcategory: new RegExp('^sarees?$', 'i') },
+          { tags: { $in: ['saree', 'sarees'] } },
+          { categorySlug: 'sarees' },
+          { collectionSlug: 'ethnic-wear' },
+        ],
         status: 'active',
       };
     } else if (slug === 'men-wear' || rawSlug === 'men' || rawSlug === 'men-wear') {
@@ -358,9 +373,9 @@ const getCategoryBySlug = async (req, res, next) => {
     else if (req.query.sort === 'newest') sortOptions = { createdAt: -1, newArrival: -1 };
 
     // Pagination & Product Limits (e.g. limit: 12, 24, 36, 48)
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 12;
-    const skip = (page - 1) * limit;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, Math.min(1000, parseInt(req.query.limit, 10) || 12));
+    const skip = Math.max(0, (page - 1) * limit);
 
     const total = await Product.countDocuments(filterQuery);
     const products = await Product.find(filterQuery)
@@ -431,7 +446,7 @@ const updateCategory = async (req, res, next) => {
     }
 
     if (image !== undefined && category.image && category.image !== image) {
-      await supabaseStorage.deleteFromSupabase(category.image).catch(() => {});
+      await gridfsService.deleteFromGridFS(category.image).catch(() => {});
     }
 
     if (description !== undefined) category.description = description;
@@ -458,7 +473,7 @@ const deleteCategory = async (req, res, next) => {
     }
 
     if (category.image) {
-      await supabaseStorage.deleteFromSupabase(category.image).catch(() => {});
+      await gridfsService.deleteFromGridFS(category.image).catch(() => {});
     }
 
     await Category.findByIdAndDelete(req.params.id);

@@ -5,6 +5,8 @@
  */
 export const CATEGORY_FALLBACK_IMAGES = {
   'women-wear': 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80',
+  'sarees': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+  'saree': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
   'men-wear': 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80',
   'kids-wear': 'https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?auto=format&fit=crop&w=800&q=80',
   'shoes': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80',
@@ -38,6 +40,7 @@ export function getCategoryFallback(category = '', categorySlug = '') {
   }
 
   // Partial match by keywords
+  if (slug.includes('saree') || slug.includes('sari') || slug.includes('ethnic')) return CATEGORY_FALLBACK_IMAGES['sarees'];
   if (slug.includes('men') && !slug.includes('women')) return CATEGORY_FALLBACK_IMAGES['men-wear'];
   if (slug.includes('women')) return CATEGORY_FALLBACK_IMAGES['women-wear'];
   if (slug.includes('kid') || slug.includes('baby')) return CATEGORY_FALLBACK_IMAGES['kids-wear'];
@@ -71,8 +74,13 @@ export function resolveImageUrl(url, category = '', categorySlug = '') {
     return trimmed;
   }
 
-  // If local relative upload path
-  if (trimmed.startsWith('/uploads') || trimmed.startsWith('uploads/')) {
+  // If local relative upload path or GridFS media path
+  if (
+    trimmed.startsWith('/uploads') ||
+    trimmed.startsWith('uploads/') ||
+    trimmed.startsWith('/api/media') ||
+    trimmed.startsWith('api/media')
+  ) {
     const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
     return cleanPath;
   }

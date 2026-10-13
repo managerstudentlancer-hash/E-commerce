@@ -11,11 +11,11 @@ const bcrypt = require('bcryptjs');
 const loginAttempts = new Map();
 const globalIpTracker = new Map();
 
-const MAX_FAILED_LOGINS = 5;
-const LOGIN_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_FAILED_LOGINS = 10;
+const LOGIN_LOCKOUT_MS = 10 * 60 * 1000; // 10 minutes
 const LOGIN_ATTEMPT_WINDOW_MS = 10 * 60 * 1000;
 
-const GLOBAL_RATE_LIMIT = 250; // max 250 requests per minute per IP
+const GLOBAL_RATE_LIMIT = 1500; // max 1500 requests per minute per IP for high concurrent traffic
 const GLOBAL_WINDOW_MS = 60 * 1000; // 1 minute
 
 // Housekeeping: garbage collect expired memory records every 5 minutes
@@ -49,7 +49,17 @@ const globalRateLimiter = (req, res, next) => {
 
   globalIpTracker.set(ip, ipData);
 
-  if (ipData.count > GLOBAL_RATE_LIMIT) {
+  const isLocal =
+    ip === '127.0.0.1' ||
+    ip === '::1' ||
+    ip.includes('127.0.0.1') ||
+    ip.startsWith('192.168.') ||
+    ip.startsWith('10.') ||
+    process.env.NODE_ENV !== 'production';
+
+  const effectiveLimit = isLocal ? 5000 : GLOBAL_RATE_LIMIT;
+
+  if (ipData.count > effectiveLimit) {
     return res.status(429).json({
       success: false,
       message: 'Rate limit exceeded: Too many requests detected from this address. Please wait a moment.',

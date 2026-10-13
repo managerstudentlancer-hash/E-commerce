@@ -9,22 +9,28 @@ export const WishlistProvider = ({ children }) => {
   const [wishlist, setWishlist] = useState(() => {
     try {
       const saved = localStorage.getItem('vexivo_wishlist');
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && Array.isArray(parsed.products)) return parsed.products;
+      return [];
     } catch {
       return [];
     }
   });
 
+  const safeWishlist = Array.isArray(wishlist) ? wishlist : [];
+
   useEffect(() => {
-    localStorage.setItem('vexivo_wishlist', JSON.stringify(wishlist));
-  }, [wishlist]);
+    localStorage.setItem('vexivo_wishlist', JSON.stringify(safeWishlist));
+  }, [safeWishlist]);
 
   // Sync with API when logged in
   useEffect(() => {
     if (isAuthenticated) {
       api.wishlist.get()
         .then((res) => {
-          if (res.success && res.products) {
+          if (res.success && Array.isArray(res.products)) {
             setWishlist(res.products);
           }
         })
@@ -33,17 +39,19 @@ export const WishlistProvider = ({ children }) => {
   }, [isAuthenticated]);
 
   const toggleWishlist = async (product) => {
+    if (!product) return false;
     const pId = product._id || product.id;
-    const exists = wishlist.some((item) => (item._id || item.id || item) === pId);
+    const currentList = Array.isArray(wishlist) ? wishlist : [];
+    const exists = currentList.some((item) => (item?._id || item?.id || item) === pId);
 
     if (exists) {
-      setWishlist((prev) => prev.filter((item) => (item._id || item.id || item) !== pId));
+      setWishlist((prev) => (Array.isArray(prev) ? prev.filter((item) => (item?._id || item?.id || item) !== pId) : []));
       if (isAuthenticated) {
         api.wishlist.remove(pId).catch(() => {});
       }
       return false; // removed
     } else {
-      setWishlist((prev) => [...prev, product]);
+      setWishlist((prev) => (Array.isArray(prev) ? [...prev, product] : [product]));
       if (isAuthenticated) {
         api.wishlist.toggle(pId).catch(() => {});
       }
@@ -52,14 +60,15 @@ export const WishlistProvider = ({ children }) => {
   };
 
   const isInWishlist = (productId) => {
-    return wishlist.some((item) => (item._id || item.id || item) === productId);
+    if (!productId || !Array.isArray(wishlist)) return false;
+    return wishlist.some((item) => (item?._id || item?.id || item) === productId);
   };
 
   return (
     <WishlistContext.Provider
       value={{
-        wishlist,
-        wishlistCount: wishlist.length,
+        wishlist: safeWishlist,
+        wishlistCount: safeWishlist.length,
         toggleWishlist,
         isInWishlist,
       }}

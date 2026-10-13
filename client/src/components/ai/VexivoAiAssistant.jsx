@@ -110,6 +110,7 @@ const VexivoAiAssistant = () => {
           ],
         });
 
+        const firstName = user && typeof user.name === 'string' && user.name.trim() ? user.name.trim().split(' ')[0] : 'Member';
         // Initialize default welcome message if empty
         setMessages([
           {
@@ -117,7 +118,7 @@ const VexivoAiAssistant = () => {
             role: 'assistant',
             content:
               res.welcomeMessage ||
-              `Hi ${user?.name ? user.name.split(' ')[0] : 'Member'}! 👋 I’m your **VEXIVO AI Customer Care Assistant**.\n\nI’m available 24×7 to help with orders, returns, refunds, payments, delivery, products, offers and shopping.\n\nHow can I help you today?`,
+              `Hi ${firstName}! 👋 I’m your **VEXIVO AI Customer Care Assistant**.\n\nI’m available 24×7 to help with orders, returns, refunds, payments, delivery, products, offers and shopping.\n\nHow can I help you today?`,
             timestamp: new Date(),
             suggestedActions: res.suggestedQuestions || [
               '📦 Track My Order',
@@ -131,12 +132,13 @@ const VexivoAiAssistant = () => {
         ]);
       }
     } catch (err) {
+      const firstName = user && typeof user.name === 'string' && user.name.trim() ? user.name.trim().split(' ')[0] : 'Member';
       // Fallback welcome message
       setMessages([
         {
           id: 'welcome',
           role: 'assistant',
-          content: `Hi ${user?.name ? user.name.split(' ')[0] : 'Member'}! 👋 I’m your **VEXIVO AI Customer Care Assistant**.\n\nI’m available 24×7 to help with orders, returns, refunds, payments, delivery, products, offers and shopping.\n\nHow can I help you today?`,
+          content: `Hi ${firstName}! 👋 I’m your **VEXIVO AI Customer Care Assistant**.\n\nI’m available 24×7 to help with orders, returns, refunds, payments, delivery, products, offers and shopping.\n\nHow can I help you today?`,
           timestamp: new Date(),
           suggestedActions: [
             '📦 Track My Order',

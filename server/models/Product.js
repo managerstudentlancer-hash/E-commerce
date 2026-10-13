@@ -61,6 +61,7 @@ const productSchema = new mongoose.Schema(
     collectionSlug: { type: String, default: '' },
     brand: { type: String, default: 'VEXIVO' },
     sellerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    seller: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     sellerName: { type: String, default: 'VEXIVO Official' },
     sellerInfo: { type: String, default: '' },
     variants: [
@@ -92,6 +93,16 @@ productSchema.pre('save', function (next) {
     this.discount = Math.round(((this.compareAtPrice - this.price) / this.compareAtPrice) * 100);
   } else {
     this.discount = 0;
+  }
+
+  // Ensure seller and sellerId are synchronized without recursive updates
+  if (this.isModified && this.isModified('seller') && !this.isModified('sellerId')) {
+    this.sellerId = this.seller;
+  } else if (this.isModified && this.isModified('sellerId') && !this.isModified('seller')) {
+    this.seller = this.sellerId;
+  } else {
+    if (this.seller && !this.sellerId) this.sellerId = this.seller;
+    if (this.sellerId && !this.seller) this.seller = this.sellerId;
   }
 
   // Ensure media array is initialized
