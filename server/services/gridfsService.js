@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { ObjectId } = require('mongodb');
+const ObjectId = mongoose.Types?.ObjectId || require('mongodb').ObjectId;
 const crypto = require('crypto');
 const path = require('path');
 const { Readable } = require('stream');

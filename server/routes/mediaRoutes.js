@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { ObjectId } = require('mongodb');
+const mongoose = require('mongoose');
+const ObjectId = mongoose.Types?.ObjectId || require('mongodb').ObjectId;
 const gridfsService = require('../services/gridfsService');
 
 /**
