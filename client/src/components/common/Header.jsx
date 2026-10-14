@@ -29,6 +29,7 @@ import SearchModal from './SearchModal';
 const searchCategories = [
   'All Categories',
   'Women Wear',
+  'Sarees & Ethnic Wear',
   'Men Wear',
   'Beauty',
   'Fragrances',
@@ -52,6 +53,9 @@ const searchCategories = [
 
 const categorySlugMap = {
   'Women Wear': 'women-wear',
+  'Sarees': 'sarees',
+  'Sarees & Ethnic Wear': 'sarees',
+  'Ethnic Wear': 'sarees',
   'Men Wear': 'men-wear',
   'Mens Wear': 'men-wear',
   'Kids Wear': 'kids-wear',

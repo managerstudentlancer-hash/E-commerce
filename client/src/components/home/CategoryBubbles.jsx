@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCategories } from '../../context/CategoryContext';
@@ -10,6 +10,12 @@ const topCategoriesList = [
     slug: 'women-wear',
     image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=400&q=80',
     description: 'Dresses, tops, luxury silks & couture tailoring',
+  },
+  {
+    name: 'Sarees',
+    slug: 'sarees',
+    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80',
+    description: 'Handcrafted Banarasi, Kanjivaram & silk drapes',
   },
   {
     name: 'Men Wear',
@@ -97,14 +103,30 @@ const CategoryBubbles = () => {
   const [activeSlug, setActiveSlug] = useState('women-wear');
 
   // Merge with any dynamic backend items while preserving the user's exact curated order & photos
-  const mergedList = topCategoriesList.map((topCat) => {
-    const fromApi = categories.find((c) => c.slug === topCat.slug);
-    return {
-      ...topCat,
-      name: fromApi?.name || topCat.name,
-      image: topCat.image, // Strictly use the user-requested high-res image
-    };
-  });
+  const mergedList = useMemo(() => {
+    const list = topCategoriesList.map((topCat) => {
+      const fromApi = categories.find((c) => c.slug === topCat.slug);
+      return {
+        ...topCat,
+        name: fromApi?.name || topCat.name,
+        image: topCat.image,
+      };
+    });
+
+    if (categories && categories.length > 0) {
+      const knownSlugs = new Set(topCategoriesList.map((c) => c.slug));
+      const extraCategories = categories
+        .filter((c) => c.status !== 'inactive' && !knownSlugs.has(c.slug))
+        .map((c) => ({
+          name: c.name,
+          slug: c.slug,
+          image: c.image || getCategoryFallback(c.name, c.slug),
+          description: c.description || `Explore our curated ${c.name} collection`,
+        }));
+      return [...list, ...extraCategories];
+    }
+    return list;
+  }, [categories]);
 
   const handleScroll = (dir) => {
     if (scrollRef.current) {

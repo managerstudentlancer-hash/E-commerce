@@ -3,6 +3,7 @@ import api from '../services/api';
 
 const defaultCategories = [
   { name: 'Women Wear', slug: 'women-wear', image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=400&q=80', status: 'active' },
+  { name: 'Sarees', slug: 'sarees', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80', status: 'active' },
   { name: 'Men Wear', slug: 'men-wear', image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=400&q=80', status: 'active' },
   { name: 'Kids Wear', slug: 'kids-wear', image: 'https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?auto=format&fit=crop&w=400&q=80', status: 'active' },
   { name: 'Shoes', slug: 'shoes', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&q=80', status: 'active' },
