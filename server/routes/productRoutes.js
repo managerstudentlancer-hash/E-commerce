@@ -15,7 +15,7 @@ const {
   deleteProductImage,
 } = require('../controllers/productController');
 
-const { protect } = require('../middleware/auth');
+const { protect, adminOnly } = require('../middleware/auth');
 
 const upload = require('../middleware/upload');
 
@@ -45,7 +45,7 @@ router.use('/:productId/reviews', reviewRouter);
 // POST /api/products/import-dummy
 // ==========================================
 
-router.post('/import-dummy', protect, async (req, res) => {
+router.post('/import-dummy', protect, adminOnly, async (req, res) => {
   try {
     const fetchLive = req.query.live === 'true' || req.body?.live === true;
     const result = await importDummyProducts({ fetchLive });
@@ -66,7 +66,7 @@ router.post('/import-dummy', protect, async (req, res) => {
   }
 });
 
-router.post('/seed-sarees', protect, async (req, res) => {
+router.post('/seed-sarees', protect, adminOnly, async (req, res) => {
   try {
     const { seedSarees } = require('../seed/sareeSeed');
     const result = await seedSarees();

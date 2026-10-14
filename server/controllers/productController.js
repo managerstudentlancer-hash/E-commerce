@@ -198,10 +198,6 @@ const getProducts = async (req, res, next) => {
       andConditions.push({ gender: gender.toLowerCase() });
     }
 
-    if (subcategory && subcategory !== 'all') {
-      andConditions.push({ subcategory: new RegExp(`^${subcategory}$`, 'i') });
-    }
-
     if (featured === 'true') andConditions.push({ featured: true });
     if (bestseller === 'true') andConditions.push({ bestseller: true });
     if (newArrival === 'true') andConditions.push({ newArrival: true });

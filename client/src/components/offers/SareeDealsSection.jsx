@@ -43,7 +43,7 @@ const SareeDealsSection = ({ data = [], onOfferClaimed }) => {
         </div>
 
         <Link
-          to="/category/women-wear"
+          to="/category/sarees"
           className="mt-2 sm:mt-0 inline-flex items-center text-xs font-bold text-neutral-900 hover:text-rose-600 transition-colors group"
         >
           <span>View All Sarees</span>
@@ -150,7 +150,7 @@ const SareeDealsSection = ({ data = [], onOfferClaimed }) => {
                     </button>
 
                     <Link
-                      to={saree.link || '/category/women-wear'}
+                      to={saree.link || (saree.slug ? `/product/${saree.slug}` : '/category/sarees')}
                       className="py-1.5 px-2 rounded-xl bg-neutral-950 hover:bg-black text-white font-bold text-[10px] sm:text-[11px] text-center transition-all flex items-center justify-center space-x-1"
                     >
                       <span>Shop</span>

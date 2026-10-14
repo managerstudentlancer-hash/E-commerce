@@ -186,6 +186,21 @@ app.all(['/api/seed-catalog', '/api/admin/seed-catalog'], protect, adminOnly, as
   }
 });
 
+// Safe, non-destructive admin catalog sync route (safe for production)
+app.post('/api/admin/sync-catalog', protect, adminOnly, async (req, res) => {
+  try {
+    const { runCatalogSync } = require('./scripts/syncCatalog');
+    const result = await runCatalogSync();
+    res.json({
+      success: true,
+      message: 'Catalog synchronized successfully without data loss.',
+      result,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
