@@ -14,6 +14,7 @@ import { ProtectedRoute, AdminRoute, DeliveryRoute } from './components/common/P
 import MobileStickyBar from './components/common/MobileStickyBar';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import VexivoAiAssistant from './components/ai/VexivoAiAssistant';
+import ScrollToTop from './components/common/ScrollToTop';
 
 // Primary Storefront Pages (Eagerly Loaded for Immediate First Paint)
 import Home from './pages/Home';
@@ -115,6 +116,7 @@ const App = () => {
         <AuthProvider>
           <CartProvider>
             <WishlistProvider>
+              <ScrollToTop />
               <Suspense fallback={<RouteLoadingFallback />}>
                 <Routes>
                 {/* Public Storefront Routes */}
