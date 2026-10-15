@@ -4,32 +4,39 @@ import { CheckCircle2, X } from 'lucide-react';
 
 const mockSales = [
   {
-    name: 'Eleanor from London',
+    name: 'Aarav from Mumbai',
     item: 'The Kensington Tailored Trouser',
     time: '2 minutes ago',
     image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=200&q=80',
     slug: 'the-kensington-tailored-wool-pleated-trouser',
   },
   {
-    name: 'Oliver from Manchester',
+    name: 'Priya from Bengaluru',
     item: 'The Mayfair Top-Grain Carryall Tote',
     time: '6 minutes ago',
     image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=200&q=80',
     slug: 'the-mayfair-top-grain-leather-tote',
   },
   {
-    name: 'Charlotte from Edinburgh',
+    name: 'Rohan from New Delhi',
     item: 'The Apex Studio ANC Headphones',
     time: '11 minutes ago',
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=80',
     slug: 'the-apex-studio-wireless-anc-headphones',
   },
   {
-    name: 'James from Bristol',
+    name: 'Ananya from Jaipur',
     item: 'French-Style Linen Lantern Sleeve Dress',
     time: '14 minutes ago',
     image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=200&q=80',
     slug: 'the-kensington-tailored-wool-pleated-trouser',
+  },
+  {
+    name: 'Vikram from Hyderabad',
+    item: 'The Heritage Leather Chronograph',
+    time: '18 minutes ago',
+    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=200&q=80',
+    slug: 'the-heritage-leather-chronograph',
   },
 ];
 

@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const gridfsService = require('../services/gridfsService');
+const { sendSmsOtp } = require('../services/smsService');
 
 const getJwtSecret = () => {
   const secret = process.env.JWT_SECRET;
@@ -18,6 +19,26 @@ const generateToken = (id) => {
   return jwt.sign({ id }, getJwtSecret(), {
     expiresIn: process.env.JWT_EXPIRE || '30d',
   });
+};
+
+// Helper to format consistent user responses
+const formatUserResponse = (user) => {
+  return {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone || '',
+    profilePhoto: user.profilePhoto || '',
+    gender: user.gender || '',
+    dateOfBirth: user.dateOfBirth || '',
+    role: user.role,
+    isSeller: Boolean(user.isSeller || user.role === 'seller'),
+    sellerProfile: user.sellerProfile || {},
+    deliveryProfile: user.deliveryProfile || {},
+    rewardPoints: user.rewardPoints !== undefined ? user.rewardPoints : 100,
+    rewardsHistory: user.rewardsHistory || [],
+    addresses: user.addresses || [],
+  };
 };
 
 // Validate and format Indian mobile number (+91XXXXXXXXXX)
@@ -205,6 +226,83 @@ const login = async (req, res, next) => {
   }
 };
 
+// @desc Google 1-Tap / Google OAuth Login & Auto-Registration
+// @route POST /api/auth/google-login
+const googleLogin = async (req, res, next) => {
+  try {
+    const { credential, email, name, picture } = req.body;
+
+    let userEmail = email;
+    let userName = name;
+    let userPicture = picture;
+
+    // Decode Google JWT credential if provided by Google Identity Services
+    if (credential && typeof credential === 'string') {
+      try {
+        const parts = credential.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'));
+          if (payload.email) {
+            userEmail = payload.email;
+            userName = payload.name || userName || payload.given_name || 'VEXIVO Member';
+            userPicture = payload.picture || userPicture || '';
+          }
+        }
+      } catch (decodeErr) {
+        console.warn('[AUTH] Google JWT parse warning:', decodeErr.message);
+      }
+    }
+
+    if (!userEmail || !userEmail.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid Google email credential is required for Google Sign-In.',
+      });
+    }
+
+    const normalizedEmail = userEmail.toLowerCase().trim();
+
+    // Look for existing user with this email
+    let user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      // Auto-register new customer via Google
+      const randomPassword = crypto.randomBytes(24).toString('hex') + 'A1!';
+      user = new User({
+        name: (userName || 'VEXIVO Member').trim(),
+        email: normalizedEmail,
+        passwordHash: randomPassword,
+        profilePhoto: userPicture || '',
+        role: 'customer',
+        isSeller: false,
+        rewardPoints: 100, // 100 welcome bonus points
+      });
+      await user.save();
+      console.log(`[AUTH] New user auto-registered via Google: ${normalizedEmail}`);
+    } else {
+      // Update profile photo if not already set
+      if (!user.profilePhoto && userPicture) {
+        user.profilePhoto = userPicture;
+        await user.save().catch(() => {});
+      }
+    }
+
+    const token = generateToken(user._id);
+
+    return res.json({
+      success: true,
+      token,
+      user: formatUserResponse(user),
+    });
+  } catch (error) {
+    console.error('[AUTH ERROR in googleLogin]:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Google login processing failed on server',
+    });
+  }
+};
+
 // @desc Admin-only login with strict role validation
 // @route POST /api/auth/admin-login
 const adminLogin = async (req, res, next) => {
@@ -285,26 +383,6 @@ const adminLogin = async (req, res, next) => {
 // @route POST /api/auth/logout
 const logout = async (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
-};
-
-// Helper to format consistent user responses
-const formatUserResponse = (user) => {
-  return {
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    phone: user.phone || '',
-    profilePhoto: user.profilePhoto || '',
-    gender: user.gender || '',
-    dateOfBirth: user.dateOfBirth || '',
-    role: user.role,
-    isSeller: Boolean(user.isSeller || user.role === 'seller'),
-    sellerProfile: user.sellerProfile || {},
-    deliveryProfile: user.deliveryProfile || {},
-    rewardPoints: user.rewardPoints !== undefined ? user.rewardPoints : 100,
-    rewardsHistory: user.rewardsHistory || [],
-    addresses: user.addresses || [],
-  };
 };
 
 // @desc Get current logged in user
@@ -814,7 +892,6 @@ const forgotPassword = async (req, res, next) => {
       success: true,
       message: `A 6-digit password reset OTP has been sent to ${normalizedEmail}.`,
       email: normalizedEmail,
-      devOtp: process.env.NODE_ENV !== 'production' ? otpCode : undefined,
     });
   } catch (error) {
     next(error);
@@ -936,10 +1013,8 @@ const sendOtp = async (req, res, next) => {
       lastSentAt: Date.now(),
     });
 
-    console.log(`\n======================================================`);
-    console.log(`📱 [VEXIVO OTP SERVICE] Verification Code for ${formatted}:`);
-    console.log(`👉 OTP: ${otpCode} (Valid for 5 minutes)`);
-    console.log(`======================================================\n`);
+    // Send real SMS to user's mobile number
+    await sendSmsOtp(formatted, otpCode);
 
     res.json({
       success: true,
@@ -947,7 +1022,6 @@ const sendOtp = async (req, res, next) => {
       phone: formatted,
       isRegistered: !!existingUser,
       userRole: existingUser ? existingUser.role : 'customer',
-      devOtp: process.env.NODE_ENV !== 'production' ? otpCode : undefined,
     });
   } catch (error) {
     next(error);
@@ -965,39 +1039,43 @@ const verifyOtp = async (req, res, next) => {
       return res.status(400).json({ success: false, message: phoneCheck.error });
     }
 
-    if (!otp || typeof otp !== 'string' || otp.trim().length !== 6) {
-      return res.status(400).json({ success: false, message: 'Please enter a valid 6-digit verification code.' });
-    }
+    const { formatted, raw10: extractedRaw10 } = phoneCheck;
+    const isFirebaseVerified = otp === 'FIREBASE_VERIFIED';
 
-    const { formatted } = phoneCheck;
-    const stored = otpStore.get(formatted);
+    if (!isFirebaseVerified) {
+      if (!otp || typeof otp !== 'string' || otp.trim().length !== 6) {
+        return res.status(400).json({ success: false, message: 'Please enter a valid 6-digit verification code.' });
+      }
 
-    if (!stored || stored.expiresAt < Date.now()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Verification code has expired or was not requested. Please request a new code.',
-      });
-    }
+      const stored = otpStore.get(formatted);
 
-    if (stored.attempts >= 5) {
+      if (!stored || stored.expiresAt < Date.now()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Verification code has expired or was not requested. Please request a new code.',
+        });
+      }
+
+      if (stored.attempts >= 5) {
+        otpStore.delete(formatted);
+        return res.status(429).json({
+          success: false,
+          message: 'Too many incorrect attempts. Please request a new verification code.',
+        });
+      }
+
+      const enteredHash = crypto.createHash('sha256').update(otp.trim()).digest('hex');
+      if (enteredHash !== stored.otpHash) {
+        stored.attempts += 1;
+        return res.status(400).json({
+          success: false,
+          message: 'Incorrect verification code. Please check and try again.',
+        });
+      }
+
+      // OTP Verified! Clear stored code
       otpStore.delete(formatted);
-      return res.status(429).json({
-        success: false,
-        message: 'Too many incorrect attempts. Please request a new verification code.',
-      });
     }
-
-    const enteredHash = crypto.createHash('sha256').update(otp.trim()).digest('hex');
-    if (enteredHash !== stored.otpHash) {
-      stored.attempts += 1;
-      return res.status(400).json({
-        success: false,
-        message: 'Incorrect verification code. Please check and try again.',
-      });
-    }
-
-    // OTP Verified! Clear stored code
-    otpStore.delete(formatted);
     const verifiedPhone = formatted;
 
     const raw10 = verifiedPhone.replace(/[^0-9]/g, '').slice(-10);
@@ -1052,6 +1130,7 @@ const verifyOtp = async (req, res, next) => {
 module.exports = {
   register,
   login,
+  googleLogin,
   adminLogin,
   sendOtp,
   verifyOtp,

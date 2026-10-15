@@ -248,7 +248,11 @@ const ProductDetail = () => {
     if (!product) return;
     const finalVariant = selectedVariant || sizeConfig.defaultSize || 'Standard';
     addToCart(product, quantity, finalVariant);
-    navigate('/checkout');
+    if (!user) {
+      navigate('/login', { state: { from: { pathname: '/checkout' } } });
+    } else {
+      navigate('/checkout');
+    }
   };
 
   const handleReviewSubmit = async (e) => {
@@ -742,8 +746,8 @@ const ProductDetail = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-neutral-900 truncate">VEXIVO Silk Care & Travel Pouch</p>
                   <div className="flex items-center space-x-1.5 mt-0.5">
-                    <span className="text-xs font-bold text-black">₹18.00</span>
-                    <span className="text-[11px] text-neutral-500 line-through">₹28.00</span>
+                    <span className="text-xs font-bold text-black">₹199</span>
+                    <span className="text-[11px] text-neutral-500 line-through">₹399</span>
                   </div>
                 </div>
                 <label className="flex items-center cursor-pointer select-none flex-shrink-0 p-1">

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Tag } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 const CartDrawer = () => {
   const {
@@ -16,6 +17,9 @@ const CartDrawer = () => {
     appliedCoupon,
     couponDiscount,
   } = useCart();
+
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   if (!isCartOpen) return null;
 
@@ -174,14 +178,21 @@ const CartDrawer = () => {
               </p>
 
               <div className="flex flex-col gap-2 pt-1">
-                <Link
-                  to="/checkout"
-                  onClick={closeCart}
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeCart();
+                    if (!user) {
+                      navigate('/login', { state: { from: { pathname: '/checkout' } } });
+                    } else {
+                      navigate('/checkout');
+                    }
+                  }}
                   className="btn-pill-dark w-full py-3.5 text-xs uppercase tracking-wider flex items-center justify-center space-x-2"
                 >
                   <span>Proceed to Checkout</span>
                   <ArrowRight className="w-4 h-4" />
-                </Link>
+                </button>
                 <Link
                   to="/cart"
                   onClick={closeCart}

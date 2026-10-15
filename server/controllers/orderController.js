@@ -97,9 +97,20 @@ const createOrder = async (req, res, next) => {
     }
 
     const recipientName = shippingAddress?.firstName || shippingAddress?.fullName;
+    const cleanPhone = (shippingAddress?.phone || '').replace(/[\s\-\(\)\+]/g, '');
+    const isIndianPhone = /^[6-9]\d{9}$/.test(cleanPhone.slice(-10));
+
     if (!shippingAddress || !recipientName || !shippingAddress.address || !shippingAddress.city) {
       return res.status(400).json({ success: false, message: 'Complete shipping address is required' });
     }
+
+    if (!cleanPhone || !isIndianPhone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order karne ke liye 10-digit mobile number add karna zaroori hai (e.g. 9876543210)',
+      });
+    }
+
     if (!shippingAddress.firstName && shippingAddress.fullName) {
       shippingAddress.firstName = shippingAddress.fullName;
     }
@@ -400,7 +411,7 @@ const createOrder = async (req, res, next) => {
     // Customer Notification & Rewards
     if (req.user) {
       const earnedPoints = Math.max(10, Math.floor(verifiedTotal / 100));
-      await User.findByIdAndUpdate(req.user._id, {
+      const userUpdateFields = {
         $inc: { rewardPoints: earnedPoints },
         $push: {
           rewardsHistory: {
@@ -410,7 +421,11 @@ const createOrder = async (req, res, next) => {
             date: new Date(),
           },
         },
-      }).catch(() => {});
+      };
+      if (!req.user.phone && cleanPhone) {
+        userUpdateFields.$set = { phone: cleanPhone.slice(-10) };
+      }
+      await User.findByIdAndUpdate(req.user._id, userUpdateFields).catch(() => {});
 
       await Notification.create({
         user: req.user._id,

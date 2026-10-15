@@ -155,6 +155,7 @@ export const api = {
       }),
     register: (userData) => request('/auth/register', { method: 'POST', body: JSON.stringify(userData) }),
     login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
+    googleLogin: (data) => request('/auth/google-login', { method: 'POST', body: JSON.stringify(data) }),
     logout: () => request('/auth/logout', { method: 'POST' }),
     getMe: () => request('/auth/me'),
     updateProfile: (profileData) => request('/auth/profile', { method: 'PUT', body: JSON.stringify(profileData) }),

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowRight, ShieldCheck, Tag, Check } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 const CartPage = () => {
@@ -18,6 +19,7 @@ const CartPage = () => {
   } = useCart();
 
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('');
@@ -308,7 +310,19 @@ const CartPage = () => {
 
               {/* Checkout CTA */}
               <button
-                onClick={() => navigate('/checkout', { state: { couponDiscount, appliedCoupon } })}
+                onClick={() => {
+                  if (!user) {
+                    navigate('/login', {
+                      state: {
+                        from: { pathname: '/checkout' },
+                        couponDiscount,
+                        appliedCoupon,
+                      },
+                    });
+                  } else {
+                    navigate('/checkout', { state: { couponDiscount, appliedCoupon } });
+                  }
+                }}
                 className="btn-pill-dark w-full py-4 text-xs uppercase tracking-wider flex items-center justify-center space-x-2"
               >
                 <span>Proceed to Checkout</span>

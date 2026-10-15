@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Sparkles,
   MessageSquare,
@@ -27,6 +27,7 @@ import {
   Tag,
   Headphones,
   Info,
+  Move,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -40,6 +41,7 @@ const VexivoAiAssistant = () => {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Assistant Configuration & State
   const [isOpen, setIsOpen] = useState(false);
@@ -83,13 +85,117 @@ const VexivoAiAssistant = () => {
   const [selectedVariants, setSelectedVariants] = useState({});
   const [hasUnread, setHasUnread] = useState(false);
 
+  // Movable / Draggable Launcher Button State
+  const [btnPos, setBtnPos] = useState(() => {
+    try {
+      const saved = localStorage.getItem('vexivo_ai_btn_pos');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return null;
+  });
+
+  const [chatSide, setChatSide] = useState(() => {
+    try {
+      return localStorage.getItem('vexivo_ai_side') || 'right';
+    } catch {
+      return 'right';
+    }
+  });
+
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ startX: 0, startY: 0, startLeft: 0, startTop: 0, hasMoved: false });
+  const launcherRef = useRef(null);
+
+  const toggleChatSide = () => {
+    const next = chatSide === 'right' ? 'left' : 'right';
+    setChatSide(next);
+    try {
+      localStorage.setItem('vexivo_ai_side', next);
+    } catch {}
+  };
+
+  const handlePointerDown = (e) => {
+    if (e.button && e.button !== 0) return;
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    const rect = launcherRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    dragStartRef.current = {
+      startX: clientX,
+      startY: clientY,
+      startLeft: rect.left,
+      startTop: rect.top,
+      hasMoved: false,
+    };
+    isDraggingRef.current = true;
+
+    const onPointerMove = (moveEvt) => {
+      if (!isDraggingRef.current) return;
+      const currentX = moveEvt.touches ? moveEvt.touches[0].clientX : moveEvt.clientX;
+      const currentY = moveEvt.touches ? moveEvt.touches[0].clientY : moveEvt.clientY;
+
+      const deltaX = currentX - dragStartRef.current.startX;
+      const deltaY = currentY - dragStartRef.current.startY;
+
+      if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
+        dragStartRef.current.hasMoved = true;
+      }
+
+      if (dragStartRef.current.hasMoved) {
+        const maxX = window.innerWidth - (rect.width || 60) - 10;
+        const maxY = window.innerHeight - (rect.height || 60) - 10;
+        const newLeft = Math.max(10, Math.min(maxX, dragStartRef.current.startLeft + deltaX));
+        const newTop = Math.max(10, Math.min(maxY, dragStartRef.current.startTop + deltaY));
+
+        setBtnPos({ x: newLeft, y: newTop });
+      }
+    };
+
+    const onPointerUp = () => {
+      isDraggingRef.current = false;
+      window.removeEventListener('mousemove', onPointerMove);
+      window.removeEventListener('mouseup', onPointerUp);
+      window.removeEventListener('touchmove', onPointerMove);
+      window.removeEventListener('touchend', onPointerUp);
+
+      if (dragStartRef.current.hasMoved) {
+        setBtnPos((current) => {
+          if (current) {
+            try {
+              localStorage.setItem('vexivo_ai_btn_pos', JSON.stringify(current));
+            } catch {}
+          }
+          return current;
+        });
+      }
+    };
+
+    window.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp);
+    window.addEventListener('touchmove', onPointerMove, { passive: true });
+    window.addEventListener('touchend', onPointerUp);
+  };
+
+  const handleLauncherClick = (e) => {
+    if (dragStartRef.current.hasMoved) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    setIsOpen(true);
+    setIsMinimized(false);
+  };
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
   // 1. Fetch AI Assistant Welcome & Settings
   useEffect(() => {
     fetchAssistantConfig();
-  }, []);
+  }, [isAuthenticated]);
 
   const fetchAssistantConfig = async () => {
     try {
@@ -110,7 +216,8 @@ const VexivoAiAssistant = () => {
           ],
         });
 
-        const firstName = user && typeof user.name === 'string' && user.name.trim() ? user.name.trim().split(' ')[0] : 'Member';
+        const firstName = user && typeof user.name === 'string' && user.name.trim() ? user.name.trim().split(' ')[0] : '';
+        const greeting = firstName ? `Hi ${firstName}! 👋` : `Hello! 👋`;
         // Initialize default welcome message if empty
         setMessages([
           {
@@ -118,7 +225,7 @@ const VexivoAiAssistant = () => {
             role: 'assistant',
             content:
               res.welcomeMessage ||
-              `Hi ${firstName}! 👋 I’m your **VEXIVO AI Customer Care Assistant**.\n\nI’m available 24×7 to help with orders, returns, refunds, payments, delivery, products, offers and shopping.\n\nHow can I help you today?`,
+              `${greeting} I’m your **VEXIVO AI Customer Care Assistant**.\n\nI’m available 24×7 to help with orders, returns, refunds, payments, delivery, products, offers and shopping.\n\nHow can I help you today?`,
             timestamp: new Date(),
             suggestedActions: res.suggestedQuestions || [
               '📦 Track My Order',
@@ -132,13 +239,14 @@ const VexivoAiAssistant = () => {
         ]);
       }
     } catch (err) {
-      const firstName = user && typeof user.name === 'string' && user.name.trim() ? user.name.trim().split(' ')[0] : 'Member';
+      const firstName = user && typeof user.name === 'string' && user.name.trim() ? user.name.trim().split(' ')[0] : '';
+      const greeting = firstName ? `Hi ${firstName}! 👋` : `Hello! 👋`;
       // Fallback welcome message
       setMessages([
         {
           id: 'welcome',
           role: 'assistant',
-          content: `Hi ${firstName}! 👋 I’m your **VEXIVO AI Customer Care Assistant**.\n\nI’m available 24×7 to help with orders, returns, refunds, payments, delivery, products, offers and shopping.\n\nHow can I help you today?`,
+          content: `${greeting} I’m your **VEXIVO AI Customer Care Assistant**.\n\nI’m available 24×7 to help with orders, returns, refunds, payments, delivery, products, offers and shopping.\n\nHow can I help you today?`,
           timestamp: new Date(),
           suggestedActions: [
             '📦 Track My Order',
@@ -394,39 +502,59 @@ Our logistics partner will coordinate doorstep pickup within 24–48 hours. Plea
     });
   };
 
-  if (aiSettings.enabled === false) {
+  // Hide AI assistant on login / auth pages, or if disabled in settings
+  const isAuthPage =
+    location.pathname === '/login' ||
+    location.pathname === '/register' ||
+    location.pathname.startsWith('/login') ||
+    location.pathname.startsWith('/register') ||
+    location.pathname === '/admin/login' ||
+    location.pathname === '/delivery/login';
+
+  if (isAuthPage || aiSettings.enabled === false) {
     return null;
   }
 
   return (
     <>
-      {/* Floating Bottom-Right Launcher Button */}
+      {/* Floating Draggable Launcher Button */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+        <div
+          ref={launcherRef}
+          onMouseDown={handlePointerDown}
+          onTouchStart={handlePointerDown}
+          style={
+            btnPos
+              ? { left: `${btnPos.x}px`, top: `${btnPos.y}px`, bottom: 'auto', right: 'auto' }
+              : undefined
+          }
+          className={`fixed z-50 flex items-center gap-2.5 select-none cursor-grab active:cursor-grabbing ${
+            !btnPos ? 'bottom-20 right-4 sm:bottom-6 sm:right-6' : ''
+          }`}
+        >
           {/* Tooltip badge */}
-          <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-amber-500/30 text-amber-200 text-xs font-medium backdrop-blur-md shadow-xl shadow-black/40 animate-bounce">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/90 border border-amber-500/30 text-amber-200 text-xs font-medium backdrop-blur-md shadow-xl shadow-black/40">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Need help? Ask VEXIVO AI</span>
+            <span>Ask VEXIVO AI</span>
+            <span className="text-[10px] text-slate-400 border-l border-white/20 pl-1.5 ml-0.5">Drag to move</span>
           </div>
 
           <button
             id="vexivo-ai-launcher-btn"
-            onClick={() => {
-              setIsOpen(true);
-              setIsMinimized(false);
-            }}
-            className="group relative flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-neutral-900 via-zinc-900 to-black border-2 border-amber-400/50 text-white shadow-2xl shadow-amber-500/20 hover:border-amber-300 hover:scale-105 active:scale-95 transition-all duration-300"
-            aria-label="Open VEXIVO AI Customer Care"
+            type="button"
+            onClick={handleLauncherClick}
+            className="group relative flex items-center justify-center w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-neutral-900 via-zinc-900 to-black border-2 border-amber-400/50 text-white shadow-2xl shadow-amber-500/20 hover:border-amber-300 hover:scale-105 active:scale-95 transition-all duration-300 touch-none"
+            aria-label="Open VEXIVO AI Customer Care (Drag to move)"
           >
             {/* Glow ring */}
             <span className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-500 to-amber-200 opacity-30 blur-sm group-hover:opacity-60 transition duration-500 animate-pulse" />
 
             <div className="relative flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-amber-300 group-hover:rotate-12 transition-transform duration-300" />
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300 group-hover:rotate-12 transition-transform duration-300" />
             </div>
 
             {/* Online status indicator */}
-            <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-sm" />
+            <span className="absolute top-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-sm" />
 
             {hasUnread && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 border-2 border-slate-900 rounded-full animate-ping" />
@@ -440,10 +568,14 @@ Our logistics partner will coordinate doorstep pickup within 24–48 hours. Plea
         <div
           className={`fixed z-50 transition-all duration-300 ${
             isMinimized
-              ? 'bottom-6 right-6 w-72 h-14'
+              ? chatSide === 'left'
+                ? 'bottom-20 left-4 sm:bottom-6 sm:left-6 w-72 h-14'
+                : 'bottom-20 right-4 sm:bottom-6 sm:right-6 w-72 h-14'
               : isExpanded
-              ? 'inset-0 sm:inset-6 sm:left-auto sm:right-6 sm:w-[680px] sm:max-h-[90vh]'
-              : 'inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[440px] sm:h-[680px] sm:max-h-[85vh]'
+              ? 'inset-0 sm:inset-6 sm:w-[680px] sm:max-h-[90vh] ' +
+                (chatSide === 'left' ? 'sm:left-6 sm:right-auto' : 'sm:right-6 sm:left-auto')
+              : 'inset-0 sm:inset-auto sm:bottom-6 sm:w-[440px] sm:h-[680px] sm:max-h-[85vh] ' +
+                (chatSide === 'left' ? 'sm:left-6' : 'sm:right-6')
           }`}
         >
           <div className="w-full h-full flex flex-col bg-[#0b0f19] border border-amber-500/20 rounded-none sm:rounded-3xl shadow-2xl shadow-black/80 backdrop-blur-2xl overflow-hidden font-sans text-slate-100">
@@ -460,7 +592,7 @@ Our logistics partner will coordinate doorstep pickup within 24–48 hours. Plea
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
-                      <span>✨ VEXIVO AI Customer Care</span>
+                      <span>✨ VEXIVO AI Care</span>
                     </h3>
                     <span className="px-1.5 py-0.2 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-semibold text-amber-300">
                       AI
@@ -468,14 +600,26 @@ Our logistics partner will coordinate doorstep pickup within 24–48 hours. Plea
                   </div>
                   <p className="text-[11px] text-slate-300 flex items-center space-x-1.5 mt-0.5">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span>Available 24×7 · Instant Support & Shopping Help</span>
+                    <span>24×7 Instant Support</span>
                   </p>
                 </div>
               </div>
 
               {/* Header Action Buttons */}
               <div className="flex items-center gap-1">
+                {/* Switch Side button */}
                 <button
+                  type="button"
+                  onClick={toggleChatSide}
+                  title={chatSide === 'right' ? 'Move chat window to Left side' : 'Move chat window to Right side'}
+                  className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 text-[10px] font-semibold transition"
+                >
+                  <Move className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{chatSide === 'right' ? 'Move Left' : 'Move Right'}</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleResetChat}
                   title="New Chat"
                   className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition"
@@ -484,6 +628,7 @@ Our logistics partner will coordinate doorstep pickup within 24–48 hours. Plea
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setIsExpanded(!isExpanded)}
                   title={isExpanded ? 'Standard view' : 'Expand view'}
                   className="hidden sm:block p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition"
@@ -492,6 +637,7 @@ Our logistics partner will coordinate doorstep pickup within 24–48 hours. Plea
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setIsMinimized(!isMinimized)}
                   title="Minimize"
                   className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition"
@@ -500,6 +646,7 @@ Our logistics partner will coordinate doorstep pickup within 24–48 hours. Plea
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setIsOpen(false)}
                   title="Close"
                   className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-white/5 transition"

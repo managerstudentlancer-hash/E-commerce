@@ -160,6 +160,19 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithOtp = verifyOtp;
 
+  const loginWithGoogle = async (googleData) => {
+    const response = await api.auth.googleLogin(googleData);
+    if (response.success && response.token) {
+      setAuthToken(response.token);
+      localStorage.setItem('vexivo_user', JSON.stringify(response.user));
+      sessionStorage.setItem('vexivo_user', JSON.stringify(response.user));
+      setToken(response.token);
+      setUser(response.user);
+      return response.user;
+    }
+    throw new Error(response.message || 'Google authentication failed');
+  };
+
   const logout = () => {
     setAuthToken(null);
     localStorage.removeItem('vexivo_user');
@@ -195,6 +208,7 @@ export const AuthProvider = ({ children }) => {
         sendOtp,
         verifyOtp,
         loginWithOtp,
+        loginWithGoogle,
         logout,
         updateProfile,
         isAdmin,

@@ -94,8 +94,8 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [currency, setCurrency] = useState('USD');
-  const [language, setLanguage] = useState('EN');
+  const [currency, setCurrency] = useState('INR');
+  const [language, setLanguage] = useState('IN');
 
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { settings } = useSettings();
@@ -140,11 +140,11 @@ const Header = () => {
           {/* Left: Free shipping & Easy returns */}
           <div className="flex items-center space-x-2.5">
             <span className="font-medium text-neutral-600">
-              Free shipping on all orders over $50
+              Free express shipping on all orders over ₹499
             </span>
             <span className="text-neutral-300">|</span>
             <span className="font-medium text-neutral-600">
-              Easy returns
+              Cash on Delivery Available
             </span>
           </div>
 
@@ -158,12 +158,12 @@ const Header = () => {
             </Link>
             
             <div className="flex items-center space-x-1 cursor-pointer hover:text-neutral-900 transition-colors">
-              <span>{currency}</span>
+              <span>₹ {currency}</span>
               <ChevronDown className="w-3 h-3 text-neutral-400" />
             </div>
 
             <div className="flex items-center space-x-1 cursor-pointer hover:text-neutral-900 transition-colors">
-              <span>{language}</span>
+              <span>🇮🇳 {language}</span>
               <ChevronDown className="w-3 h-3 text-neutral-400" />
             </div>
           </div>
@@ -177,11 +177,12 @@ const Header = () => {
           {/* Left: Mobile Drawer Trigger + Brand Logo */}
           <div className="flex items-center space-x-3 sm:space-x-4">
             <button
+              type="button"
               onClick={() => setIsMobileNavOpen(true)}
               aria-label="Open mobile navigation"
-              className="lg:hidden p-1.5 rounded-lg text-neutral-800 hover:bg-neutral-100 transition-colors"
+              className="lg:hidden p-2 -ml-1 rounded-xl text-neutral-900 hover:bg-neutral-100 active:scale-90 transition-all touch-manipulation cursor-pointer"
             >
-              <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+              <Menu className="w-6 h-6" />
             </button>
 
             {/* Logo matching Reference Screenshot ("Shopio." weight and aesthetic) */}
