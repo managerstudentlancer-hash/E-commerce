@@ -256,6 +256,21 @@ const CheckoutPage = () => {
       return;
     }
 
+    // Phone validation: MUST be valid 10-digit Indian mobile
+    const cleanPhone = (formData.phone || '').replace(/[\s\-\(\)\+]/g, '');
+    const isIndianPhone = /^[6-9]\d{9}$/.test(cleanPhone.slice(-10));
+    if (!cleanPhone || !isIndianPhone) {
+      setErrorMsg('Order karne ke liye 10-digit mobile number add karna zaroori hai (e.g. 9876543210). Delivery aur order updates ke liye phone number mandatory hai.');
+      const phoneInput = document.querySelector('input[name="phone"]');
+      if (phoneInput) {
+        phoneInput.focus();
+        phoneInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
+
     if (formData.postalCode.length !== 6) {
       setErrorMsg('Kripya valid 6-digit Indian PIN code enter karein (e.g. 302017).');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -654,9 +669,16 @@ const CheckoutPage = () => {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold uppercase text-neutral-700 mb-1">
-                    10-Digit Mobile Phone (For WhatsApp & Delivery SMS updates) *
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold uppercase text-neutral-700">
+                      10-Digit Mobile Phone *
+                    </label>
+                    {(!formData.phone || formData.phone.trim().length < 10) && (
+                      <span className="text-[11px] font-bold text-red-600 bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200 animate-pulse">
+                        ⚠️ Mobile number add karna zaroori hai
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center">
                     <span className="px-3.5 py-3 rounded-l-full bg-neutral-100 border border-r-0 border-neutral-200 text-xs font-bold text-neutral-700 select-none">
                       +91
@@ -668,9 +690,23 @@ const CheckoutPage = () => {
                       value={formData.phone}
                       onChange={handleInputChange}
                       placeholder="9876543210"
-                      className="w-full px-4 py-3 rounded-r-full border border-neutral-200 text-xs font-semibold focus:outline-none focus:border-black font-mono"
+                      className={`w-full px-4 py-3 rounded-r-full border text-xs font-semibold focus:outline-none font-mono transition-all ${
+                        !formData.phone || formData.phone.trim().length < 10
+                          ? 'border-amber-400 bg-amber-50/20 focus:border-red-500 ring-1 ring-amber-300'
+                          : 'border-neutral-200 focus:border-black'
+                      }`}
                     />
                   </div>
+                  {!formData.phone || formData.phone.trim().length < 10 ? (
+                    <p className="text-[11px] font-semibold text-amber-700 mt-1.5 flex items-center gap-1">
+                      <span>💡</span>
+                      <span>Aapne email se login kiya hai. Order delivery updates aur OTP ke liye kripya apna 10-digit mobile number enter karein.</span>
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-neutral-500 mt-1">
+                      Delivery SMS &amp; WhatsApp order notifications will be sent to this number.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -998,7 +1034,7 @@ const CheckoutPage = () => {
                       {/* Dynamic QR Box */}
                       <div className="relative p-3 bg-white rounded-2xl border-2 border-dashed border-neutral-300 shadow-sm text-center flex-shrink-0">
                         <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=upi%3A%2F%2Fpay%3Fpa%3Dvexivo%40icici%26pn%3DVexivo%2BMarketplace%26am%3D${grandTotal}%26cu%3DINR`}
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=upi%3A%2F%2Fpay%3Fpa%3D8000795118%40ybl%26pn%3DVexivo%2BMarketplace%26am%3D${grandTotal}%26cu%3DINR`}
                           alt="VEXIVO Dynamic UPI QR"
                           className="w-36 h-36 mx-auto object-contain rounded-lg"
                         />

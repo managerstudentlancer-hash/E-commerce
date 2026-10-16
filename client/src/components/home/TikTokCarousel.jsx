@@ -150,7 +150,7 @@ const ContinuousVideoCard = ({ video, index, isAudioActive, onToggleAudio, onOpe
   }, [isAudioActive, video.videoUrl]);
 
   return (
-    <div className="flex-shrink-0 w-[220px] sm:w-[250px] md:w-[270px] flex flex-col gap-2.5 group select-none">
+    <div className="flex-shrink-0 w-[78vw] max-w-[260px] sm:w-[250px] md:w-[270px] snap-center flex flex-col gap-2.5 group select-none">
       {/* 9:16 Video Stage */}
       <div
         onClick={() => onOpenModal(index)}
@@ -167,7 +167,7 @@ const ContinuousVideoCard = ({ video, index, isAudioActive, onToggleAudio, onOpe
             playsInline
             preload="auto"
             onError={() => setHasError(true)}
-            className="absolute inset-0 w-full h-full object-cover pointer-events-none group-hover/card:scale-105 transition-transform duration-700 ease-out"
+            className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none group-hover/card:scale-105 transition-transform duration-700 ease-out"
           />
         ) : (
           <img
@@ -270,6 +270,8 @@ const TikTokCarousel = () => {
   const [activeModalIndex, setActiveModalIndex] = useState(null);
   const [modalAdded, setModalAdded] = useState(false);
   const [isCarouselHovered, setIsCarouselHovered] = useState(false);
+  const [isModalPlaying, setIsModalPlaying] = useState(true);
+  const [isModalMuted, setIsModalMuted] = useState(false);
   const modalVideoRef = useRef(null);
   const { addToCart } = useCart();
 
@@ -282,7 +284,8 @@ const TikTokCarousel = () => {
         if (scrollLeft + clientWidth >= scrollWidth - 30) {
           scrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
-          scrollRef.current.scrollBy({ left: 280, behavior: 'smooth' });
+          const scrollStep = clientWidth < 640 ? clientWidth * 0.8 : 280;
+          scrollRef.current.scrollBy({ left: scrollStep, behavior: 'smooth' });
         }
       }
     }, 4500);
@@ -291,7 +294,7 @@ const TikTokCarousel = () => {
 
   const handleScroll = (dir) => {
     if (scrollRef.current) {
-      const scrollOffset = dir === 'left' ? -380 : 380;
+      const scrollOffset = dir === 'left' ? -320 : 320;
       scrollRef.current.scrollBy({ left: scrollOffset, behavior: 'smooth' });
     }
   };
@@ -303,21 +306,36 @@ const TikTokCarousel = () => {
   const handleOpenModal = (index) => {
     setActiveModalIndex(index);
     setModalAdded(false);
+    setIsModalPlaying(true);
   };
 
   const handleCloseModal = () => {
     setActiveModalIndex(null);
   };
 
+  const toggleModalPlay = () => {
+    if (modalVideoRef.current) {
+      if (modalVideoRef.current.paused) {
+        modalVideoRef.current.play();
+        setIsModalPlaying(true);
+      } else {
+        modalVideoRef.current.pause();
+        setIsModalPlaying(false);
+      }
+    }
+  };
+
   // Continuous Navigation handlers in Modal: seamlessly auto-advances or manual jumps
   const handleNextVideo = useCallback(() => {
     setActiveModalIndex((prev) => (prev === null ? 0 : (prev + 1) % tiktokVideos.length));
     setModalAdded(false);
+    setIsModalPlaying(true);
   }, []);
 
   const handlePrevVideo = useCallback(() => {
     setActiveModalIndex((prev) => (prev === null ? 0 : (prev - 1 + tiktokVideos.length) % tiktokVideos.length));
     setModalAdded(false);
+    setIsModalPlaying(true);
   }, []);
 
   // Keyboard navigation when modal is open
@@ -405,12 +423,12 @@ const TikTokCarousel = () => {
           </div>
         </div>
 
-        {/* 9:16 Video Track — Runs Continuously */}
+        {/* 9:16 Video Track — Runs Continuously with Snap Centering */}
         <div
           ref={scrollRef}
           onMouseEnter={() => setIsCarouselHovered(true)}
           onMouseLeave={() => setIsCarouselHovered(false)}
-          className="flex space-x-4 sm:space-x-6 overflow-x-auto no-scrollbar scroll-smooth pb-2"
+          className="flex space-x-4 sm:space-x-6 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory px-4 sm:px-0 pb-2"
         >
           {tiktokVideos.map((video, idx) => (
             <ContinuousVideoCard
@@ -428,7 +446,7 @@ const TikTokCarousel = () => {
 
       {/* Continuous Reel Watch & Shop Modal */}
       {activeVideo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 animate-fade-in">
           {/* Backdrop */}
           <div
             onClick={handleCloseModal}
@@ -436,22 +454,24 @@ const TikTokCarousel = () => {
           />
 
           {/* Modal Container */}
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl overflow-hidden shadow-2xl z-10 border border-neutral-100 flex flex-col md:flex-row max-h-[92vh]">
+          <div className="relative w-full max-w-xl md:max-w-3xl bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl z-10 border border-neutral-100 flex flex-col md:flex-row max-h-[92vh] mx-auto">
             
             {/* Close Button */}
             <button
               onClick={handleCloseModal}
               aria-label="Close modal"
-              className="absolute top-4 right-4 z-30 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-neutral-800 flex items-center justify-center shadow-md active:scale-95 transition-all"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-40 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center shadow-md active:scale-95 transition-all backdrop-blur-md border border-white/20"
             >
               <X className="w-4 h-4" />
             </button>
 
-            {/* Left: Continuous Video Player with TikTok Navigation & Story Bars */}
-            <div className="relative w-full md:w-[48%] bg-black aspect-[9/16] md:aspect-auto min-h-[340px] md:min-h-[480px] flex items-center justify-center overflow-hidden group/modalvideo">
-              
+            {/* Left/Top: Continuous Video Player with TikTok Navigation & Story Bars */}
+            <div 
+              onClick={toggleModalPlay}
+              className="relative w-full md:w-[48%] bg-black flex items-center justify-center overflow-hidden cursor-pointer select-none h-[42vh] sm:h-[48vh] md:h-auto md:min-h-[500px]"
+            >
               {/* Top Story Progress Segments */}
-              <div className="absolute top-3 inset-x-3 z-30 flex items-center space-x-1.5">
+              <div className="absolute top-2.5 inset-x-3 z-30 flex items-center space-x-1.5">
                 {tiktokVideos.map((v, i) => (
                   <div
                     key={v.id}
@@ -470,25 +490,51 @@ const TikTokCarousel = () => {
                 ))}
               </div>
 
-              {/* Seamless Video Element: onEnded automatically advances to next video */}
+              {/* Seamless Centered Video Element: plays centered with object-contain/object-cover */}
               <video
                 key={activeVideo.id}
                 ref={modalVideoRef}
                 src={activeVideo.videoUrl}
                 autoPlay
                 playsInline
-                controls
+                loop={false}
+                muted={isModalMuted}
                 onEnded={handleNextVideo}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain md:object-cover mx-auto"
               />
 
+              {/* Sound Toggle Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsModalMuted((prev) => !prev);
+                }}
+                className="absolute top-7 left-3 z-30 p-2 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md border border-white/20 transition-all"
+                title={isModalMuted ? 'Unmute' : 'Mute'}
+              >
+                {isModalMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-amber-400" />}
+              </button>
+
+              {/* Play/Pause Center Indicator */}
+              {!isModalPlaying && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-20 pointer-events-none">
+                  <div className="w-14 h-14 rounded-full bg-white/90 text-neutral-950 flex items-center justify-center shadow-xl">
+                    <Play className="w-6 h-6 ml-1 fill-current" />
+                  </div>
+                </div>
+              )}
+
               {/* Floating Vertical Next/Prev Reel Controls (TikTok / Reels Style) */}
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center space-y-2 pointer-events-auto">
+              <div 
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center space-y-2 pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button
                   type="button"
                   onClick={handlePrevVideo}
-                  title="Previous Video (Up Arrow)"
-                  className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-transform active:scale-90 border border-white/20 shadow-md"
+                  title="Previous Video"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-transform active:scale-90 border border-white/20 shadow-md"
                 >
                   <ChevronUp className="w-5 h-5" />
                 </button>
@@ -498,39 +544,39 @@ const TikTokCarousel = () => {
                 <button
                   type="button"
                   onClick={handleNextVideo}
-                  title="Next Video (Down Arrow)"
-                  className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-transform active:scale-90 border border-white/20 shadow-md animate-bounce"
+                  title="Next Video"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-transform active:scale-90 border border-white/20 shadow-md animate-bounce"
                 >
                   <ChevronDown className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Auto-Advance Continuous Notice Pill */}
-              <div className="absolute bottom-3 left-3 z-20 flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-bold text-white border border-white/20 pointer-events-none">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>Auto-plays Next Reel Continuously</span>
+              <div className="absolute bottom-2 left-2.5 z-20 flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-bold text-white border border-white/20 pointer-events-none">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                <span>Auto-plays Next Reel</span>
               </div>
             </div>
 
-            {/* Right: Exact Matching Product Details (Updates Synchronously) */}
-            <div className="w-full md:w-[52%] p-6 sm:p-7 flex flex-col justify-between overflow-y-auto">
+            {/* Right/Bottom: Exact Matching Product Details */}
+            <div className="w-full md:w-[52%] p-4 sm:p-6 flex flex-col justify-between overflow-y-auto">
               <div>
                 {/* Creator tag */}
-                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-neutral-100 text-[10px] font-extrabold uppercase tracking-wider text-neutral-800 mb-2">
+                <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-neutral-100 text-[10px] font-extrabold uppercase tracking-wider text-neutral-800 mb-2">
                   <Sparkles className="w-3 h-3 text-amber-600" />
                   <span>{activeVideo.creator} • Reel {activeModalIndex + 1} of {tiktokVideos.length}</span>
                 </div>
 
-                <h3 className="text-base sm:text-lg font-extrabold text-neutral-950 tracking-tight leading-snug line-clamp-2">
+                <h3 className="text-sm sm:text-base font-extrabold text-neutral-950 tracking-tight leading-snug line-clamp-1 sm:line-clamp-2">
                   {activeVideo.title}
                 </h3>
 
                 {/* Matching Product Card Box */}
-                <div className="mt-4 p-4 rounded-2xl bg-[#FAF8F5] border border-[#ECE5DB] flex items-center space-x-3.5">
+                <div className="mt-2.5 sm:mt-4 p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[#FAF8F5] border border-[#ECE5DB] flex items-center space-x-3">
                   <img
                     src={activeVideo.product.image}
                     alt={activeVideo.product.name}
-                    className="w-16 h-16 rounded-xl object-cover border border-white shadow-xs flex-shrink-0"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover border border-white shadow-xs flex-shrink-0"
                   />
                   <div className="min-w-0 flex-1">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900/80 block">
@@ -540,25 +586,18 @@ const TikTokCarousel = () => {
                       {activeVideo.product.name}
                     </h4>
 
-                    {/* Star Rating */}
-                    <div className="flex items-center space-x-1 mt-1">
+                    {/* Star Rating & Price */}
+                    <div className="flex items-center space-x-2 mt-0.5">
                       <div className="flex text-amber-400">
                         {[...Array(5)].map((_, i) => (
                           <Star key={i} className="w-3 h-3 fill-current" />
                         ))}
                       </div>
-                      <span className="text-[10px] text-neutral-500 font-medium">
-                        ({activeVideo.product.reviewsCount})
-                      </span>
-                    </div>
-
-                    {/* Indian Rupee Price */}
-                    <div className="flex items-baseline space-x-2 mt-1">
-                      <span className="text-sm font-extrabold text-neutral-950">
+                      <span className="text-xs font-black text-neutral-950">
                         ₹{activeVideo.product.price.toLocaleString('en-IN')}
                       </span>
                       {activeVideo.product.compareAtPrice > activeVideo.product.price && (
-                        <span className="text-xs text-neutral-400 line-through">
+                        <span className="text-[10px] text-neutral-400 line-through">
                           ₹{activeVideo.product.compareAtPrice.toLocaleString('en-IN')}
                         </span>
                       )}
@@ -567,16 +606,16 @@ const TikTokCarousel = () => {
                 </div>
 
                 {/* Continuous Playlist Thumbnails Strip */}
-                <div className="mt-4 pt-3 border-t border-neutral-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-bold text-neutral-600 uppercase tracking-wider">
-                      Continuous Reels Playlist:
+                <div className="mt-3 pt-2.5 border-t border-neutral-100 hidden sm:block">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider">
+                      Reels Playlist:
                     </span>
-                    <span className="text-[10px] text-neutral-400 font-medium">
+                    <span className="text-[9px] text-neutral-400 font-medium">
                       Tap or use ↑↓ keys
                     </span>
                   </div>
-                  <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1">
+                  <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-0.5">
                     {tiktokVideos.map((item, idx) => (
                       <button
                         key={item.id}
@@ -584,15 +623,16 @@ const TikTokCarousel = () => {
                         onClick={() => {
                           setActiveModalIndex(idx);
                           setModalAdded(false);
+                          setIsModalPlaying(true);
                         }}
-                        className={`relative w-12 h-14 rounded-xl overflow-hidden flex-shrink-0 border-2 transition-all ${
+                        className={`relative w-10 h-12 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
                           idx === activeModalIndex
                             ? 'border-amber-500 scale-105 shadow-md ring-2 ring-amber-300'
                             : 'border-transparent opacity-60 hover:opacity-100'
                         }`}
                       >
                         <img src={item.poster} alt={item.title} className="w-full h-full object-cover" />
-                        <span className="absolute bottom-0.5 right-1 text-[9px] font-black text-white drop-shadow">
+                        <span className="absolute bottom-0.5 right-1 text-[8px] font-black text-white drop-shadow">
                           #{idx + 1}
                         </span>
                       </button>
@@ -602,12 +642,12 @@ const TikTokCarousel = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 space-y-2">
+              <div className="pt-3 space-y-2">
                 <button
                   type="button"
                   onClick={handleModalAddToCart}
                   disabled={modalAdded}
-                  className={`w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 ${
+                  className={`w-full py-2.5 sm:py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-md active:scale-95 ${
                     modalAdded
                       ? 'bg-emerald-600 text-white'
                       : 'bg-neutral-950 hover:bg-neutral-800 text-white'
@@ -630,16 +670,16 @@ const TikTokCarousel = () => {
                   <Link
                     to={`/product/${activeVideo.product.slug}`}
                     onClick={handleCloseModal}
-                    className="flex-1 py-2.5 rounded-xl bg-white border border-neutral-300 hover:border-black text-neutral-900 font-bold text-xs flex items-center justify-center space-x-1.5 transition-all hover:bg-neutral-50"
+                    className="flex-1 py-2 sm:py-2.5 rounded-xl bg-white border border-neutral-300 hover:border-black text-neutral-900 font-bold text-xs flex items-center justify-center space-x-1.5 transition-all hover:bg-neutral-50"
                   >
-                    <span>Inspect Details</span>
+                    <span>View Product</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </Link>
 
                   <button
                     type="button"
                     onClick={handleNextVideo}
-                    className="px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs flex items-center space-x-1 transition-all"
+                    className="px-3.5 py-2 sm:py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs flex items-center space-x-1 transition-all"
                   >
                     <span>Next Reel</span>
                     <ChevronRight className="w-3.5 h-3.5" />

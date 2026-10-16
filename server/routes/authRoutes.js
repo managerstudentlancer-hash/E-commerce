@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   register,
   login,
+  googleLogin,
   adminLogin,
   sendOtp,
   verifyOtp,
@@ -28,6 +29,7 @@ const { checkBruteForce, sanitizeAuthInputs } = require('../middleware/securityM
 
 router.post('/register', sanitizeAuthInputs, register);
 router.post('/login', sanitizeAuthInputs, checkBruteForce, login);
+router.post('/google-login', sanitizeAuthInputs, googleLogin);
 router.post('/admin-login', sanitizeAuthInputs, checkBruteForce, adminLogin);
 router.post('/admin-forgot-password', sanitizeAuthInputs, adminForgotPassword);
 router.post('/admin-reset-password', sanitizeAuthInputs, adminResetPassword);

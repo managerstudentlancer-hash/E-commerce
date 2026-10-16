@@ -129,19 +129,21 @@ const App = () => {
                   <Route path="/search" element={<SearchResults />} />
                   <Route path="/offers" element={<OffersPage />} />
                   <Route path="/cart" element={<CartPage />} />
-                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/wishlist" element={<WishlistPage />} />
+                  <Route path="/account/wishlist" element={<WishlistPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/forgot-password" element={<Login />} />
 
-                  {/* Customer Account Routes (Protected) */}
+                  <Route path="/become-a-seller" element={<BecomeSeller />} />
+                  <Route path="/seller/register" element={<BecomeSeller />} />
+
+                  {/* Customer Account & Order Routes (Protected - Login Mandatory) */}
                   <Route element={<ProtectedRoute />}>
+                    <Route path="/checkout" element={<CheckoutPage />} />
                     <Route path="/account" element={<AccountDashboard />} />
                     <Route path="/account/orders" element={<OrderHistory />} />
-                    <Route path="/account/wishlist" element={<WishlistPage />} />
                     <Route path="/account/addresses" element={<AddressBook />} />
-                    <Route path="/become-a-seller" element={<BecomeSeller />} />
-                    <Route path="/seller/register" element={<BecomeSeller />} />
                     <Route path="/account/seller" element={<SellerDashboard />} />
                   </Route>
 

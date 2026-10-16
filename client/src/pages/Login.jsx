@@ -4,6 +4,7 @@ import {
   Lock,
   Mail,
   Phone,
+  User,
   ArrowRight,
   ArrowLeft,
   Loader2,
@@ -13,25 +14,30 @@ import {
   ShieldCheck,
   ShieldAlert,
   Sparkles,
+  Gift,
+  Truck,
+  RotateCcw,
+  Star,
   X,
   History,
   KeyRound,
   RefreshCw,
+  Store,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import GoogleAuthButton from '../components/auth/GoogleAuthButton';
 
 const Login = () => {
   const location = useLocation();
   const [authMode, setAuthMode] = useState(
-    location.pathname === '/forgot-password' ? 'forgot-password' : 'email'
-  ); // 'email' | 'phone' | 'forgot-password'
+    location.pathname === '/forgot-password' ? 'forgot-password' : 'phone'
+  ); // 'phone' (fast Indian OTP) | 'email' | 'forgot-password'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [devOtpHint, setDevOtpHint] = useState('');
   const [countdown, setCountdown] = useState(0);
 
   // Forgot Password Real-Time Email OTP State
@@ -61,6 +67,10 @@ const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTarget = searchParams.get('redirect');
+  const isSellerLogin =
+    searchParams.get('role') === 'seller' ||
+    redirectTarget?.includes('seller') ||
+    location.state?.from?.pathname?.includes('seller');
 
   // Sync route changes if navigated to /forgot-password
   useEffect(() => {
@@ -108,18 +118,25 @@ const Login = () => {
     return () => clearTimeout(timer);
   }, [forgotCountdown]);
 
+  const getSuccessRedirect = (targetUser) => {
+    const fromPath = location.state?.from?.pathname
+      ? `${location.state.from.pathname}${location.state.from.search || ''}`
+      : null;
+    if (targetUser?.role === 'admin') {
+      return redirectTarget?.startsWith('/admin') ? redirectTarget : '/admin';
+    }
+    if (targetUser?.role === 'seller') {
+      return redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account/seller';
+    }
+    return fromPath || (redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account');
+  };
+
   // Navigate if already logged in
   useEffect(() => {
     if (user) {
-      if (user.role === 'admin') {
-        navigate(redirectTarget?.startsWith('/admin') ? redirectTarget : '/admin');
-      } else if (user.role === 'seller') {
-        navigate(redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account/seller');
-      } else {
-        navigate(redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account');
-      }
+      navigate(getSuccessRedirect(user));
     }
-  }, [user, redirectTarget, navigate]);
+  }, [user, redirectTarget, navigate, location.state]);
 
   // OTP resend countdown
   useEffect(() => {
@@ -188,14 +205,7 @@ const Login = () => {
       const loggedInUser = await login(email.trim(), password);
       // Persist login suggestion so future sessions suggest it automatically
       persistEmailSuggestion(email);
-
-      if (loggedInUser.role === 'admin') {
-        navigate(redirectTarget?.startsWith('/admin') ? redirectTarget : '/admin');
-      } else if (loggedInUser.role === 'seller') {
-        navigate(redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account/seller');
-      } else {
-        navigate(redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account');
-      }
+      navigate(getSuccessRedirect(loggedInUser));
     } catch (err) {
       if (err.status === 429 || (err.message && err.message.toLowerCase().includes('lockout'))) {
         setLockoutSeconds(15 * 60); // 15 mins lock
@@ -225,9 +235,6 @@ const Login = () => {
       if (res.success) {
         setOtpSent(true);
         setCountdown(45);
-        if (res.devOtp) {
-          setDevOtpHint(res.devOtp);
-        }
       }
     } catch (err) {
       setError(err.message || 'Failed to dispatch verification code');
@@ -250,12 +257,7 @@ const Login = () => {
       const loggedInUser = await loginWithOtp(phone, otp.trim());
       // Persist phone suggestion
       persistPhoneSuggestion(phone);
-
-      if (loggedInUser.role === 'seller') {
-        navigate(redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account/seller');
-      } else {
-        navigate(redirectTarget && !redirectTarget.startsWith('/admin') ? redirectTarget : '/account');
-      }
+      navigate(getSuccessRedirect(loggedInUser));
     } catch (err) {
       setError(err.message || 'Invalid verification code');
     } finally {
@@ -282,9 +284,6 @@ const Login = () => {
         setForgotEmail(targetEmail);
         setForgotOtpSent(true);
         setForgotCountdown(45);
-        if (res.devOtp) {
-          setForgotDevOtp(res.devOtp);
-        }
       }
     } catch (err) {
       setError(err.message || 'Failed to dispatch password reset OTP. Please check your email.');
@@ -350,55 +349,103 @@ const Login = () => {
       </datalist>
 
       <div className="max-w-4xl w-full bg-white rounded-3xl shadow-xl border border-neutral-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12">
-        {/* Left Editorial Visual Column (5 Cols) */}
-        <div className="hidden md:flex md:col-span-5 relative bg-neutral-900 text-white flex-col justify-between p-8 sm:p-10 overflow-hidden">
-          <img
-            src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=85"
-            alt="VEXIVO Editorial"
-            className="absolute inset-0 w-full h-full object-cover object-center opacity-40 mix-blend-overlay scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/60 pointer-events-none" />
+        {/* Left Customer Benefits & Trust Column (5 Cols) - Clean, Modern & Attractive */}
+        <div className="hidden md:flex md:col-span-5 relative bg-gradient-to-br from-[#FAF7F2] via-[#F4ECE1] to-[#ECE1D0] border-r border-[#E8DEC8] flex-col justify-between p-7 sm:p-8 overflow-hidden select-none">
+          {/* Subtle ambient luxury glow circles */}
+          <div className="absolute -top-16 -left-16 w-48 h-48 rounded-full bg-amber-200/40 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-16 -right-16 w-48 h-48 rounded-full bg-rose-200/30 blur-3xl pointer-events-none" />
 
-          {/* Brand Header */}
-          <div className="relative z-10">
-            <Link to="/" className="text-2xl font-extrabold tracking-widest text-white inline-block">
-              VEXIVO
-            </Link>
-            <p className="text-xs text-neutral-300 mt-1 uppercase tracking-widest font-semibold">
-              London Atelier &amp; Marketplace
-            </p>
-          </div>
-
-          {/* Editorial Quote & Perks */}
-          <div className="relative z-10 space-y-6">
-            <blockquote className="text-sm font-medium leading-relaxed text-neutral-200">
-              “Precision tailoring, pure acoustic engineering, and everyday British luxury designed for longevity.”
-            </blockquote>
-
-            <div className="space-y-2.5 pt-4 border-t border-white/20 text-xs">
-              <div className="flex items-center space-x-2 text-neutral-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>Complimentary Express Delivery</span>
-              </div>
-              <div className="flex items-center space-x-2 text-neutral-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>Direct Seller Marketplace Access</span>
-              </div>
-              <div className="flex items-center space-x-2 text-neutral-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>30-Day Hassle-Free Returns</span>
-              </div>
-            </div>
-          </div>
-
+          {/* Top Brand Header & Badge */}
           <div className="relative z-10 space-y-2">
-            <div className="text-[11px] text-neutral-300 flex items-center space-x-2 bg-white/10 px-3 py-2 rounded-xl backdrop-blur-sm border border-white/10">
-              <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>256-Bit TLS Bank-Grade Encryption</span>
+            <div className="flex items-center justify-between">
+              <Link to="/" className="text-2xl font-extrabold tracking-widest text-neutral-900 flex items-center">
+                <span>VEXIVO</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#C4301C] ml-1 mb-1" />
+              </Link>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 shadow-2xs">
+                Verified Store
+              </span>
             </div>
-            <p className="text-[10px] text-neutral-400">
-              Protected against automated brute-force intrusion.
+            <p className="text-xs text-neutral-600 font-medium">
+              Curated Fashion, Footwear &amp; Lifestyle Essentials
             </p>
+          </div>
+
+          {/* Customer Benefits Cards Showcase */}
+          <div className="relative z-10 space-y-3 my-4">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-neutral-500 block">
+              Why Shop With Us
+            </span>
+
+            {/* Benefit 1: 10% Welcome Gift */}
+            <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-sm border border-white/80 shadow-xs flex items-start space-x-3 transition-transform hover:scale-[1.02]">
+              <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Gift className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-xs font-bold text-neutral-900">Flat 10% Welcome Gift</span>
+                  <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-rose-100 text-rose-700">CODE: VEX10</span>
+                </div>
+                <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">
+                  Instant discount automatically applied on your first order.
+                </p>
+              </div>
+            </div>
+
+            {/* Benefit 2: Pan-India Express Delivery */}
+            <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-sm border border-white/80 shadow-xs flex items-start space-x-3 transition-transform hover:scale-[1.02]">
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Truck className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-neutral-900 block">Free Pan-India Express</span>
+                <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">
+                  Fast doorstep delivery across 28,000+ PIN codes with live tracking.
+                </p>
+              </div>
+            </div>
+
+            {/* Benefit 3: 7-Day Easy Returns */}
+            <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-sm border border-white/80 shadow-xs flex items-start space-x-3 transition-transform hover:scale-[1.02]">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <RotateCcw className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-neutral-900 block">Hassle-Free Doorstep Pickup</span>
+                <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">
+                  7-day easy replacements or full refunds to original payment method.
+                </p>
+              </div>
+            </div>
+
+            {/* Benefit 4: 100% Genuine Certified */}
+            <div className="p-3 rounded-2xl bg-white/90 backdrop-blur-sm border border-white/80 shadow-xs flex items-start space-x-3 transition-transform hover:scale-[1.02]">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-neutral-900 block">100% Verified Quality</span>
+                <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">
+                  Direct artisan &amp; flagship atelier sourcing with strict quality checks.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Social Proof & Trust Rating */}
+          <div className="relative z-10 pt-3 border-t border-[#E8DEC8]/80 flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-1.5">
+              <div className="flex text-amber-500">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-3.5 h-3.5 fill-current" />
+                ))}
+              </div>
+              <span className="text-[11px] font-bold text-neutral-800">4.9 / 5.0</span>
+            </div>
+            <span className="text-[10px] text-neutral-600 font-medium">
+              18,500+ Verified Customers
+            </span>
           </div>
         </div>
 
@@ -430,39 +477,72 @@ const Login = () => {
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between border-b border-neutral-200 pb-4 mb-5">
-                <div>
-                  <h1 className="text-2xl font-extrabold text-neutral-900 tracking-tight">
-                    Welcome Back
-                  </h1>
-                  <p className="text-xs text-neutral-500 mt-1">
-                    Sign in to manage your orders, products, and profile.
-                  </p>
+              {isSellerLogin && (
+                <div className="mb-5 p-4 bg-gradient-to-r from-neutral-900 via-neutral-950 to-blue-950 text-white rounded-2xl flex items-center space-x-3 shadow-md border border-neutral-800 animate-in fade-in">
+                  <div className="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center flex-shrink-0">
+                    <Store className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-white">VEXIVO Seller Partner Sign In</h3>
+                    <p className="text-xs text-neutral-300 mt-0.5">Apne seller dashboard aur store inventory ko manage karne ke liye sign in karein.</p>
+                  </div>
                 </div>
-                <Link
-                  to="/register"
-                  className="text-xs font-bold text-neutral-900 hover:text-[#C4301C] underline underline-offset-4 transition-colors"
+              )}
+
+              {location.state?.from?.pathname === '/checkout' && !isSellerLogin && (
+                <div className="mb-5 p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center space-x-2 text-xs font-bold text-amber-950 animate-in fade-in">
+                  <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                  <span>Order place karne ke liye pehle login karein. Login karte hi aapka checkout open ho jayega.</span>
+                </div>
+              )}
+
+              {/* Primary Top Action Switcher: Sign In vs Create Account */}
+              <div className="grid grid-cols-2 bg-neutral-100 p-1.5 rounded-2xl mb-4 shadow-inner">
+                <button
+                  type="button"
+                  className="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold bg-white text-neutral-950 shadow-sm flex items-center justify-center space-x-1.5"
                 >
-                  Need an account?
+                  <User className="w-3.5 h-3.5 text-neutral-900" />
+                  <span>Sign In / Login</span>
+                </button>
+                <Link
+                  to={isSellerLogin ? '/register?redirect=/become-a-seller&seller=true' : '/register'}
+                  state={location.state}
+                  className="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold text-neutral-500 hover:text-neutral-950 flex items-center justify-center space-x-1.5 hover:bg-white/60 transition-all"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Create Account</span>
                 </Link>
               </div>
 
-              {/* Clean Authentication Mode Tabs: Email vs Mobile OTP */}
-              <div className="flex bg-neutral-100 p-1 rounded-2xl mb-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('email');
-                    setError('');
-                  }}
-                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${
-                    authMode === 'email'
-                      ? 'bg-white text-neutral-950 shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                  }`}
+              {/* New User Welcome Benefit Pill Banner */}
+              <div className="mb-4 p-3 rounded-2xl bg-gradient-to-r from-amber-50 via-rose-50 to-orange-50 border border-amber-200/80 flex items-center justify-between text-xs animate-in fade-in">
+                <div className="flex items-center space-x-2 min-w-0">
+                  <span className="text-base">🎁</span>
+                  <p className="text-neutral-800 text-[11px] sm:text-xs truncate">
+                    <strong>Naye Customer?</strong> Sign up karein aur pehle order par <strong>Flat 10% OFF</strong> payein!
+                  </p>
+                </div>
+                <Link
+                  to={isSellerLogin ? '/register?redirect=/become-a-seller&seller=true' : '/register'}
+                  state={location.state}
+                  className="text-xs font-bold text-rose-600 hover:text-rose-800 underline flex-shrink-0 ml-2"
                 >
-                  Email &amp; Password
-                </button>
+                  Sign Up &rarr;
+                </Link>
+              </div>
+
+              <div className="border-b border-neutral-200 pb-3 mb-4">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-neutral-900 tracking-tight">
+                  {isSellerLogin ? 'Seller Portal Login' : 'Login to Your Account'}
+                </h1>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Mobile number se 10-second fast OTP login karein ya email use karein.
+                </p>
+              </div>
+
+              {/* Fast Method Switcher: Mobile OTP (Default / Highlighted) vs Email */}
+              <div className="flex bg-neutral-100 p-1 rounded-2xl mb-5">
                 <button
                   type="button"
                   onClick={() => {
@@ -475,10 +555,24 @@ const Login = () => {
                       : 'text-neutral-500 hover:text-neutral-900'
                   }`}
                 >
-                  <span>📱 Mobile OTP</span>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-bold">
-                    India
+                  <span>📱 Fast Mobile OTP</span>
+                  <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full font-bold">
+                    1-Tap
                   </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('email');
+                    setError('');
+                  }}
+                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${
+                    authMode === 'email'
+                      ? 'bg-white text-neutral-950 shadow-sm'
+                      : 'text-neutral-500 hover:text-neutral-900'
+                  }`}
+                >
+                  ✉️ Email &amp; Password
                 </button>
               </div>
             </>
@@ -658,7 +752,7 @@ const Login = () => {
           {authMode === 'phone' && (
             <div className="space-y-4">
               <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-200 text-xs text-neutral-600">
-                💡 <span className="font-semibold text-neutral-900">Normal User Login:</span> Enter your 10-digit Indian mobile number to log in or register instantly. (Admin access requires email credentials).
+                💡 <span className="font-semibold text-neutral-900">Quick Login:</span> Enter your 10-digit Indian mobile number to log in or register instantly with OTP.
               </div>
 
               {/* Suggested Mobile Phone */}
@@ -749,7 +843,6 @@ const Login = () => {
                       onClick={() => {
                         setOtpSent(false);
                         setOtp('');
-                        setDevOtpHint('');
                       }}
                       className="text-xs font-bold text-[#C4301C] hover:underline"
                     >
@@ -780,19 +873,13 @@ const Login = () => {
                     />
                   </div>
 
-                  {/* Dev OTP hint (if active in dev environment) */}
-                  {devOtpHint && (
-                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 flex items-center justify-between">
-                      <span>Development SMS Code: <strong className="font-mono text-amber-950 font-bold">{devOtpHint}</strong></span>
-                      <button
-                        type="button"
-                        onClick={() => setOtp(devOtpHint)}
-                        className="text-xs font-bold text-amber-900 underline"
-                      >
-                        Auto-Fill
-                      </button>
-                    </div>
-                  )}
+                  {/* Real SMS & WhatsApp Sent Notice */}
+                  <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200/80 text-xs text-emerald-800 flex items-center space-x-2 animate-in fade-in">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>6-digit verification code aapke WhatsApp &amp; SMS par bhej diya gaya hai.</span>
+                  </div>
+
+
 
                   <div className="flex items-center justify-between text-xs text-neutral-500 pt-1">
                     <span>Didn't receive code?</span>
@@ -936,19 +1023,11 @@ const Login = () => {
                     </button>
                   </div>
 
-                  {/* Real-time Dev OTP Banner */}
-                  {forgotDevOtp && (
-                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 flex items-center justify-between animate-in fade-in">
-                      <span>Real-Time Reset OTP: <strong className="font-mono text-amber-950 font-bold">{forgotDevOtp}</strong></span>
-                      <button
-                        type="button"
-                        onClick={() => setForgotOtp(forgotDevOtp)}
-                        className="text-xs font-bold text-amber-900 underline"
-                      >
-                        Auto-Fill
-                      </button>
-                    </div>
-                  )}
+                  {/* Email OTP Sent Notice */}
+                  <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200/80 text-xs text-emerald-800 flex items-center space-x-2 animate-in fade-in">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>6-digit password reset code aapke email par bhej diya gaya hai.</span>
+                  </div>
 
                   {/* 6-Digit OTP */}
                   <div>
@@ -1080,6 +1159,25 @@ const Login = () => {
             </div>
           )}
 
+          {/* Fast Google 1-Click Sign-In (At the Bottom) */}
+          {authMode !== 'forgot-password' && (
+            <div className="mt-5 pt-3">
+              <div className="relative my-3">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-neutral-200" />
+                </div>
+                <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest text-neutral-400">
+                  <span className="bg-white px-2">Or continue with</span>
+                </div>
+              </div>
+              <GoogleAuthButton
+                text="Continue with Google"
+                onSuccess={(loggedUser) => navigate(getSuccessRedirect(loggedUser))}
+                onError={(err) => setError(err)}
+              />
+            </div>
+          )}
+
           {/* Security & Authentication Assurance Footer */}
           <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-500">
             <span className="flex items-center space-x-1.5">
@@ -1089,17 +1187,6 @@ const Login = () => {
             <span className="text-neutral-400">
               Never share your credentials
             </span>
-          </div>
-
-          {/* Dedicated Administrator Portal Separation */}
-          <div className="mt-3 pt-3 border-t border-neutral-100 text-center">
-            <p className="text-[11px] text-neutral-500 flex items-center justify-center space-x-1.5">
-              <span>Are you a store administrator?</span>
-              <Link to="/admin/login" className="font-bold text-[#C4301C] hover:underline inline-flex items-center space-x-0.5">
-                <span>Go to Admin Portal</span>
-                <ArrowRight className="w-3 h-3 inline" />
-              </Link>
-            </p>
           </div>
         </div>
       </div>

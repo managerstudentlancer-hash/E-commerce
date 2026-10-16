@@ -418,6 +418,37 @@ const BecomeSeller = () => {
           </div>
         </div>
 
+        {/* ================= GUEST SELLER ONBOARDING ACTION CARD ================= */}
+        {!user && (
+          <div className="bg-white border-2 border-blue-600/30 rounded-3xl p-6 sm:p-8 mb-8 shadow-lg text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="space-y-2 max-w-xl">
+              <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                Seller Account Access
+              </span>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-900">
+                Start Selling on VEXIVO in 3 Minutes
+              </h2>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                Aapke paas pehle se seller account hai to login karein, ya 1-minute me naya seller account register karein aur apna store shuru karein.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto flex-shrink-0">
+              <Link
+                to="/login?redirect=/become-a-seller&role=seller"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-neutral-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider text-center shadow-md transition-all flex items-center justify-center space-x-1.5"
+              >
+                <span>1. Seller Login</span>
+              </Link>
+              <Link
+                to="/register?redirect=/become-a-seller&seller=true"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider text-center shadow-md transition-all flex items-center justify-center space-x-1.5"
+              >
+                <span>2. Register as Seller</span>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* ================= ALREADY A SELLER BANNER ================= */}
         {user?.isSeller && !isSuccess && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">

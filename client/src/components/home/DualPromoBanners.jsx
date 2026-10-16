@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../services/api';
@@ -27,7 +27,7 @@ const defaultLeftBanners = [
     titleLine2: 'Off Selected',
     description: 'Curated luxury styles at exceptional prices.',
     ctaText: 'Shop Now',
-    ctaLink: '/collection/special-offers',
+    ctaLink: '/offers',
     image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=85',
     fallbackImage: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=800&q=80',
     productBadge: 'Handcrafted Leather',
@@ -237,6 +237,63 @@ const DualPromoBanners = () => {
     setRightIndex((prev) => (prev - 1 + rightItems.length) % rightItems.length);
   };
 
+  const [mobileIndex, setMobileIndex] = useState(0);
+  const [isMobilePaused, setIsMobilePaused] = useState(false);
+  const touchStartXRef = useRef(null);
+
+  // Combine left and right banners into an alternating mobile slide deck
+  const mobileSlides = useMemo(() => {
+    const list = [];
+    const max = Math.max(leftItems.length, rightItems.length);
+    for (let i = 0; i < max; i++) {
+      if (leftItems[i]) list.push(leftItems[i]);
+      if (rightItems[i]) list.push(rightItems[i]);
+    }
+    return list.length > 0 ? list : defaultLeftBanners;
+  }, [leftItems, rightItems]);
+
+  const safeMobileIndex = mobileSlides.length > 0 ? mobileIndex % mobileSlides.length : 0;
+
+  // Mobile auto-slide timer (6 seconds)
+  useEffect(() => {
+    if (isMobilePaused || mobileSlides.length <= 1) return;
+    const timer = setInterval(() => {
+      setMobileIndex((prev) => (prev + 1) % mobileSlides.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [isMobilePaused, mobileSlides.length]);
+
+  const handlePrevMobile = (e) => {
+    if (e) e.stopPropagation();
+    setMobileIndex((prev) => (prev - 1 + mobileSlides.length) % mobileSlides.length);
+  };
+
+  const handleNextMobile = (e) => {
+    if (e) e.stopPropagation();
+    setMobileIndex((prev) => (prev + 1) % mobileSlides.length);
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    setIsMobilePaused(true);
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartXRef.current !== null) {
+      const touchEndX = e.changedTouches[0].clientX;
+      const diff = touchEndX - touchStartXRef.current;
+      if (diff > 45) {
+        handlePrevMobile();
+      } else if (diff < -45) {
+        handleNextMobile();
+      }
+      touchStartXRef.current = null;
+    }
+    setTimeout(() => setIsMobilePaused(false), 2000);
+  };
+
+  const currentMobile = mobileSlides[safeMobileIndex] || mobileSlides[0];
+
   const handleNextRight = (e) => {
     e.stopPropagation();
     setRightIndex((prev) => (prev + 1) % rightItems.length);
@@ -244,7 +301,151 @@ const DualPromoBanners = () => {
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-4 select-none">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+      
+      {/* ======================================================== */}
+      {/* 1. MOBILE VIEW (< md): Single Unified Modern Sliding Banner */}
+      {/* ======================================================== */}
+      <div 
+        className="block md:hidden relative rounded-3xl overflow-hidden shadow-[0_4px_25px_rgba(0,0,0,0.03)] border border-[#E4DACF]"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseEnter={() => setIsMobilePaused(true)}
+        onMouseLeave={() => setIsMobilePaused(false)}
+      >
+        {/* Horizontal sliding track that physically translates */}
+        <div 
+          className="flex transition-transform duration-500 ease-out"
+          style={{ transform: `translateX(-${safeMobileIndex * 100}%)` }}
+        >
+          {mobileSlides.map((slide, idx) => (
+            <div 
+              key={`mob-slide-${slide.id}-${idx}`}
+              className="w-full flex-shrink-0 min-w-full"
+            >
+              <div
+                className={`relative overflow-hidden bg-gradient-to-br ${slide.bgGradient || 'from-[#EFE8DF] via-[#ECE4DA] to-[#E3D7CB]'} p-5 xs:p-6 min-h-[235px] flex items-center justify-between select-none`}
+              >
+                {/* Subtle Ambient Light Spot */}
+                <div className="absolute top-0 right-1/3 w-48 h-48 rounded-full bg-white/40 blur-2xl pointer-events-none" />
+
+                {/* Background Image on Right with smooth fade */}
+                <div className="absolute right-0 top-0 bottom-0 w-[50%] xs:w-[52%] pointer-events-none overflow-hidden">
+                  <img
+                    src={slide.image}
+                    alt={`${slide.titleLine1} ${slide.titleLine2}`}
+                    className="w-full h-full object-cover object-center"
+                    onError={(e) => {
+                      e.currentTarget.src = slide.fallbackImage;
+                    }}
+                  />
+                  {/* Dynamic gradient fade matching slide background */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-stone-100/90 via-stone-100/30 to-transparent" />
+
+                  {/* Floating Tag on Product */}
+                  {slide.productBadge && (
+                    <div
+                      className="inline-flex items-center space-x-1 absolute bottom-3.5 right-3 z-10 px-2.5 py-0.5 rounded-full bg-white/90 backdrop-blur-md border border-white/80 text-[8px] font-semibold text-neutral-800 shadow-xs"
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${slide.badgeDotColor || 'bg-stone-700'}`} />
+                      <span className="truncate max-w-[105px]">{slide.productBadge}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Left Text Block */}
+                <div className="relative z-10 max-w-[185px] xs:max-w-[215px] space-y-2">
+                  {/* Badge */}
+                  {slide.tag && (
+                    <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-white/85 backdrop-blur-xs shadow-2xs border border-white/80">
+                      <span className={`w-1.5 h-1.5 rounded-full ${slide.tagDotColor || 'bg-stone-700'}`} />
+                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-neutral-900">
+                        {slide.tag}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Dynamic Title */}
+                  <h3 className="text-xl xs:text-2xl font-extrabold text-neutral-900 tracking-tight leading-tight">
+                    {slide.titleLine1} <br />
+                    {slide.titleLine2 && (
+                      <span className="font-serif italic font-normal text-amber-950">
+                        {slide.titleLine2}
+                      </span>
+                    )}
+                  </h3>
+
+                  {/* Description */}
+                  {slide.description && (
+                    <p className="text-[11px] text-neutral-600 font-medium line-clamp-2 leading-relaxed">
+                      {slide.description}
+                    </p>
+                  )}
+
+                  {/* CTA Button */}
+                  <div className="pt-0.5">
+                    <Link
+                      to={slide.ctaLink}
+                      className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-neutral-950 text-white font-semibold text-xs tracking-wide shadow-xs active:scale-95 transition-all"
+                    >
+                      <span>{slide.ctaText}</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Manual Arrow Controls on Mobile */}
+        {mobileSlides.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={handlePrevMobile}
+              aria-label="Previous promo slide"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/90 hover:bg-white text-neutral-800 flex items-center justify-center shadow-md border border-neutral-200/60 z-20 active:scale-90 transition-transform"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleNextMobile}
+              aria-label="Next promo slide"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/90 hover:bg-white text-neutral-800 flex items-center justify-center shadow-md border border-neutral-200/60 z-20 active:scale-90 transition-transform"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </>
+        )}
+
+        {/* Animated Progress Indicators at Bottom Left */}
+        {mobileSlides.length > 1 && (
+          <div className="absolute bottom-3 left-5 flex items-center space-x-1.5 z-20">
+            {mobileSlides.map((item, idx) => (
+              <button
+                key={`mob-dot-${item.id}-${idx}`}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMobileIndex(idx);
+                }}
+                aria-label={`Go to slide ${idx + 1}`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  idx === safeMobileIndex
+                    ? 'w-6 bg-neutral-900 shadow-xs'
+                    : 'w-1.5 bg-neutral-400/60'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ========================================================= */}
+      {/* 2. DESKTOP VIEW (md: and up): Side-by-side Dual Cards     */}
+      {/* ========================================================= */}
+      <div className="hidden md:grid md:grid-cols-2 gap-5 sm:gap-6">
         
         {/* Banner 1 (Left Card) with Auto-Rotating Branding Items */}
         <div

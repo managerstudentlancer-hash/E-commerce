@@ -1,304 +1,376 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, X, ChevronRight, User, Heart, ShoppingBag, ShieldCheck, Package, Mail, Phone, Gift, Store } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Link, useLocation } from 'react-router-dom';
+import {
+  X,
+  ChevronRight,
+  User,
+  Heart,
+  ShoppingBag,
+  ShieldCheck,
+  Package,
+  Phone,
+  Store,
+  Home,
+  Sparkles,
+  Flame,
+  HelpCircle,
+  LogOut,
+  LogIn,
+  Layers,
+  ArrowRight,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useSettings } from '../../context/SettingsContext';
 
-const navigationLinks = [
-  { name: 'New In (Spring/Summer 26)', href: '/collection/new-arrivals', badge: 'LIVE', isHighlight: true },
-  { name: "Women's Dresses", href: '/collection/women-dresses' },
-  { name: "Women's Shoes & Heels", href: '/collection/women-shoes' },
-  { name: "Women's Bags & Luggage", href: '/collection/women-bags' },
-  { name: "Women's Fine Jewellery", href: '/collection/women-jewellery' },
-  { name: "Women's Luxury Watches", href: '/collection/women-watches' },
-  { name: "Men's Shirts", href: '/collection/men-shirts' },
-  { name: "Men's Shoes", href: '/collection/men-shoes' },
-  { name: "Men's Watches", href: '/collection/men-watches' },
-  { name: 'All Departments / Categories', href: '/shop' },
-  { name: 'Bestsellers Archive', href: '/collection/bestsellers' },
-  { name: 'Seasonal Sale', href: '/collection/special-offers', badge: 'UP TO 40%', isSale: true },
+// All store categories with direct links
+const storeCategories = [
+  { name: 'Sarees & Ethnic Wear', slug: 'sarees', badge: 'Trending', isHot: true },
+  { name: 'Women Wear', slug: 'women-wear' },
+  { name: 'Men Wear', slug: 'men-wear' },
+  { name: 'Beauty & Skincare', slug: 'beauty' },
+  { name: 'Fragrances & Perfumes', slug: 'fragrances' },
+  { name: 'Fine Jewellery', slug: 'womens-jewellery' },
+  { name: 'Watches & Sunglasses', slug: 'sunglasses' },
+  { name: 'Bags & Handbags', slug: 'womens-bags' },
+  { name: 'Shoes & Footwear', slug: 'womens-shoes' },
+  { name: 'Electronics & Mobiles', slug: 'smartphones' },
+  { name: 'Home & Living', slug: 'furniture' },
 ];
 
 const MobileNav = ({ isOpen, onClose }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const { wishlistCount } = useWishlist();
   const { settings } = useSettings();
-  const [mobileSearchQuery, setMobileSearchQuery] = useState('');
-  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleMobileSearch = (e) => {
-    e.preventDefault();
-    if (mobileSearchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(mobileSearchQuery.trim())}`);
-      onClose();
+  // Prevent background scrolling while mobile drawer is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
     }
-  };
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-hidden animate-fade-in lg:hidden">
-      {/* Backdrop */}
-      <div onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] lg:hidden animate-fade-in font-sans">
+      {/* 1. Backdrop Overlay */}
+      <div
+        onClick={onClose}
+        className="fixed inset-0 bg-neutral-950/70 backdrop-blur-xs transition-opacity duration-300"
+        aria-hidden="true"
+      />
 
-      {/* Drawer */}
-      <div className="absolute inset-y-0 left-0 max-w-full flex pr-10">
-        <div className="w-screen max-w-sm bg-white shadow-2xl flex flex-col justify-between">
-          {/* Header */}
-          <div className="p-5 border-b border-neutral-100 flex items-center justify-between">
-            <Link to="/" onClick={onClose} className="flex items-center space-x-2">
-              {settings?.logo ? (
-                <img
-                  src={settings.logo}
-                  alt={settings?.siteName || 'VEXIVO'}
-                  className="h-7 w-auto max-w-[140px] object-contain"
-                />
-              ) : (
-                <span className="text-xl font-extrabold tracking-tighter text-neutral-900">
-                  {settings?.siteName || 'VEXIVO'}
-                </span>
-              )}
-            </Link>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-500 hover:text-black transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Mobile Search Bar */}
-          <div className="p-4 border-b border-neutral-100 bg-neutral-50/50">
-            <form onSubmit={handleMobileSearch} className="flex items-center bg-white rounded-full px-3.5 py-2 border border-neutral-200 shadow-2xs">
-              <Search className="w-4 h-4 text-neutral-400 mr-2 flex-shrink-0" />
-              <input
-                type="text"
-                value={mobileSearchQuery}
-                onChange={(e) => setMobileSearchQuery(e.target.value)}
-                placeholder="Search products, brands, categories..."
-                className="w-full bg-transparent text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none"
+      {/* 2. Slide-out Navigation Drawer */}
+      <div className="fixed inset-y-0 left-0 w-[84vw] max-w-[330px] bg-white h-full shadow-2xl flex flex-col z-[10000] overflow-hidden">
+        
+        {/* Top Header: Brand Logo & Close Button */}
+        <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/90 flex-shrink-0">
+          <Link to="/" onClick={onClose} className="flex items-center space-x-2">
+            {settings?.logo ? (
+              <img
+                src={settings.logo}
+                alt={settings?.siteName || 'VEXIVO'}
+                className="h-7 w-auto max-w-[130px] object-contain"
               />
-              {mobileSearchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setMobileSearchQuery('')}
-                  className="text-neutral-400 hover:text-black ml-1 text-xs"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </form>
+            ) : (
+              <div className="flex items-center">
+                <span className="text-xl font-black tracking-tight text-neutral-950">
+                  {settings?.siteName || 'Shopio'}
+                </span>
+                <span className="w-2 h-2 rounded-full bg-amber-400 ml-0.5 inline-block" />
+              </div>
+            )}
+          </Link>
+
+          <button
+            onClick={onClose}
+            aria-label="Close menu"
+            className="w-8 h-8 rounded-full bg-white border border-neutral-200 text-neutral-600 hover:text-black flex items-center justify-center transition-all shadow-xs active:scale-90"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* User Profile / Login Welcome Banner */}
+        <div className="px-5 py-3.5 bg-gradient-to-r from-neutral-950 to-neutral-800 text-white flex-shrink-0 shadow-xs">
+          {isAuthenticated ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-amber-400 text-neutral-950 font-black text-sm flex items-center justify-center flex-shrink-0 shadow-xs">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-white truncate max-w-[150px]">
+                    Hi, {user?.name || 'Customer'}
+                  </p>
+                  <p className="text-[10px] text-neutral-300 truncate max-w-[150px]">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                to="/account"
+                onClick={onClose}
+                className="text-[11px] font-bold text-amber-300 hover:text-white px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
+              >
+                Profile →
+              </Link>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-white">Welcome Shopper</p>
+                <p className="text-[10px] text-neutral-300">Sign in to track orders &amp; offers</p>
+              </div>
+              <Link
+                to="/login"
+                onClick={onClose}
+                className="px-3 py-1.5 rounded-lg bg-white text-neutral-950 text-xs font-bold hover:bg-neutral-100 transition-colors flex items-center space-x-1 shadow-xs active:scale-95 flex-shrink-0"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Login</span>
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Scrollable Navigation Body */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+          
+          {/* Section 1: Store Main Links */}
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 pb-0.5">
+              Explore Store
+            </p>
+
+            <Link
+              to="/"
+              onClick={onClose}
+              className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                location.pathname === '/'
+                  ? 'bg-neutral-950 text-white shadow-xs'
+                  : 'text-neutral-800 hover:bg-neutral-50'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <Home className="w-4 h-4" />
+                <span>Home</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+            </Link>
+
+            <Link
+              to="/shop"
+              onClick={onClose}
+              className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                location.pathname === '/shop'
+                  ? 'bg-neutral-950 text-white shadow-xs'
+                  : 'text-neutral-800 hover:bg-neutral-50'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <ShoppingBag className="w-4 h-4" />
+                <span>All Products / Shop Catalog</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+            </Link>
+
+            <Link
+              to="/collection/special-offers"
+              onClick={onClose}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-neutral-800 hover:bg-red-50 hover:text-red-600 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <Flame className="w-4 h-4 text-red-500" />
+                <span>Deals &amp; Special Offers</span>
+              </div>
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 text-red-600">
+                40% OFF
+              </span>
+            </Link>
+
+            <Link
+              to="/collection/new-arrivals"
+              onClick={onClose}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-neutral-800 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <Sparkles className="w-4 h-4 text-emerald-600" />
+                <span>New Arrivals</span>
+              </div>
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                NEW
+              </span>
+            </Link>
           </div>
 
-          {/* Navigation Links */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 divide-y divide-neutral-100">
-            <div className="space-y-1 pb-4">
-              {navigationLinks.map((link) => (
+          {/* Section 2: Shop by Department */}
+          <div className="pt-2 border-t border-neutral-100 space-y-1">
+            <div className="flex items-center justify-between px-2 pb-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                Shop By Department
+              </span>
+              <Layers className="w-3 h-3 text-neutral-400" />
+            </div>
+
+            <div className="space-y-0.5">
+              {storeCategories.map((cat) => (
                 <Link
-                  key={link.name}
-                  to={link.href}
+                  key={cat.slug}
+                  to={`/category/${cat.slug}`}
                   onClick={onClose}
-                  className="flex items-center justify-between py-3 text-sm font-semibold text-neutral-800 hover:text-black transition-colors"
+                  className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-neutral-800 hover:bg-neutral-50 transition-colors"
                 >
-                  <span className={link.isSale ? 'text-[#C4301C] font-bold' : ''}>
-                    {link.name}
-                  </span>
+                  <div className="flex items-center space-x-2.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-neutral-300" />
+                    <span className={cat.isHot ? 'font-bold text-neutral-950' : ''}>
+                      {cat.name}
+                    </span>
+                  </div>
+
                   <div className="flex items-center space-x-2">
-                    {link.badge && (
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                          link.isSale ? 'bg-[#C4301C] text-white' : 'bg-[#0D8756] text-white'
-                        }`}
-                      >
-                        {link.badge}
+                    {cat.badge && (
+                      <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 uppercase">
+                        {cat.badge}
                       </span>
                     )}
-                    <ChevronRight className="w-4 h-4 text-neutral-400" />
+                    <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
                   </div>
                 </Link>
               ))}
             </div>
+          </div>
 
-            {/* Quick Actions (Wishlist & Account) */}
-            <div className="pt-4 space-y-2">
-              <Link
-                to="/account/wishlist"
-                onClick={onClose}
-                className="flex items-center justify-between py-2.5 text-sm font-medium text-neutral-700 hover:text-black"
-              >
-                <div className="flex items-center space-x-3">
-                  <Heart className="w-4 h-4 text-neutral-500" />
-                  <span>Wishlist</span>
-                </div>
-                {wishlistCount > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-neutral-900 text-white text-[10px] font-bold flex items-center justify-center">
-                    {wishlistCount}
-                  </span>
-                )}
-              </Link>
+          {/* Section 3: Orders, Wishlist & Services */}
+          <div className="pt-2 border-t border-neutral-100 space-y-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 px-2 pb-0.5">
+              Orders &amp; Account
+            </p>
 
-              <Link
-                to="/offers"
-                onClick={onClose}
-                className="flex items-center justify-between py-2.5 text-sm font-medium text-neutral-700 hover:text-black"
-              >
-                <div className="flex items-center space-x-3">
-                  <Gift className="w-4 h-4 text-rose-500" />
-                  <span>Offers &amp; Gift Cards</span>
-                </div>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100 uppercase">
-                  New
+            <Link
+              to="/account/orders"
+              onClick={onClose}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-neutral-800 hover:bg-neutral-50 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <Package className="w-4 h-4 text-neutral-500" />
+                <span>Track My Orders</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+            </Link>
+
+            <Link
+              to="/account/wishlist"
+              onClick={onClose}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-neutral-800 hover:bg-neutral-50 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <Heart className="w-4 h-4 text-neutral-500" />
+                <span>My Wishlist</span>
+              </div>
+              {wishlistCount > 0 ? (
+                <span className="w-5 h-5 rounded-full bg-neutral-950 text-white text-[10px] font-bold flex items-center justify-center">
+                  {wishlistCount}
                 </span>
-              </Link>
+              ) : (
+                <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+              )}
+            </Link>
 
-              {isAuthenticated ? (
-                <>
-                  <div className="p-3 bg-neutral-50 rounded-2xl mb-1">
-                    <p className="text-xs font-bold text-neutral-900 truncate">{user?.name}</p>
-                    <p className="text-[11px] text-neutral-500 truncate">{user?.email}</p>
-                    <span className={`inline-block mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                      user?.role === 'admin'
-                        ? 'bg-purple-100 text-purple-700'
-                        : user?.isSeller
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {user?.role === 'admin' ? 'Admin' : user?.isSeller ? 'Verified Seller' : 'Verified Shopper'}
+            {/* Sell on Marketplace Card */}
+            <div className="pt-2">
+              <Link
+                to="/become-a-seller"
+                onClick={onClose}
+                className="block p-3 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 hover:border-amber-300 transition-all shadow-2xs group"
+              >
+                <div className="flex items-center space-x-2.5 mb-1.5">
+                  <div className="w-7 h-7 rounded-xl bg-amber-500 text-neutral-950 flex items-center justify-center shadow-xs">
+                    <Store className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-neutral-950 block leading-tight">
+                      Sell on VEXIVO
+                    </span>
+                    <span className="text-[10px] text-amber-900 font-medium">
+                      Become a marketplace partner
                     </span>
                   </div>
-
-                  <Link
-                    to="/account"
-                    onClick={onClose}
-                    className="flex items-center space-x-3 py-2 text-sm font-medium text-neutral-700 hover:text-black"
-                  >
-                    <User className="w-4 h-4 text-neutral-500" />
-                    <span>My Account</span>
-                  </Link>
-
-                  {user?.role === 'admin' ? (
-                    <>
-                      <Link
-                        to="/admin"
-                        onClick={onClose}
-                        className="flex items-center space-x-3 py-2 text-sm font-bold text-[#C4301C] hover:bg-red-50 rounded-xl px-2 -mx-2"
-                      >
-                        <ShieldCheck className="w-4 h-4 text-[#C4301C]" />
-                        <span>Admin Dashboard</span>
-                      </Link>
-                      <Link
-                        to="/admin/products"
-                        onClick={onClose}
-                        className="flex items-center space-x-3 py-2 text-sm font-medium text-neutral-700 hover:text-black px-2 -mx-2"
-                      >
-                        <Package className="w-4 h-4 text-neutral-500" />
-                        <span>Manage Products</span>
-                      </Link>
-                      <Link
-                        to="/admin/users"
-                        onClick={onClose}
-                        className="flex items-center space-x-3 py-2 text-sm font-medium text-neutral-700 hover:text-black px-2 -mx-2"
-                      >
-                        <User className="w-4 h-4 text-neutral-500" />
-                        <span>Manage Users</span>
-                      </Link>
-                    </>
-                  ) : user?.isSeller ? (
-                    <>
-                      <Link
-                        to="/account/seller"
-                        onClick={onClose}
-                        className="flex items-center space-x-3 py-2 text-sm font-bold text-purple-700 hover:bg-purple-50 rounded-xl px-2 -mx-2"
-                      >
-                        <Package className="w-4 h-4 text-purple-600" />
-                        <span>Seller Dashboard</span>
-                      </Link>
-                      <Link
-                        to="/account?tab=orders"
-                        onClick={onClose}
-                        className="flex items-center space-x-3 py-2 text-sm font-medium text-neutral-700 hover:text-black"
-                      >
-                        <ShoppingBag className="w-4 h-4 text-neutral-500" />
-                        <span>My Purchases</span>
-                      </Link>
-                    </>
-                  ) : (
-                    <>
-                      <Link
-                        to="/account?tab=orders"
-                        onClick={onClose}
-                        className="flex items-center space-x-3 py-2 text-sm font-medium text-neutral-700 hover:text-black"
-                      >
-                        <ShoppingBag className="w-4 h-4 text-neutral-500" />
-                        <span>My Orders</span>
-                      </Link>
-                      <Link
-                        to="/account?tab=coupons"
-                        onClick={onClose}
-                        className="flex items-center space-x-3 py-2 text-sm font-medium text-neutral-700 hover:text-black"
-                      >
-                        <Package className="w-4 h-4 text-neutral-500" />
-                        <span>Available Coupons</span>
-                      </Link>
-                      <Link
-                        to="/become-a-seller"
-                        onClick={onClose}
-                        className="flex items-center space-x-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50 rounded-xl px-2 -mx-2"
-                      >
-                        <Store className="w-4 h-4 text-amber-600" />
-                        <span>Become a Seller</span>
-                      </Link>
-                    </>
-                  )}
-
-                  <div className="pt-2 border-t border-neutral-100">
-                    <button
-                      onClick={() => {
-                        logout();
-                        onClose();
-                      }}
-                      className="w-full text-left py-2 text-xs text-red-600 hover:text-red-700 font-bold"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="pt-2 flex flex-col gap-2">
-                  <Link
-                    to="/login"
-                    onClick={onClose}
-                    className="btn-pill-dark w-full py-2.5 text-xs text-center"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    to="/register"
-                    onClick={onClose}
-                    className="btn-pill-light w-full py-2.5 text-xs text-center"
-                  >
-                    Create Account
-                  </Link>
                 </div>
-              )}
+                <div className="flex items-center justify-between pt-1.5 border-t border-amber-200/60 text-[10px] font-bold text-amber-950">
+                  <span>Open Seller Portal</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+              </Link>
             </div>
+
+            {/* Admin / Seller Dashboards */}
+            {isAuthenticated && (
+              <div className="pt-2 space-y-1">
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    onClick={onClose}
+                    className="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Admin Dashboard</span>
+                  </Link>
+                )}
+
+                {user?.isSeller && (
+                  <Link
+                    to="/account/seller"
+                    onClick={onClose}
+                    className="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors"
+                  >
+                    <Package className="w-4 h-4" />
+                    <span>Seller Dashboard</span>
+                  </Link>
+                )}
+
+                <button
+                  onClick={() => {
+                    logout();
+                    onClose();
+                  }}
+                  className="w-full flex items-center space-x-3 px-3 py-2.5 text-xs font-bold text-neutral-500 hover:text-red-600 hover:bg-neutral-50 rounded-xl transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Footer Assistance */}
-          <div className="p-5 bg-neutral-50 border-t border-neutral-100 text-xs text-neutral-500 space-y-2">
-            <div className="flex items-center space-x-2">
-              <Phone className="w-3.5 h-3.5" />
+        </div>
+
+        {/* Footer: Help & Support info */}
+        <div className="p-3.5 bg-neutral-50 border-t border-neutral-100 text-[11px] text-neutral-500 flex-shrink-0">
+          <div className="flex items-center justify-between text-neutral-700 font-medium">
+            <a href="tel:+918000012345" className="flex items-center space-x-1.5 hover:text-black">
+              <Phone className="w-3.5 h-3.5 text-neutral-400" />
               <span>+91 80000 12345</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Mail className="w-3.5 h-3.5" />
-              <span>support@vexivo.com</span>
-            </div>
+            </a>
+            <Link to="/faq" onClick={onClose} className="hover:text-black flex items-center space-x-1">
+              <HelpCircle className="w-3.5 h-3.5 text-neutral-400" />
+              <span>Help Center</span>
+            </Link>
           </div>
         </div>
+
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

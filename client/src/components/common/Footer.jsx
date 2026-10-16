@@ -158,10 +158,10 @@ const Footer = () => {
                 <Link to="/contact" className="hover:text-white transition-colors">Contact Concierge</Link>
               </li>
               <li>
-                <Link to="/faq" className="hover:text-white transition-colors">Shipping &amp; Logistics</Link>
+                <Link to="/shipping-policy" className="hover:text-white transition-colors">Shipping &amp; Logistics</Link>
               </li>
               <li>
-                <Link to="/faq" className="hover:text-white transition-colors">Complimentary Returns</Link>
+                <Link to="/return-policy" className="hover:text-white transition-colors">Complimentary Returns</Link>
               </li>
               <li>
                 <Link to="/account/orders" className="hover:text-white transition-colors">Track Your Order</Link>

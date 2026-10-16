@@ -22,7 +22,7 @@ export const CartProvider = ({ children }) => {
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  const freeShippingThreshold = settings?.freeShippingThreshold !== undefined ? Number(settings.freeShippingThreshold) : 50;
+  const freeShippingThreshold = settings?.freeShippingThreshold !== undefined ? Number(settings.freeShippingThreshold) : 499;
 
   // Coupon State & Persistence
   const [appliedCoupon, setAppliedCoupon] = useState(() => {

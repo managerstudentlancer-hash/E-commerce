@@ -65,7 +65,7 @@ const ReferenceHero = ({ banners = [] }) => {
               Artisanal Linen Set
             </span>
             <span className="text-[10px] font-semibold text-neutral-500">
-              • $189
+              • ₹1,899
             </span>
           </div>
 
@@ -143,7 +143,7 @@ const ReferenceHero = ({ banners = [] }) => {
             </div>
             <div>
               <p className="text-[10px] sm:text-[11px] font-bold text-neutral-900 leading-tight">Free Shipping</p>
-              <p className="text-[8px] sm:text-[9px] text-neutral-500 mt-0.5 leading-none hidden xs:block sm:block">Over $50</p>
+              <p className="text-[8px] sm:text-[9px] text-neutral-500 mt-0.5 leading-none hidden xs:block sm:block">Over ₹499</p>
             </div>
           </div>
 
